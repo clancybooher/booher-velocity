@@ -1,5 +1,5 @@
 // Booher Velocity — minimal service worker for PWA install
-const CACHE = 'booher-velocity-v1';
+const CACHE = 'velocity-v1';
 const ASSETS = ['/', '/index.html', '/manifest.json'];
 
 self.addEventListener('install', e => {
