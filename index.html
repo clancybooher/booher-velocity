@@ -255,6 +255,96 @@
       flex-shrink: 0;
     }
 
+    /* ── Library button ──────────────────────────────────────── */
+    .btn-library {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      width: 100%;
+      padding: 16px 24px;
+      background: rgba(255,255,255,0.07);
+      border: 1.5px solid rgba(255,255,255,0.15);
+      border-radius: var(--radius-xl);
+      color: var(--white-dim);
+      font-family: inherit;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      margin-top: 12px;
+      transition: background 0.15s ease, transform 0.1s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-library:hover { background: rgba(255,255,255,0.12); }
+    .btn-library:active { transform: scale(0.97); }
+    .btn-library:disabled { opacity: 0.4; pointer-events: none; }
+    .btn-library .icon { font-size: 22px; line-height: 1; flex-shrink: 0; }
+
+    /* ── Budget panel ─────────────────────────────────────────── */
+    .budget-panel {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+    .budget-panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 14px;
+    }
+    .budget-panel-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.38);
+    }
+    .budget-total-badge {
+      font-size: 12px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+    .budget-total-positive { background: rgba(74,222,128,0.15); color: #4ade80; }
+    .budget-total-negative { background: rgba(239,68,68,0.15); color: #ef4444; }
+    .budget-row {
+      padding: 9px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .budget-row:last-child { border-bottom: none; }
+    .budget-row-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+    .budget-row-label {
+      font-size: 13px;
+      color: rgba(255,255,255,0.65);
+    }
+    .budget-row-right {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .bval-remaining-pos { color: #4ade80; }
+    .bval-remaining-neg { color: #ef4444; }
+    .bval-budget { color: rgba(255,255,255,0.28); font-size: 11px; font-weight: 400; }
+    .budget-bar-wrap {
+      width: 100%;
+      height: 3px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 2px;
+    }
+    .budget-bar {
+      height: 3px;
+      border-radius: 2px;
+      transition: width 0.4s ease;
+    }
+
     /* ── Preview area ─────────────────────────────────────────── */
     .preview-card {
       width: 100%;
@@ -603,6 +693,26 @@
         <span class="icon">📸</span>
         SNAP RECEIPT
       </button>
+
+      <input
+        type="file"
+        id="libraryInput"
+        accept="image/*"
+      >
+
+      <button class="btn-library" id="libraryBtn" onclick="triggerLibrary()">
+        <span class="icon">🖼️</span>
+        Choose from Library
+      </button>
+    </div>
+
+    <!-- Budget summary panel -->
+    <div class="budget-panel" id="budgetPanel">
+      <div class="budget-panel-header">
+        <span class="budget-panel-title">This Month's Budget</span>
+        <span class="budget-total-badge budget-total-positive" id="budgetTotalBadge"></span>
+      </div>
+      <div id="budgetRows"></div>
     </div>
 
     <!-- Preview (hidden until photo taken) -->
@@ -697,6 +807,19 @@
     uploadToTelegram(file);
   });
 
+  // ── Library trigger ────────────────────────────────────────────────────────
+  function triggerLibrary() {
+    document.getElementById('libraryInput').click();
+  }
+
+  document.getElementById('libraryInput').addEventListener('change', function (e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    currentFile = file;
+    showPreview(file);
+    uploadToTelegram(file);
+  });
+
   // ── Preview ────────────────────────────────────────────────────────────────
   function showPreview(file) {
     const reader = new FileReader();
@@ -743,6 +866,7 @@
       document.getElementById('mainCard').classList.add('glow-success');
       document.getElementById('resetBtn').classList.add('visible');
       document.getElementById('snapBtn').disabled = true;
+      document.getElementById('libraryBtn').disabled = true;
 
     } catch (err) {
       console.error('Telegram error:', err);
@@ -776,6 +900,7 @@
     currentFile = null;
 
     document.getElementById('cameraInput').value = '';
+    document.getElementById('libraryInput').value = '';
     document.getElementById('previewImg').src = '';
     document.getElementById('previewCard').classList.remove('visible');
     document.getElementById('statusArea').classList.remove('visible');
@@ -784,8 +909,78 @@
     document.getElementById('statusError').classList.remove('visible');
     document.getElementById('mainCard').classList.remove('glow-success');
     document.getElementById('snapBtn').disabled = false;
+    document.getElementById('libraryBtn').disabled = false;
     document.getElementById('resetBtn').classList.remove('visible');
   }
+
+  // ── Budget panel ───────────────────────────────────────────────────────────
+  const DEFAULT_BUDGETS = {
+    '🛒 Groceries':             600,
+    '☕ Coffee & Dining':       300,
+    '⛽ Gas & Transport':       200,
+    '🏠 Home & Utilities':      400,
+    '🎉 Date Nights':           200,
+    '✈️ Travel':                100,
+    '💊 Health & Medical':      150,
+    '👕 Clothing & Personal':   150,
+    '🐾 Pets':                  100,
+    '🤝 Giving':                100,
+    '📦 Everything Else':       200,
+  };
+
+  function loadBudgetState() {
+    try {
+      const raw = localStorage.getItem('velocity_budget_state');
+      if (!raw) return { budgets: { ...DEFAULT_BUDGETS }, spent: {} };
+      const parsed = JSON.parse(raw);
+      // fill in any missing categories
+      for (const k of Object.keys(DEFAULT_BUDGETS)) {
+        if (!(k in parsed.budgets)) parsed.budgets[k] = DEFAULT_BUDGETS[k];
+        if (!(k in parsed.spent))   parsed.spent[k] = 0;
+      }
+      return parsed;
+    } catch { return { budgets: { ...DEFAULT_BUDGETS }, spent: {} }; }
+  }
+
+  function renderBudget() {
+    const state = loadBudgetState();
+    let totalBudget = 0, totalSpent = 0;
+    const rowsHtml = [];
+
+    for (const [cat, budgeted] of Object.entries(state.budgets)) {
+      const spent   = state.spent[cat] || 0;
+      const rem     = budgeted - spent;
+      const pct     = budgeted > 0 ? Math.min((spent / budgeted) * 100, 100) : 0;
+      const barColor = pct >= 100 ? '#ef4444' : pct >= 80 ? '#f59e0b' : '#4ade80';
+      const remClass = rem >= 0 ? 'bval-remaining-pos' : 'bval-remaining-neg';
+      const remStr   = rem >= 0 ? `$${rem}` : `-$${Math.abs(rem)}`;
+      totalBudget += budgeted;
+      totalSpent  += spent;
+      rowsHtml.push(`
+        <div class="budget-row">
+          <div class="budget-row-top">
+            <span class="budget-row-label">${cat}</span>
+            <div class="budget-row-right">
+              <span class="${remClass}">${remStr}</span>
+              <span class="bval-budget">/ $${budgeted}</span>
+            </div>
+          </div>
+          <div class="budget-bar-wrap">
+            <div class="budget-bar" style="width:${pct.toFixed(1)}%;background:${barColor}"></div>
+          </div>
+        </div>
+      `);
+    }
+
+    const totalRem     = totalBudget - totalSpent;
+    const totalRemStr  = totalRem >= 0 ? `$${totalRem} left` : `-$${Math.abs(totalRem)} over`;
+    const totalBadge   = document.getElementById('budgetTotalBadge');
+    totalBadge.textContent = totalRemStr;
+    totalBadge.className   = 'budget-total-badge ' + (totalRem >= 0 ? 'budget-total-positive' : 'budget-total-negative');
+    document.getElementById('budgetRows').innerHTML = rowsHtml.join('');
+  }
+
+  renderBudget();
 
   // ── Helpers ────────────────────────────────────────────────────────────────
   function formatDateTime(d) {
