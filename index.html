@@ -821,6 +821,7 @@
       document.getElementById('resetBtn').classList.add('visible');
       document.getElementById('snapBtn').disabled = true;
       document.getElementById('libraryBtn').disabled = true;
+      startBudgetPolling();
 
     } catch (err) {
       console.error('Telegram error:', err);
@@ -868,73 +869,140 @@
   }
 
   // ── Budget panel ───────────────────────────────────────────────────────────
-  const DEFAULT_BUDGETS = {
-    '🛒 Groceries':             600,
-    '☕ Coffee & Dining':       300,
-    '⛽ Gas & Transport':       200,
-    '🏠 Home & Utilities':      400,
-    '🎉 Date Nights':           200,
-    '✈️ Travel':                100,
-    '💊 Health & Medical':      150,
-    '👕 Clothing & Personal':   150,
-    '🐾 Pets':                  100,
-    '🤝 Giving':                100,
-    '📦 Everything Else':       200,
+
+  // Category names match the backend exactly; display labels add emoji
+  const CATEGORY_DISPLAY = {
+    'Groceries':                   '🛒 Groceries',
+    'Dining Out & Coffee':         '☕ Dining Out & Coffee',
+    'Utilities & Bills':           '🏠 Utilities & Bills',
+    'Transportation & Gas':        '⛽ Transportation & Gas',
+    'Entertainment & Date Nights': '🎉 Entertainment & Dates',
+    'Home & Maintenance':          '🔧 Home & Maintenance',
+    'Health & Personal Care':      '💊 Health & Personal',
+    'Travel & Vacations':          '✈️ Travel & Vacations',
+    'Savings & Investments':       '💰 Savings & Investments',
+    'Gifts & Giving':              '🤝 Gifts & Giving',
+    'Miscellaneous':               '📦 Miscellaneous',
   };
 
-  function loadBudgetState() {
-    try {
-      const raw = localStorage.getItem('velocity_budget_state');
-      if (!raw) return { budgets: { ...DEFAULT_BUDGETS }, spent: {} };
-      const parsed = JSON.parse(raw);
-      // fill in any missing categories
-      for (const k of Object.keys(DEFAULT_BUDGETS)) {
-        if (!(k in parsed.budgets)) parsed.budgets[k] = DEFAULT_BUDGETS[k];
-        if (!(k in parsed.spent))   parsed.spent[k] = 0;
-      }
-      return parsed;
-    } catch { return { budgets: { ...DEFAULT_BUDGETS }, spent: {} }; }
+  const DEFAULT_BUDGETS = {
+    'Groceries': 800, 'Dining Out & Coffee': 300, 'Utilities & Bills': 400,
+    'Transportation & Gas': 250, 'Entertainment & Date Nights': 150,
+    'Home & Maintenance': 200, 'Health & Personal Care': 100,
+    'Travel & Vacations': 200, 'Savings & Investments': 500,
+    'Gifts & Giving': 100, 'Miscellaneous': 100,
+  };
+
+  // ── CSV helpers ────────────────────────────────────────────────────────────
+  function parseCSVRow(row) {
+    const result = []; let inQ = false, cur = '';
+    for (let i = 0; i < row.length; i++) {
+      if (row[i] === '"') { if (inQ && row[i+1] === '"') { cur += '"'; i++; } else { inQ = !inQ; } }
+      else if (row[i] === ',' && !inQ) { result.push(cur); cur = ''; }
+      else cur += row[i];
+    }
+    result.push(cur);
+    return result;
   }
 
-  function renderBudget() {
-    const state = loadBudgetState();
-    let totalBudget = 0, totalSpent = 0;
-    const rowsHtml = [];
+  // ── Fetch live budget from Google Sheets Budget tab ────────────────────────
+  // Requires the sheet to be shared "Anyone with link can view"
+  async function fetchBudgetFromSheets() {
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_URL.match(/\/d\/([^/]+)/)?.[1]}/gviz/tq?tqx=out:csv&sheet=Budget&t=${Date.now()}`;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      const text = await res.text();
+      const lines = text.trim().split('\n');
+      if (lines.length < 2) return null;
+      const cats = {};
+      let totalBudget = 0, totalSpent = 0;
+      for (let i = 1; i < lines.length; i++) {
+        const cols = parseCSVRow(lines[i]);
+        const cat = cols[0];
+        if (!cat || cat === 'TOTAL') continue;
+        const budget    = parseFloat(cols[1]) || 0;
+        const spent     = parseFloat(cols[2]) || 0;
+        const remaining = parseFloat(cols[3]);
+        cats[cat] = { budget, spent, remaining: isNaN(remaining) ? budget - spent : remaining };
+        totalBudget += budget;
+        totalSpent  += spent;
+      }
+      if (!Object.keys(cats).length) return null;
+      return { cats, totalBudget, totalSpent, source: 'live' };
+    } catch { return null; }
+  }
 
-    for (const [cat, budgeted] of Object.entries(state.budgets)) {
-      const spent   = state.spent[cat] || 0;
-      const rem     = budgeted - spent;
-      const pct     = budgeted > 0 ? Math.min((spent / budgeted) * 100, 100) : 0;
-      const barColor = pct >= 100 ? '#7C2033' : pct >= 80 ? '#C2773A' : '#16A34A';
-      const remClass = rem >= 0 ? 'bval-remaining-pos' : 'bval-remaining-neg';
-      const remStr   = rem >= 0 ? `$${rem}` : `-$${Math.abs(rem)}`;
-      totalBudget += budgeted;
-      totalSpent  += spent;
-      rowsHtml.push(`
-        <div class="budget-row">
-          <div class="budget-row-top">
-            <span class="budget-row-label">${cat}</span>
-            <div class="budget-row-right">
-              <span class="${remClass}">${remStr}</span>
-              <span class="bval-budget">/ $${budgeted}</span>
-            </div>
-          </div>
-          <div class="budget-bar-wrap">
-            <div class="budget-bar" style="width:${pct.toFixed(1)}%;background:${barColor}"></div>
-          </div>
-        </div>
-      `);
+  // ── Render budget panel ────────────────────────────────────────────────────
+  function renderBudget(liveData) {
+    let cats, totalBudget = 0, totalSpent = 0, isLive = false;
+
+    if (liveData) {
+      ({ cats, totalBudget, totalSpent } = liveData);
+      isLive = true;
+    } else {
+      cats = {};
+      for (const [k, budget] of Object.entries(DEFAULT_BUDGETS)) {
+        cats[k] = { budget, spent: 0, remaining: budget };
+        totalBudget += budget;
+      }
     }
 
-    const totalRem     = totalBudget - totalSpent;
-    const totalRemStr  = totalRem >= 0 ? `$${totalRem} left` : `-$${Math.abs(totalRem)} over`;
-    const totalBadge   = document.getElementById('budgetTotalBadge');
-    totalBadge.textContent = totalRemStr;
-    totalBadge.className   = 'budget-total-badge ' + (totalRem >= 0 ? 'budget-total-positive' : 'budget-total-negative');
-    document.getElementById('budgetRows').innerHTML = rowsHtml.join('');
+    const rowsHtml = Object.entries(cats)
+      .filter(([k]) => k !== 'TOTAL')
+      .map(([cat, { budget, spent, remaining }]) => {
+        const pct      = budget > 0 ? Math.min((spent / budget) * 100, 100) : 0;
+        const barColor = pct >= 100 ? '#7C2033' : pct >= 80 ? '#C2773A' : '#16A34A';
+        const remClass = remaining >= 0 ? 'bval-remaining-pos' : 'bval-remaining-neg';
+        const remStr   = remaining >= 0 ? `$${remaining.toFixed(0)}` : `-$${Math.abs(remaining).toFixed(0)}`;
+        const label    = CATEGORY_DISPLAY[cat] || cat;
+        return `
+          <div class="budget-row">
+            <div class="budget-row-top">
+              <span class="budget-row-label">${label}</span>
+              <div class="budget-row-right">
+                <span class="${remClass}">${remStr}</span>
+                <span class="bval-budget">/ $${budget}</span>
+              </div>
+            </div>
+            <div class="budget-bar-wrap">
+              <div class="budget-bar" style="width:${pct.toFixed(1)}%;background:${barColor}"></div>
+            </div>
+          </div>`;
+      }).join('');
+
+    const totalRem    = totalBudget - totalSpent;
+    const totalRemStr = totalRem >= 0 ? `$${totalRem.toFixed(0)} left` : `-$${Math.abs(totalRem).toFixed(0)} over`;
+    const badge = document.getElementById('budgetTotalBadge');
+    badge.textContent = totalRemStr;
+    badge.className   = 'budget-total-badge ' + (totalRem >= 0 ? 'budget-total-positive' : 'budget-total-negative');
+    document.getElementById('budgetRows').innerHTML = rowsHtml;
+
+    const title = document.querySelector('.budget-panel-title');
+    if (title) title.textContent = isLive ? "This Month's Budget  •  LIVE" : "This Month's Budget";
   }
 
-  renderBudget();
+  // ── Initial load: try Sheets, fall back to defaults ─────────────────────
+  async function initBudget() {
+    const live = await fetchBudgetFromSheets();
+    renderBudget(live);
+  }
+
+  // ── Poll for updated budget after receipt upload (up to ~2 min) ─────────
+  let _pollTimer = null;
+  function startBudgetPolling() {
+    let attempts = 0;
+    const MAX = 24; // 24 × 5s = 2 min
+    clearInterval(_pollTimer);
+    _pollTimer = setInterval(async () => {
+      attempts++;
+      const live = await fetchBudgetFromSheets();
+      if (live) renderBudget(live);
+      if (attempts >= MAX) clearInterval(_pollTimer);
+    }, 5000);
+  }
+
+  initBudget();
 
   // ── Helpers ────────────────────────────────────────────────────────────────
   function formatDateTime(d) {

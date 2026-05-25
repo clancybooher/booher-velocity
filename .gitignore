@@ -1,0 +1,7 @@
+# Sensitive — never commit
+SETUP.md
+agent/
+.claude/
+
+# macOS
+.DS_Store
