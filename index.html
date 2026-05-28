@@ -91,6 +91,15 @@
     }
     .screen.active { opacity: 1; pointer-events: auto; }
 
+    /* ── Chat screen overrides (no padding — owns its own layout) ─────── */
+    #screen-chat {
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      overflow: hidden;
+    }
+
     /* ── Back button ──────────────────────────────────────────────────── */
     .back-btn {
       display: flex; align-items: center; gap: 6px;
@@ -114,6 +123,12 @@
       border-top: 1px solid var(--border);
       display: flex; align-items: stretch;
       z-index: 100;
+      transition: opacity 0.18s ease, transform 0.18s ease;
+    }
+    .app.chat-active .bottom-nav {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(100%);
     }
 
     .nav-btn {
@@ -147,14 +162,16 @@
     }
 
     /* ── Home header ──────────────────────────────────────────────────── */
-    .home-header { text-align: center; padding-top: 4px; }
+    .home-header { padding-top: 4px; }
     .home-eyebrow {
-      font-size: 11px; font-weight: 600; letter-spacing: 0.18em;
-      text-transform: uppercase; color: var(--wine); opacity: 0.85; margin-bottom: 4px;
+      font-size: 10px; font-weight: 600; letter-spacing: 0.16em;
+      text-transform: uppercase; color: var(--wine); opacity: 0.75;
+      margin-bottom: 6px; text-align: left;
     }
     .home-title {
       font-size: clamp(26px, 7vw, 34px);
       font-weight: 900; letter-spacing: -0.03em; line-height: 1; color: var(--text);
+      text-align: center;
     }
     .home-title span { color: var(--wine); }
 
@@ -202,7 +219,6 @@
     }
     .btn-snap:active { transform: scale(0.96); }
     .btn-snap:disabled { opacity: 0.45; pointer-events: none; }
-    .btn-snap .icon { font-size: 22px; line-height: 1; }
 
     .btn-library {
       display: flex; align-items: center; justify-content: center; gap: 10px;
@@ -283,7 +299,7 @@
 
     .status-error { display: none; flex-direction: column; align-items: center; gap: 8px; }
     .status-error.visible { display: flex; }
-    .error-icon { font-size: 24px; }
+    .error-icon { color: var(--wine); }
     .error-text { font-size: 13px; font-weight: 500; color: var(--wine); text-align: center; }
 
     .btn-reset {
@@ -318,15 +334,17 @@
     .txn-right { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex-shrink: 0; }
     .txn-amount { font-size: 16px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
     .txn-category-chip {
+      display: flex; align-items: center; gap: 5px;
       font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px;
       background: var(--green-bg); color: var(--green);
       letter-spacing: 0.01em; white-space: nowrap;
     }
+    .txn-category-chip svg { flex-shrink: 0; }
     .txn-chevron { color: var(--text-faint); flex-shrink: 0; opacity: 0.4; }
 
     /* ── Empty state ──────────────────────────────────────────────────── */
     .empty-state { text-align: center; padding: 36px 20px; color: var(--text-faint); font-size: 14px; line-height: 1.6; }
-    .empty-state-icon { font-size: 30px; margin-bottom: 10px; }
+    .empty-state-icon { margin-bottom: 12px; color: var(--text-faint); display: flex; justify-content: center; }
 
     /* ── Budget panel ─────────────────────────────────────────────────── */
     .budget-card {
@@ -341,7 +359,8 @@
     .budget-row { padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.05); }
     .budget-row:last-child { border-bottom: none; }
     .budget-row-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
-    .budget-row-label { font-size: 13px; color: var(--text-muted); }
+    .budget-row-label { display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--text-muted); }
+    .budget-row-label svg { flex-shrink: 0; opacity: 0.7; }
     .budget-row-right { display: flex; align-items: baseline; gap: 4px; font-size: 13px; font-weight: 600; }
     .bval-remaining-pos { color: #16A34A; }
     .bval-remaining-neg { color: var(--wine); }
@@ -366,55 +385,28 @@
       background: var(--bg-alt); border: 1px solid var(--border);
       border-radius: 14px; padding: 10px 14px; text-align: center;
     }
-    .settings-card {
-      background: var(--bg-card); border: 1px solid var(--border);
-      border-radius: var(--radius-2xl); box-shadow: var(--shadow-card); overflow: hidden;
-    }
-    .settings-row {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 14px 18px; border-bottom: 1px solid rgba(0,0,0,0.05); gap: 12px;
-    }
-    .settings-row:last-child { border-bottom: none; }
-    .settings-cat-label { font-size: 14px; color: var(--text-muted); flex: 1; }
-    .settings-input-wrap {
-      display: flex; align-items: center; gap: 2px;
-      background: var(--bg-alt); border: 1.5px solid var(--border);
-      border-radius: 10px; padding: 6px 10px; min-width: 82px;
-      transition: border-color 0.15s ease;
-    }
-    .settings-input-wrap:focus-within { border-color: var(--wine); }
-    .dollar-sign { font-size: 14px; font-weight: 600; color: var(--text-faint); }
-    .settings-input {
-      width: 58px; border: none; background: none;
-      font-family: inherit; font-size: 15px; font-weight: 700; color: var(--text);
-      text-align: right; outline: none; -webkit-appearance: none;
-    }
 
-    .btn-save-budget {
-      width: 100%; padding: 18px 20px;
-      background: linear-gradient(135deg, var(--wine) 0%, var(--wine-dark) 100%);
-      border: none; border-radius: var(--radius-xl);
-      color: #fff; font-family: inherit; font-size: 17px;
-      font-weight: 800; letter-spacing: -0.01em; cursor: pointer;
-      box-shadow: 0 8px 28px var(--wine-glow), 0 2px 8px rgba(0,0,0,0.14);
-      transition: transform 0.12s cubic-bezier(0.34,1.56,0.64,1), opacity 0.12s ease;
+    /* ── Settings action list ─────────────────────────────────────────── */
+    .settings-action-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-2xl); overflow: hidden;
+      box-shadow: var(--shadow-card);
+    }
+    .settings-action-row {
+      display: flex; align-items: center; gap: 14px;
+      width: 100%; padding: 17px 18px;
+      background: none; border: none; border-bottom: 1px solid rgba(0,0,0,0.05);
+      font-family: inherit; font-size: 15px; font-weight: 600; color: var(--text-muted);
+      cursor: pointer; text-align: left;
       -webkit-tap-highlight-color: transparent;
+      transition: background 0.12s ease;
     }
-    .btn-save-budget:active { transform: scale(0.97); }
-    .btn-save-budget:disabled { opacity: 0.5; pointer-events: none; }
-
-    /* ── Google Sheet link ────────────────────────────────────────────── */
-    .btn-sheet {
-      display: flex; align-items: center; justify-content: center; gap: 10px;
-      width: 100%; padding: 14px 20px;
-      background: var(--bg-card); border: 1px solid var(--border);
-      border-radius: var(--radius-xl); color: var(--text-muted);
-      font-family: inherit; font-size: 14px; font-weight: 600;
-      cursor: pointer; text-decoration: none;
-      transition: all 0.15s ease; -webkit-tap-highlight-color: transparent;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
-    }
-    .btn-sheet:active { transform: scale(0.97); opacity: 0.85; }
+    .settings-action-row:last-child { border-bottom: none; }
+    .settings-action-row:active { background: var(--bg-alt); }
+    .settings-action-row svg { flex-shrink: 0; color: var(--wine); }
+    .settings-action-row .row-chevron { margin-left: auto; color: var(--text-faint); opacity: 0.5; }
+    .settings-action-danger { color: var(--wine); }
+    .settings-action-danger svg { color: var(--wine); }
 
     /* ── Category picker overlay ──────────────────────────────────────── */
     .overlay-backdrop {
@@ -457,7 +449,12 @@
     }
     .cat-btn:active { background: var(--bg-alt); }
     .cat-btn.selected { background: var(--green-bg); border-color: rgba(22,163,74,0.25); }
-    .cat-btn-emoji { font-size: 20px; line-height: 1; flex-shrink: 0; }
+    .cat-btn-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: var(--bg-alt); display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; color: var(--text-muted);
+    }
+    .cat-btn.selected .cat-btn-icon { background: var(--green-bg); color: var(--green); }
     .cat-btn-name { font-size: 15px; font-weight: 600; color: var(--text-muted); flex: 1; }
     .cat-btn.selected .cat-btn-name { color: var(--green); }
     .cat-check {
@@ -471,23 +468,22 @@
     .cat-btn.selected .cat-check { opacity: 1; transform: scale(1); }
 
     /* ── Chat screen ──────────────────────────────────────────────────── */
-    #screen-chat {
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-    }
-
-    .chat-top-header {
+    .chat-back-bar {
       flex-shrink: 0;
-      padding: calc(var(--safe-top) + 16px) 20px 14px;
+      padding: calc(var(--safe-top) + 14px) 20px 14px;
       border-bottom: 1px solid var(--border);
       background: rgba(250,248,244,0.96);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
     }
-    .chat-top-title { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; color: var(--text); }
-    .chat-top-sub { font-size: 12px; color: var(--text-faint); margin-top: 2px; }
+    .chat-back-btn {
+      background: none; border: none; cursor: pointer;
+      display: flex; align-items: center; gap: 6px;
+      color: var(--wine); padding: 2px 0;
+      font-family: inherit; font-size: 15px; font-weight: 600;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .chat-back-btn:active { opacity: 0.6; }
 
     .chat-scroller {
       flex: 1;
@@ -498,6 +494,7 @@
       display: flex;
       flex-direction: column;
       gap: 12px;
+      min-height: 0;
     }
 
     .chat-empty {
@@ -506,30 +503,12 @@
       padding: 32px 16px 0;
       gap: 10px;
     }
-    .chat-empty-icon { font-size: 36px; }
+    .chat-empty-icon { color: var(--text-faint); }
     .chat-empty-title {
       font-size: 17px; font-weight: 700; color: var(--text);
       letter-spacing: -0.01em;
     }
     .chat-empty-sub { font-size: 13px; color: var(--text-faint); line-height: 1.5; }
-
-    .chat-chips {
-      display: flex; flex-direction: column; gap: 8px;
-      width: 100%; margin-top: 8px;
-    }
-    .chat-chip {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 12px 16px;
-      font-family: inherit; font-size: 14px; font-weight: 500;
-      color: var(--text-muted);
-      cursor: pointer; text-align: left;
-      transition: background 0.12s ease, transform 0.1s ease, border-color 0.12s ease;
-      -webkit-tap-highlight-color: transparent;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-    }
-    .chat-chip:active { background: var(--bg-alt); transform: scale(0.98); border-color: var(--wine); }
 
     /* Message bubbles */
     .chat-msg-wrap {
@@ -560,13 +539,6 @@
       color: #fff;
       border-bottom-right-radius: 4px;
     }
-    .chat-bubble-time {
-      font-size: 10px;
-      color: var(--text-faint);
-      margin: 2px 6px 0;
-      flex-shrink: 0;
-      align-self: flex-end;
-    }
 
     /* Typing indicator */
     .typing-indicator {
@@ -590,11 +562,37 @@
       40%            { transform: translateY(-5px); opacity: 1; }
     }
 
+    /* Suggestion chips — shown above input, hidden after first send */
+    .chat-suggestions {
+      flex-shrink: 0;
+      padding: 8px 16px 4px;
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .chat-suggestions::-webkit-scrollbar { display: none; }
+    .chat-chip {
+      flex-shrink: 0;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 9px 14px;
+      font-family: inherit; font-size: 13px; font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer; white-space: nowrap;
+      transition: background 0.12s ease, transform 0.1s ease, border-color 0.12s ease;
+      -webkit-tap-highlight-color: transparent;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .chat-chip:active { background: var(--bg-alt); transform: scale(0.97); border-color: var(--wine); }
+
     /* Chat input area */
     .chat-footer {
       flex-shrink: 0;
       display: flex; align-items: flex-end; gap: 10px;
-      padding: 10px 16px calc(12px + var(--safe-bottom));
+      padding: 8px 16px calc(12px + var(--safe-bottom));
       border-top: 1px solid var(--border);
       background: rgba(250,248,244,0.96);
       backdrop-filter: blur(16px);
@@ -626,10 +624,86 @@
       box-shadow: 0 4px 14px var(--wine-glow);
       transition: transform 0.12s cubic-bezier(0.34,1.56,0.64,1), opacity 0.12s;
       -webkit-tap-highlight-color: transparent;
-      flex-shrink: 0;
     }
     .chat-send-btn:active { transform: scale(0.9); }
     .chat-send-btn:disabled { opacity: 0.35; pointer-events: none; }
+
+    /* ── Budget Modal ─────────────────────────────────────────────────── */
+    .budget-modal-sheet {
+      background: var(--bg-card);
+      border-radius: 24px 24px 0 0;
+      width: 100%; max-width: 440px;
+      max-height: 92svh;
+      display: flex; flex-direction: column;
+      transform: translateY(100%);
+      transition: transform 0.28s cubic-bezier(0.32,0.72,0,1);
+    }
+    .overlay-backdrop.open .budget-modal-sheet { transform: translateY(0); }
+    .budget-modal-scroll {
+      flex: 1; overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .settings-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 13px 20px; border-bottom: 1px solid rgba(0,0,0,0.05); gap: 12px;
+    }
+    .settings-row:last-child { border-bottom: none; }
+    .settings-cat-label {
+      display: flex; align-items: center; gap: 9px;
+      font-size: 14px; color: var(--text-muted); flex: 1;
+    }
+    .settings-cat-label svg { flex-shrink: 0; opacity: 0.7; }
+    .settings-input-wrap {
+      display: flex; align-items: center; gap: 2px;
+      background: var(--bg-alt); border: 1.5px solid var(--border);
+      border-radius: 10px; padding: 6px 10px; min-width: 82px;
+      transition: border-color 0.15s ease;
+    }
+    .settings-input-wrap:focus-within { border-color: var(--wine); }
+    .dollar-sign { font-size: 14px; font-weight: 600; color: var(--text-faint); }
+    .settings-input {
+      width: 58px; border: none; background: none;
+      font-family: inherit; font-size: 15px; font-weight: 700; color: var(--text);
+      text-align: right; outline: none; -webkit-appearance: none;
+    }
+    .budget-modal-footer {
+      flex-shrink: 0;
+      padding: 12px 20px calc(16px + var(--safe-bottom));
+      border-top: 1px solid var(--border);
+      background: var(--bg-card);
+    }
+    .btn-save-budget {
+      width: 100%; padding: 18px 20px;
+      background: linear-gradient(135deg, var(--wine) 0%, var(--wine-dark) 100%);
+      border: none; border-radius: var(--radius-xl);
+      color: #fff; font-family: inherit; font-size: 17px;
+      font-weight: 800; letter-spacing: -0.01em; cursor: pointer;
+      box-shadow: 0 8px 28px var(--wine-glow), 0 2px 8px rgba(0,0,0,0.14);
+      transition: transform 0.12s cubic-bezier(0.34,1.56,0.64,1), opacity 0.12s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-save-budget:active { transform: scale(0.97); }
+    .btn-save-budget:disabled { opacity: 0.5; pointer-events: none; }
+    .add-cat-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 20px; border-top: 1px solid rgba(0,0,0,0.05);
+    }
+    .add-cat-input {
+      flex: 1; background: var(--bg-alt); border: 1.5px solid var(--border);
+      border-radius: 12px; padding: 10px 14px;
+      font-family: inherit; font-size: 14px; color: var(--text);
+      outline: none; -webkit-appearance: none;
+      transition: border-color 0.15s;
+    }
+    .add-cat-input:focus { border-color: var(--wine); }
+    .add-cat-input::placeholder { color: var(--text-faint); }
+    .btn-add-cat-confirm {
+      background: var(--wine); color: #fff; border: none; border-radius: 12px;
+      padding: 10px 16px; font-family: inherit; font-size: 14px; font-weight: 700;
+      cursor: pointer; white-space: nowrap; flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-add-cat-confirm:active { opacity: 0.8; }
 
     /* ── Toast ────────────────────────────────────────────────────────── */
     .toast {
@@ -655,27 +729,27 @@
     }
     .auth-gate.hidden { display: none; }
     .auth-box {
-      width: 100%; max-width: 320px;
+      width: 100%; max-width: 340px;
       display: flex; flex-direction: column; align-items: center; gap: 20px;
       text-align: center;
     }
-    .auth-logo { font-size: 42px; }
+    .auth-logo { display: none; }
     .auth-title {
       font-size: 24px; font-weight: 900; letter-spacing: -0.03em;
       color: var(--text);
     }
     .auth-title span { color: var(--wine); }
     .auth-sub { font-size: 14px; color: var(--text-faint); line-height: 1.5; }
-    .auth-input-wrap {
+    .auth-form {
       width: 100%;
       display: flex; flex-direction: column; gap: 10px;
     }
     .auth-input {
-      width: 100%;
+      width: 100%; box-sizing: border-box;
       background: var(--bg-alt); border: 1.5px solid var(--border);
       border-radius: 16px; padding: 15px 18px;
       font-family: inherit; font-size: 16px; color: var(--text);
-      outline: none; text-align: center; letter-spacing: 0.05em;
+      outline: none; text-align: left; letter-spacing: normal;
       transition: border-color 0.15s;
     }
     .auth-input:focus { border-color: var(--wine); }
@@ -690,38 +764,74 @@
       box-shadow: 0 8px 28px var(--wine-glow);
       transition: transform 0.12s cubic-bezier(0.34,1.56,0.64,1);
     }
-    .btn-auth:active { transform: scale(0.97); }
+    .btn-auth:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .btn-auth:active:not(:disabled) { transform: scale(0.97); }
     .auth-error { font-size: 13px; color: var(--wine); font-weight: 600; min-height: 18px; }
+    .auth-toggle {
+      font-size: 13px; color: var(--text-faint);
+    }
+    .auth-toggle a {
+      color: var(--wine); font-weight: 700; cursor: pointer; text-decoration: none;
+    }
+    .auth-toggle a:hover { text-decoration: underline; }
+    .auth-field-name { display: none; }
+    .auth-gate.signup-mode .auth-field-name { display: block; }
+    .auth-gate.signup-mode .auth-sub-signin { display: none; }
+    .auth-gate.signin-mode .auth-sub-signup { display: none; }
+    /* Header user display */
+    .home-header-row {
+      display: flex; align-items: center; justify-content: space-between;
+      width: 100%;
+    }
+    .btn-logout {
+      background: none; border: 1.5px solid var(--border);
+      border-radius: 20px; padding: 6px 14px;
+      font-family: inherit; font-size: 12px; font-weight: 600;
+      color: var(--text-faint); cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .btn-logout:hover { border-color: var(--wine); color: var(--wine); }
   </style>
 </head>
 <body>
 
-<!-- ── Auth gate (hidden once unlocked) ───────────────────────────── -->
-<div id="authGate" class="auth-gate">
+<!-- ── Auth gate ──────────────────────────────────────────────────── -->
+<div id="authGate" class="auth-gate signin-mode">
   <div class="auth-box">
-    <div class="auth-logo">💸</div>
+    <div class="auth-logo"></div>
     <div class="auth-title">Booher <span>Velocity</span></div>
-    <div class="auth-sub">Budget &amp; spending tracker for Clancy &amp; Naomi.<br>Enter the access code to continue.</div>
-    <div class="auth-input-wrap">
-      <input id="authInput" class="auth-input" type="password"
-        placeholder="Access code" autocomplete="off"
-        onkeydown="if(event.key==='Enter')checkAuth()">
-      <button class="btn-auth" onclick="checkAuth()">Enter →</button>
+    <div class="auth-sub auth-sub-signin">Budget &amp; spending tracker.<br>Sign in to continue.</div>
+    <div class="auth-sub auth-sub-signup">Create your account to get started.</div>
+    <div class="auth-form">
+      <input id="authName" class="auth-input auth-field-name" type="text"
+        placeholder="Your name" autocomplete="name"
+        onkeydown="if(event.key==='Enter')authSubmit()">
+      <input id="authEmail" class="auth-input" type="email"
+        placeholder="Email address" autocomplete="email"
+        onkeydown="if(event.key==='Enter')authSubmit()">
+      <input id="authPassword" class="auth-input" type="password"
+        placeholder="Password" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter')authSubmit()">
+      <button class="btn-auth" id="authBtn" onclick="authSubmit()">Sign In →</button>
       <div class="auth-error" id="authError"></div>
+      <div class="auth-toggle">
+        <span id="authToggleText">Don't have an account?</span>
+        <a id="authToggleLink" onclick="authToggleMode()">Create one</a>
+      </div>
     </div>
   </div>
 </div>
 
 <div class="bg-ambient" aria-hidden="true"></div>
 
-<div class="app">
+<div class="app" id="appRoot">
   <div class="screens">
 
     <!-- ══ Screen: Home ══════════════════════════════════════════════════ -->
     <div id="screen-home" class="screen active">
 
       <div class="home-header">
-        <p class="home-eyebrow">Clancy &amp; Naomi Booher</p>
+        <p class="home-eyebrow" id="homeEyebrow">Booher Velocity</p>
         <h1 class="home-title"><span>Velocity</span></h1>
       </div>
 
@@ -730,8 +840,11 @@
         <div class="snap-area">
           <input type="file" id="cameraInput" accept="image/*" capture="environment">
           <button class="btn-snap" id="snapBtn" onclick="triggerCamera()">
-            <span class="icon">📸</span>
-            SNAP RECEIPT
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M1 8C1 6.9 1.9 6 3 6h2l2-3h8l2 3h2a2 2 0 012 2v10a2 2 0 01-2 2H3a2 2 0 01-2-2V8z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="11" cy="13" r="3" stroke="white" stroke-width="1.5"/>
+            </svg>
+            Snap Receipt
           </button>
           <input type="file" id="libraryInput" accept="image/*">
           <button class="btn-library" id="libraryBtn" onclick="triggerLibrary()">
@@ -756,7 +869,7 @@
         <div class="status-area" id="statusArea">
           <div class="status-loading" id="statusLoading">
             <div class="spinner"></div>
-            <p class="loading-text">Velocity AI reading receipt…</p>
+            <p class="loading-text">Reading receipt…</p>
           </div>
           <div class="status-success" id="statusSuccess">
             <div class="checkmark-wrap">
@@ -769,7 +882,12 @@
             <p class="success-detail" id="successDetail">Saved to your budget</p>
           </div>
           <div class="status-error" id="statusError">
-            <div class="error-icon">⚠️</div>
+            <div class="error-icon">
+              <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M14 10v6M14 19.5V20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M3 22L14 4l11 18H3z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
             <p class="error-text" id="errorText">Something went wrong.</p>
           </div>
         </div>
@@ -792,15 +910,20 @@
         </div>
 
         <div style="text-align:center; padding-top:14px;">
-          <button class="btn-reset" id="resetBtn" onclick="resetSnap()">📷 Snap another</button>
+          <button class="btn-reset" id="resetBtn" onclick="resetSnap()">Snap Another</button>
         </div>
       </div>
 
-      <!-- Last 2 transactions -->
+      <!-- Recent transactions (3) -->
       <p class="section-label">Recent Transactions</p>
       <div id="homeTransactions">
         <div class="empty-state">
-          <div class="empty-state-icon">🧾</div>
+          <div class="empty-state-icon">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="5" y="3" width="22" height="27" rx="2" stroke="currentColor" stroke-width="1.6"/>
+              <path d="M10 10h12M10 15h12M10 20h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </div>
           <p>No transactions yet.<br>Snap a receipt to get started.</p>
         </div>
       </div>
@@ -815,32 +938,43 @@
         <div id="budgetRows"></div>
       </div>
 
-      <button class="btn-sheet" id="syncBankBtn" onclick="syncBank()">
-        <span>🏦</span> Sync Bank Accounts
-      </button>
-
     </div><!-- /screen-home -->
 
     <!-- ══ Screen: Chat ══════════════════════════════════════════════════ -->
     <div id="screen-chat" class="screen">
 
-      <div class="chat-top-header">
-        <div class="chat-top-title">💸 Velocity AI</div>
-        <div class="chat-top-sub">Ask anything about your budget</div>
+      <!-- Minimal header: just back arrow -->
+      <div class="chat-back-bar">
+        <button class="chat-back-btn" onclick="showScreen('home')" aria-label="Back to Home">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M13 16L7 10L13 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Back
+        </button>
       </div>
 
+      <!-- Message area -->
       <div class="chat-scroller" id="chatScroller">
         <div id="chatEmpty" class="chat-empty">
-          <div class="chat-empty-icon">💬</div>
-          <div class="chat-empty-title">Your budget, explained</div>
-          <div class="chat-empty-sub">Ask me anything about your spending,<br>savings, or where your money goes.</div>
-          <div class="chat-chips">
-            <button class="chat-chip" onclick="sendChip(this)">💡 How can we save more money this month?</button>
-            <button class="chat-chip" onclick="sendChip(this)">📊 What did we spend the most on?</button>
-            <button class="chat-chip" onclick="sendChip(this)">🛒 How's our grocery budget looking?</button>
-            <button class="chat-chip" onclick="sendChip(this)">⚠️ Where are we overspending?</button>
+          <div class="chat-empty-icon">
+            <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M5 6h34a2 2 0 012 2v22a2 2 0 01-2 2H14l-6 6V8a2 2 0 012-2z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M13 17h18M13 23h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
           </div>
+          <div class="chat-empty-title">Your budget, explained</div>
+          <div class="chat-empty-sub">Ask me anything about your spending,<br>savings, or subscriptions.</div>
         </div>
+      </div>
+
+      <!-- Suggestion chips — horizontal scroll, shown until first message -->
+      <div class="chat-suggestions" id="chatSuggestions">
+        <button class="chat-chip" onclick="sendChip(this)">How can we save more this month?</button>
+        <button class="chat-chip" onclick="sendChip(this)">What subscriptions are we paying for?</button>
+        <button class="chat-chip" onclick="sendChip(this)">Where are we overspending?</button>
+        <button class="chat-chip" onclick="sendChip(this)">Predict next month's spending</button>
+        <button class="chat-chip" onclick="sendChip(this)">Which subscriptions should we cut?</button>
+        <button class="chat-chip" onclick="sendChip(this)">Show spending trends over time</button>
       </div>
 
       <div class="chat-footer">
@@ -887,7 +1021,12 @@
 
       <div id="allTransactions">
         <div class="empty-state">
-          <div class="empty-state-icon">⏳</div>
+          <div class="empty-state-icon">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="16" cy="16" r="12" stroke="currentColor" stroke-width="1.7"/>
+              <path d="M16 9v7l4 4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
           <p>Loading transactions…</p>
         </div>
       </div>
@@ -897,24 +1036,49 @@
     <!-- ══ Screen: Settings ══════════════════════════════════════════════ -->
     <div id="screen-settings" class="screen">
 
-      <button class="back-btn" onclick="showScreen('home')" aria-label="Back to Home">
-        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <path d="M11 14L6 9L11 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        Home
-      </button>
-
       <div class="screen-header">
         <div>
-          <div class="screen-header-title">Budget Settings</div>
-          <div class="screen-header-sub">Monthly envelope amounts</div>
+          <div class="screen-header-title">Settings</div>
         </div>
       </div>
 
-      <div class="settings-note">Monthly envelope amounts — saved to Velocity</div>
-      <div class="settings-card" id="settingsRows"></div>
-      <button class="btn-save-budget" id="saveBudgetBtn" onclick="saveBudget()">Save Budget</button>
-      <div style="height:8px"></div>
+      <p class="section-label">Account</p>
+      <div class="settings-action-card">
+        <button class="settings-action-row" onclick="openBudgetModal()">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect x="1" y="3" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M1 8h18" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M5 13h5M14 13h1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+          Monthly Budget
+          <svg class="row-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="settings-action-row" id="syncBankBtn" onclick="syncBank()">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M17 10A7 7 0 1 1 10 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M13 3l4 0 0 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Sync Bank Accounts
+          <svg class="row-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="settings-action-row" onclick="updateApp()">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M10 6v4l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Update App
+          <svg class="row-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="settings-action-row settings-action-danger" onclick="authLogout()">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M13 14l4-4-4-4M17 10H7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M7 3H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          Sign Out
+        </button>
+      </div>
+
+      <div style="height:16px"></div>
 
     </div><!-- /screen-settings -->
 
@@ -949,12 +1113,12 @@
       <span class="nav-label">History</span>
     </button>
 
-    <button class="nav-btn" id="nav-settings" onclick="showScreen('settings')" aria-label="Budget Settings">
+    <button class="nav-btn" id="nav-settings" onclick="showScreen('settings')" aria-label="Settings">
       <svg width="21" height="21" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.4"/>
         <path d="M16.2 10c0-.3 0-.6-.1-.9l1.4-1.1a.4.4 0 0 0 .1-.5l-1.4-2.4a.4.4 0 0 0-.5-.2l-1.7.7a6 6 0 0 0-1.5-.9l-.3-1.8A.4.4 0 0 0 11.8 2.6h-2.8a.4.4 0 0 0-.4.3l-.3 1.8a6 6 0 0 0-1.5.9L5.1 4.9a.4.4 0 0 0-.5.2L3.2 7.5a.4.4 0 0 0 .1.5l1.4 1.1c0 .3-.1.6-.1.9s0 .6.1.9L3.3 12a.4.4 0 0 0-.1.5l1.4 2.4c.1.2.3.3.5.2l1.7-.7c.5.4 1 .7 1.5.9l.3 1.8c0 .2.2.3.4.3h2.8c.2 0 .4-.1.4-.3l.3-1.8c.5-.2 1-.5 1.5-.9l1.7.7a.4.4 0 0 0 .5-.2l1.4-2.4a.4.4 0 0 0-.1-.5l-1.4-1.1c.1-.3.1-.6.1-.9z" stroke="currentColor" stroke-width="1.4"/>
       </svg>
-      <span class="nav-label">Budget</span>
+      <span class="nav-label">Settings</span>
     </button>
 
   </nav>
@@ -973,25 +1137,74 @@
   </div>
 </div>
 
+<!-- ── Budget Modal ────────────────────────────────────────────────── -->
+<div id="budgetModalOverlay" class="overlay-backdrop" onclick="handleBudgetModalTap(event)" role="dialog" aria-modal="true" aria-label="Monthly budget">
+  <div class="budget-modal-sheet" id="budgetModalSheet">
+    <div class="sheet-handle-wrap"><div class="sheet-handle"></div></div>
+    <div class="sheet-header">
+      <div class="sheet-title">Monthly Budget</div>
+      <div class="sheet-vendor" id="budgetMonthLabel"></div>
+    </div>
+    <div class="budget-modal-scroll">
+      <div id="budgetModalList"></div>
+      <div class="add-cat-row" id="addCatTriggerRow">
+        <button class="settings-action-row" onclick="showAddCategoryForm()" style="flex:1; border-radius:14px; border:1.5px dashed var(--border); justify-content:center; gap:8px; color:var(--text-faint); font-size:14px;">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+          Add Category
+        </button>
+      </div>
+      <div class="add-cat-row" id="addCatFormRow" style="display:none;">
+        <input id="addCatInput" class="add-cat-input" type="text" placeholder="Category name…"
+          onkeydown="if(event.key==='Enter')confirmAddCategory()">
+        <button class="btn-add-cat-confirm" onclick="confirmAddCategory()">Add</button>
+      </div>
+    </div>
+    <div class="budget-modal-footer">
+      <button class="btn-save-budget" id="saveBudgetModalBtn" onclick="saveBudgetFromModal()">Save Budget</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── Toast ──────────────────────────────────────────────────────────── -->
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
+  // ── Category icon SVGs ──────────────────────────────────────────────────
+  const CAT_ICONS = {
+    'Groceries': `<svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 3h2.5l2.5 10h9l2-7H7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8.5" cy="17" r="1.5" fill="currentColor"/><circle cx="14.5" cy="17" r="1.5" fill="currentColor"/></svg>`,
+    'Dining Out & Coffee': `<svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 4h10v7a4 4 0 01-8 0V4z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 6h1a2 2 0 010 4h-1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 17h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`,
+    'Utilities & Bills': `<svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13 2L8 10h6L11 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    'Transportation & Gas': `<svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 14l2-5 1.5-2h9l1.5 2 2 5H2z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6" cy="16.5" r="1.5" stroke="currentColor" stroke-width="1.3"/><circle cx="14" cy="16.5" r="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M2 14h16" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>`,
+    'Entertainment & Date Nights': `<svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/><path d="M8 7l6 3-6 3V7z" fill="currentColor"/></svg>`,
+    'Home & Maintenance': `<svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 10L10 3l8 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 10v7a1 1 0 001 1h8a1 1 0 001-1v-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 18v-5h4v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    'Health & Personal Care': `<svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 17s-7-5-7-9.5a5 5 0 0114 0C17 12 10 17 10 17z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    'Travel & Vacations': `<svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17 4L10 11 8.5 15.5l-1-1L5 17l-2-2 2.5-2.5-1-1L9 8.5 4 7.5 9.5 4l2 3 5.5-3z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    'Savings & Investments': `<svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><polyline points="2,15 7,10 11,13 18,6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><polyline points="14,6 18,6 18,10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    'Gifts & Giving': `<svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="7" width="16" height="11" rx="1" stroke="currentColor" stroke-width="1.5"/><path d="M2 12h16M10 7v11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M10 7c0 0 0-4-3-3s0 3 3 3z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 7c0 0 0-4 3-3s0 3-3 3z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    'Miscellaneous': `<svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="11" y="2" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="11" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="11" y="11" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/></svg>`,
+  };
+
+  function getCatIcon(key) {
+    return CAT_ICONS[key] || CAT_ICONS['Miscellaneous'];
+  }
+
   // ── Constants ──────────────────────────────────────────────────────────
-  const BUDGET_LAUNCH = new Date('2026-01-01'); // already launched
+  const BUDGET_LAUNCH = new Date('2026-01-01');
 
   const CATEGORIES = [
-    { key: 'Groceries',                   emoji: '🛒', label: 'Groceries' },
-    { key: 'Dining Out & Coffee',          emoji: '☕', label: 'Dining Out & Coffee' },
-    { key: 'Utilities & Bills',            emoji: '🏠', label: 'Utilities & Bills' },
-    { key: 'Transportation & Gas',         emoji: '⛽', label: 'Transportation & Gas' },
-    { key: 'Entertainment & Date Nights',  emoji: '🎉', label: 'Entertainment & Dates' },
-    { key: 'Home & Maintenance',           emoji: '🔧', label: 'Home & Maintenance' },
-    { key: 'Health & Personal Care',       emoji: '💊', label: 'Health & Personal' },
-    { key: 'Travel & Vacations',           emoji: '✈️', label: 'Travel & Vacations' },
-    { key: 'Savings & Investments',        emoji: '💰', label: 'Savings & Investments' },
-    { key: 'Gifts & Giving',               emoji: '🤝', label: 'Gifts & Giving' },
-    { key: 'Miscellaneous',                emoji: '📦', label: 'Miscellaneous' },
+    { key: 'Groceries',                   label: 'Groceries' },
+    { key: 'Dining Out & Coffee',          label: 'Dining Out & Coffee' },
+    { key: 'Utilities & Bills',            label: 'Utilities & Bills' },
+    { key: 'Transportation & Gas',         label: 'Transportation & Gas' },
+    { key: 'Entertainment & Date Nights',  label: 'Entertainment & Dates' },
+    { key: 'Home & Maintenance',           label: 'Home & Maintenance' },
+    { key: 'Health & Personal Care',       label: 'Health & Personal' },
+    { key: 'Travel & Vacations',           label: 'Travel & Vacations' },
+    { key: 'Savings & Investments',        label: 'Savings & Investments' },
+    { key: 'Gifts & Giving',               label: 'Gifts & Giving' },
+    { key: 'Miscellaneous',                label: 'Miscellaneous' },
   ];
   const CAT_MAP = Object.fromEntries(CATEGORIES.map(c => [c.key, c]));
 
@@ -1012,9 +1225,6 @@
   let _chatHistory   = [];
   let _chatTyping    = false;
 
-  // ── Boot ── (data loads after auth in bootAuth())
-  // initBudget() and loadTransactions() are called by bootAuth() when already authenticated
-
   // ── Screen navigation ──────────────────────────────────────────────────
   function showScreen(name) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -1022,8 +1232,16 @@
     document.getElementById('screen-' + name).classList.add('active');
     const btn = document.getElementById('nav-' + name);
     if (btn) btn.classList.add('active');
+
+    // Hide/show bottom nav for chat screen
+    const appRoot = document.getElementById('appRoot');
+    if (name === 'chat') {
+      appRoot.classList.add('chat-active');
+    } else {
+      appRoot.classList.remove('chat-active');
+    }
+
     if (name === 'transactions' && _transactions.length === 0) loadTransactions(false);
-    if (name === 'settings') renderSettings();
     if (name === 'chat') {
       setTimeout(() => {
         const s = document.getElementById('chatScroller');
@@ -1056,7 +1274,7 @@
     reader.readAsDataURL(file);
   }
 
-  // ── Upload receipt to Cloudflare Worker → Gemini ───────────────────────
+  // ── Upload receipt ─────────────────────────────────────────────────────
   async function uploadReceipt(file) {
     setStatus('loading');
 
@@ -1064,7 +1282,7 @@
     fd.append('image', file, file.name || 'receipt.jpg');
 
     try {
-      const res  = await fetch('/api/receipt', { method: 'POST', body: fd });
+      const res  = await fetch('/api/receipt', { method: 'POST', body: fd, credentials: 'include' });
       const data = await res.json();
 
       if (!res.ok || !data.ok) {
@@ -1072,23 +1290,26 @@
       }
 
       // Show parsed receipt info
-      document.getElementById('rrVendor').textContent    = data.vendor;
-      document.getElementById('rrAmount').textContent    = `$${data.amount.toFixed(2)}`;
-      document.getElementById('rrDate').textContent      = fmtShort(data.date) || data.date;
-      const cat = CAT_MAP[data.category] || { emoji: '📦', label: data.category };
-      document.getElementById('rrCategory').textContent  = `${cat.emoji} ${cat.label}`;
+      document.getElementById('rrVendor').textContent   = data.vendor;
+      document.getElementById('rrAmount').textContent   = `$${data.amount.toFixed(2)}`;
+      document.getElementById('rrDate').textContent     = fmtShort(data.date) || data.date;
+      const cat = CAT_MAP[data.category] || { label: data.category };
+      document.getElementById('rrCategory').textContent = cat.label;
       document.getElementById('receiptResult').classList.add('visible');
 
       setStatus('success');
       document.getElementById('successDetail').textContent =
-        `${data.vendor} · $${data.amount.toFixed(2)} · ${cat.emoji} ${cat.label}`;
+        `${data.vendor} · $${data.amount.toFixed(2)} · ${cat.label}`;
       document.getElementById('mainCard').classList.add('glow-success');
       document.getElementById('resetBtn').classList.add('visible');
       document.getElementById('snapBtn').disabled = true;
       document.getElementById('libraryBtn').disabled = true;
 
-      // Reload transactions and budget
-      setTimeout(() => loadTransactions(false), 1500);
+      // Reload transactions, then deduplicate
+      setTimeout(async () => {
+        await loadTransactions(false);
+        await deduplicateTransactions();
+      }, 1500);
       startBudgetPolling();
 
     } catch (err) {
@@ -1123,6 +1344,50 @@
     document.getElementById('resetBtn').classList.remove('visible');
   }
 
+  // ── Deduplication ──────────────────────────────────────────────────────
+  async function deduplicateTransactions() {
+    if (_transactions.length < 2) return;
+
+    const seen = new Map();
+    const toDelete = [];
+
+    // Process newest-first so we keep the most recent entry
+    const sorted = [..._transactions].sort((a, b) =>
+      (b.created_at || b.date || '').localeCompare(a.created_at || a.date || '')
+    );
+
+    for (const t of sorted) {
+      const vendor = (t.vendor || '').toLowerCase().trim();
+      const amount = Math.abs(t.amount || 0).toFixed(2);
+      const date   = t.date || '';
+      const key    = `${vendor}|${amount}|${date}`;
+
+      if (seen.has(key)) {
+        toDelete.push(t.id);
+      } else {
+        seen.set(key, t.id);
+      }
+    }
+
+    if (toDelete.length === 0) return;
+
+    for (const id of toDelete) {
+      try {
+        await fetch('/api/transactions', {
+          method: 'DELETE',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id }),
+        });
+      } catch {}
+    }
+
+    _transactions = _transactions.filter(t => !toDelete.includes(t.id));
+    renderHomeTransactions();
+    renderAllTransactions();
+    showToast(`Removed ${toDelete.length} duplicate${toDelete.length > 1 ? 's' : ''}`);
+  }
+
   // ── Chat ───────────────────────────────────────────────────────────────
   function handleChatKey(e) {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -1137,7 +1402,7 @@
   }
 
   function sendChip(btn) {
-    const msg = btn.textContent.replace(/^[\p{Emoji}\s]+/u, '').trim();
+    const msg = btn.textContent.trim();
     document.getElementById('chatInput').value = msg;
     sendChatMessage();
   }
@@ -1147,17 +1412,17 @@
     const msg   = input.value.trim();
     if (!msg || _chatTyping) return;
 
-    // Hide empty state
+    // Hide empty state and suggestions on first message
     const empty = document.getElementById('chatEmpty');
     if (empty) empty.style.display = 'none';
+    const suggestions = document.getElementById('chatSuggestions');
+    if (suggestions) suggestions.style.display = 'none';
 
-    // Add user message
     appendChatBubble('user', msg);
     _chatHistory.push({ role: 'user', content: msg });
     input.value = '';
     input.style.height = 'auto';
 
-    // Show typing
     _chatTyping = true;
     document.getElementById('chatSendBtn').disabled = true;
     const typingEl = appendTypingIndicator();
@@ -1165,6 +1430,7 @@
     try {
       const res  = await fetch('/api/chat', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: msg,
@@ -1223,10 +1489,10 @@
     return wrap;
   }
 
-  // ── API fetch (KV-backed) ──────────────────────────────────────────────
+  // ── API fetch ──────────────────────────────────────────────────────────
   async function fetchBudgetFromAPI() {
     try {
-      const res  = await fetch('/api/budget');
+      const res  = await fetch('/api/budget', { credentials: 'include' });
       if (!res.ok) return null;
       const data = await res.json();
       if (!data.ok || !data.cats) return null;
@@ -1236,18 +1502,19 @@
 
   async function fetchTransactionsFromAPI() {
     try {
-      const res  = await fetch('/api/transactions');
+      const res  = await fetch('/api/transactions', { credentials: 'include' });
       if (!res.ok) return null;
       const data = await res.json();
       if (!data.ok) return null;
-      return (data.transactions || []).slice(0, 100).map(e => ({
-        id:       e.id,
-        date:     e.date,
-        vendor:   e.vendor,
-        amount:   e.amount,
-        category: e.category,
-        notes:    e.notes,
-        type:     e.type,
+      return (data.transactions || []).slice(0, 300).map(e => ({
+        id:         e.id,
+        date:       e.date,
+        vendor:     e.vendor,
+        amount:     e.amount,
+        category:   e.category,
+        notes:      e.notes,
+        type:       e.type,
+        created_at: e.created_at,
       }));
     } catch { return null; }
   }
@@ -1269,12 +1536,13 @@
       }
     }
 
-    const rowsHtml = CATEGORIES.map(({ key, emoji, label }) => {
+    const rowsHtml = CATEGORIES.map(({ key, label }) => {
       const { budget = 0, spent = 0, remaining = budget } = cats[key] || {};
+      const icon = getCatIcon(key);
       if (showTBD) {
         return `<div class="budget-row">
           <div class="budget-row-top">
-            <span class="budget-row-label">${emoji} ${label}</span>
+            <span class="budget-row-label">${icon} ${label}</span>
             <span style="font-size:12px;color:var(--text-faint)">— / TBD</span>
           </div>
           <div class="budget-bar-wrap"><div class="budget-bar" style="width:0;background:var(--border)"></div></div>
@@ -1286,7 +1554,7 @@
       const remStr   = remaining >= 0 ? `$${remaining.toFixed(0)}` : `-$${Math.abs(remaining).toFixed(0)}`;
       return `<div class="budget-row">
         <div class="budget-row-top">
-          <span class="budget-row-label">${emoji} ${label}</span>
+          <span class="budget-row-label">${icon} ${label}</span>
           <div class="budget-row-right">
             <span class="${remCls}">${remStr}</span>
             <span class="bval-budget">/ $${budget}</span>
@@ -1323,7 +1591,7 @@
       n++;
       const live = await fetchBudgetFromAPI();
       if (live) renderBudget(live);
-      if (n >= 6) clearInterval(_pollTimer); // 6× at 5s = 30s polling
+      if (n >= 6) clearInterval(_pollTimer);
     }, 5000);
   }
 
@@ -1348,10 +1616,10 @@
   function renderHomeTransactions() {
     const el = document.getElementById('homeTransactions');
     if (!el) return;
-    const top2 = _transactions.slice(0, 2);
-    el.innerHTML = top2.length
-      ? top2.map(txnCardHTML).join('')
-      : `<div class="empty-state"><div class="empty-state-icon">🧾</div><p>No transactions yet.<br>Snap a receipt to get started.</p></div>`;
+    const top3 = _transactions.slice(0, 3);
+    el.innerHTML = top3.length
+      ? top3.map(txnCardHTML).join('')
+      : `<div class="empty-state"><div class="empty-state-icon"><svg width="32" height="32" viewBox="0 0 32 32" fill="none"><rect x="5" y="3" width="22" height="27" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M10 10h12M10 15h12M10 20h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div><p>No transactions yet.<br>Snap a receipt to get started.</p></div>`;
   }
 
   function renderAllTransactions() {
@@ -1359,11 +1627,12 @@
     if (!el) return;
     el.innerHTML = _transactions.length
       ? _transactions.map(txnCardHTML).join('')
-      : `<div class="empty-state"><div class="empty-state-icon">🧾</div><p>No transactions found.</p></div>`;
+      : `<div class="empty-state"><div class="empty-state-icon"><svg width="32" height="32" viewBox="0 0 32 32" fill="none"><rect x="5" y="3" width="22" height="27" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M10 10h12M10 15h12M10 20h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div><p>No transactions found.</p></div>`;
   }
 
   function txnCardHTML(t) {
-    const cat    = CAT_MAP[t.category] || { emoji: '📦', label: t.category || 'Uncategorized' };
+    const cat    = CAT_MAP[t.category] || { label: t.category || 'Uncategorized' };
+    const icon   = getCatIcon(t.category);
     const amtStr = t.amount ? `$${Math.abs(t.amount).toFixed(2)}` : '—';
     return `<div class="txn-card" onclick="openPickerById('${esc(t.id)}')" data-txn-id="${esc(t.id)}">
       <div class="txn-left">
@@ -1372,7 +1641,7 @@
       </div>
       <div class="txn-right">
         <div class="txn-amount">${amtStr}</div>
-        <div class="txn-category-chip">${cat.emoji} ${cat.label}</div>
+        <div class="txn-category-chip">${icon} ${cat.label}</div>
       </div>
       <svg class="txn-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -1389,7 +1658,7 @@
       `${txn.vendor}${txn.date ? '  ·  ' + fmtShort(txn.date) : ''}`;
     document.getElementById('categoryList').innerHTML = CATEGORIES.map(c => `
       <button class="cat-btn${c.key === txn.category ? ' selected' : ''}" onclick="selectCategory('${esc(c.key)}')">
-        <span class="cat-btn-emoji">${c.emoji}</span>
+        <span class="cat-btn-icon">${getCatIcon(c.key)}</span>
         <span class="cat-btn-name">${c.label}</span>
         <span class="cat-check" aria-hidden="true">
           <svg viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" width="12" height="12">
@@ -1420,46 +1689,93 @@
     renderAllTransactions();
     closePicker();
 
-    const c   = CAT_MAP[newCat] || { emoji: '📦', label: newCat };
-    showToast(`${c.emoji} Moved to ${c.label}`);
+    const c = CAT_MAP[newCat] || { label: newCat };
+    showToast(`Moved to ${c.label}`);
 
     try {
       await fetch('/api/transactions', {
         method: 'PATCH',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: txn.id, category: newCat }),
       });
-      // Refresh budget after recategorize
       const live = await fetchBudgetFromAPI();
       if (live) renderBudget(live);
-    } catch (err) {
+    } catch {
       showToast('Saved locally — sync pending');
     }
   }
 
-  // ── Budget settings ────────────────────────────────────────────────────
-  function renderSettings() {
+  // ── Budget Modal ───────────────────────────────────────────────────────
+  function openBudgetModal() {
+    const monthName = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    document.getElementById('budgetMonthLabel').textContent = monthName;
+    renderBudgetModalList();
+    document.getElementById('budgetModalOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeBudgetModal() {
+    document.getElementById('budgetModalOverlay').classList.remove('open');
+    document.body.style.overflow = '';
+    document.getElementById('addCatFormRow').style.display = 'none';
+    document.getElementById('addCatTriggerRow').style.display = '';
+  }
+
+  function handleBudgetModalTap(e) {
+    if (e.target === document.getElementById('budgetModalOverlay')) closeBudgetModal();
+  }
+
+  function renderBudgetModalList() {
     const liveVals = (_liveBudget && _liveBudget.cats)
       ? Object.fromEntries(Object.entries(_liveBudget.cats).map(([k, v]) => [k, v.budget]))
       : {};
-    document.getElementById('settingsRows').innerHTML = CATEGORIES.map(c => {
+    document.getElementById('budgetModalList').innerHTML = CATEGORIES.map(c => {
       const val = liveVals[c.key] ?? DEFAULT_BUDGETS[c.key] ?? 0;
       return `<div class="settings-row">
-        <span class="settings-cat-label">${c.emoji} ${c.label}</span>
+        <span class="settings-cat-label">${getCatIcon(c.key)} ${c.label}</span>
         <div class="settings-input-wrap">
           <span class="dollar-sign">$</span>
-          <input class="settings-input" type="number" inputmode="decimal" min="0" max="99999" step="1"
+          <input class="settings-input budget-modal-input" type="number" inputmode="decimal" min="0" max="99999" step="1"
             data-cat="${esc(c.key)}" value="${val}" aria-label="${c.label} monthly budget">
         </div>
       </div>`;
     }).join('');
   }
 
-  async function saveBudget() {
-    const btn = document.getElementById('saveBudgetBtn');
+  function showAddCategoryForm() {
+    document.getElementById('addCatTriggerRow').style.display = 'none';
+    document.getElementById('addCatFormRow').style.display = '';
+    setTimeout(() => document.getElementById('addCatInput').focus(), 50);
+  }
+
+  function confirmAddCategory() {
+    const input = document.getElementById('addCatInput');
+    const name  = input.value.trim();
+    if (!name) return;
+
+    const key = name;
+    if (!CATEGORIES.find(c => c.key === key)) {
+      CATEGORIES.push({ key, label: name });
+      DEFAULT_BUDGETS[key] = 0;
+      CAT_MAP[key] = { key, label: name };
+    }
+
+    input.value = '';
+    document.getElementById('addCatFormRow').style.display = 'none';
+    document.getElementById('addCatTriggerRow').style.display = '';
+
+    renderBudgetModalList();
+    // Scroll new row into view
+    const list = document.getElementById('budgetModalList');
+    list.lastElementChild && list.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  async function saveBudgetFromModal() {
+    const btn = document.getElementById('saveBudgetModalBtn');
     btn.disabled = true; btn.textContent = 'Saving…';
 
-    const categories = [...document.querySelectorAll('.settings-input')].map(inp => ({
+    const categories = [...document.querySelectorAll('.budget-modal-input')].map(inp => ({
       category: inp.dataset.cat,
       amount: parseFloat(inp.value) || 0,
     }));
@@ -1467,11 +1783,13 @@
     try {
       const res = await fetch('/api/budget', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ categories }),
       });
       if (res.ok) {
         showToast('Budget saved!');
+        closeBudgetModal();
         setTimeout(async () => {
           const l = await fetchBudgetFromAPI();
           if (l) renderBudget(l);
@@ -1489,25 +1807,51 @@
   // ── Sync Bank ──────────────────────────────────────────────────────────
   async function syncBank() {
     const btn = document.getElementById('syncBankBtn');
-    if (btn) { btn.textContent = '⏳ Syncing…'; btn.disabled = true; }
+    const origHTML = btn ? btn.innerHTML : null;
+    if (btn) {
+      btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" style="animation:spin 0.75s linear infinite"><path d="M17 10A7 7 0 1 1 10 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M13 3l4 0 0 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Syncing…`;
+      btn.disabled = true;
+    }
     try {
-      const res  = await fetch('/api/sync', { method: 'POST' });
+      const res  = await fetch('/api/sync', { method: 'POST', credentials: 'include' });
       const data = await res.json();
       if (data.ok) {
         const n = data.new_count || 0;
-        showToast(n > 0 ? `✅ ${n} new transaction${n !== 1 ? 's' : ''} pulled` : '✅ Already up to date');
+        showToast(n > 0 ? `${n} new transaction${n !== 1 ? 's' : ''} pulled` : 'Already up to date');
         if (n > 0) {
           await loadTransactions(false);
+          await deduplicateTransactions();
           const live = await fetchBudgetFromAPI();
           if (live) renderBudget(live);
         }
       } else {
-        showToast('⚠️ Sync failed: ' + (data.error || 'unknown error'));
+        showToast('Sync failed: ' + (data.error || 'unknown error'));
       }
     } catch (err) {
-      showToast('⚠️ ' + err.message);
+      showToast(err.message);
     } finally {
-      if (btn) { btn.textContent = '🏦 Sync Bank Accounts'; btn.disabled = false; }
+      if (btn && origHTML) { btn.innerHTML = origHTML; btn.disabled = false; }
+    }
+  }
+
+  // ── Update App (PWA) ───────────────────────────────────────────────────
+  async function updateApp() {
+    showToast('Checking for update…');
+    try {
+      if ('serviceWorker' in navigator) {
+        const reg = await navigator.serviceWorker.getRegistration();
+        if (reg) {
+          await reg.update();
+          if (reg.waiting) {
+            reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+            setTimeout(() => window.location.reload(), 400);
+            return;
+          }
+        }
+      }
+      window.location.reload(true);
+    } catch {
+      window.location.reload(true);
     }
   }
 
@@ -1536,49 +1880,100 @@
     return String(s).replace(/'/g,"&#39;").replace(/"/g,'&quot;');
   }
 
-  // ── Auth gate ──────────────────────────────────────────────────────────
-  const AUTH_KEY  = 'velocity_auth_v1';
-  const AUTH_HASH = '7db26df9'; // hash of 'velocity2026' — change via /api/auth-code
+  // ── Auth ───────────────────────────────────────────────────────────────
+  let _authMode = 'signin';
 
-  async function sha8(str) {
-    const buf  = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('').slice(0,8);
+  function authToggleMode() {
+    _authMode = _authMode === 'signin' ? 'signup' : 'signin';
+    const gate = document.getElementById('authGate');
+    gate.classList.toggle('signin-mode', _authMode === 'signin');
+    gate.classList.toggle('signup-mode', _authMode === 'signup');
+    document.getElementById('authBtn').textContent   = _authMode === 'signin' ? 'Sign In →' : 'Create Account →';
+    document.getElementById('authToggleText').textContent = _authMode === 'signin' ? "Don't have an account?" : 'Already have an account?';
+    document.getElementById('authToggleLink').textContent = _authMode === 'signin' ? 'Create one' : 'Sign in';
+    document.getElementById('authError').textContent = '';
+    document.getElementById('authPassword').autocomplete = _authMode === 'signin' ? 'current-password' : 'new-password';
+    const firstField = _authMode === 'signup' ? 'authName' : 'authEmail';
+    setTimeout(() => document.getElementById(firstField).focus(), 50);
   }
 
-  async function checkAuth() {
-    const input = document.getElementById('authInput');
-    const val   = input.value.trim().toLowerCase().replace(/\s/g,'');
-    if (!val) return;
-    const h = await sha8(val);
-    if (h === AUTH_HASH) {
-      localStorage.setItem(AUTH_KEY, h);
-      document.getElementById('authGate').classList.add('hidden');
-      document.getElementById('authError').textContent = '';
-      // Reload data now that we're in
-      initBudget();
-      loadTransactions(false);
+  function authSetError(msg) {
+    const err = document.getElementById('authError');
+    err.textContent = msg;
+    const btn = document.getElementById('authBtn');
+    btn.classList.add('error');
+    setTimeout(() => btn.classList.remove('error'), 400);
+  }
+
+  async function authSubmit() {
+    const btn      = document.getElementById('authBtn');
+    const email    = document.getElementById('authEmail').value.trim();
+    const password = document.getElementById('authPassword').value;
+    const errEl    = document.getElementById('authError');
+    errEl.textContent = '';
+
+    if (!email || !password) { authSetError('Please fill in all fields.'); return; }
+    if (_authMode === 'signup') {
+      const name = document.getElementById('authName').value.trim();
+      if (!name) { authSetError('Please enter your name.'); return; }
+      if (password.length < 8) { authSetError('Password must be at least 8 characters.'); return; }
+      btn.disabled = true;
+      btn.textContent = 'Creating account…';
+      try {
+        const res  = await fetch('/api/auth/signup', { method: 'POST', headers: {'Content-Type':'application/json'}, credentials: 'include', body: JSON.stringify({ name, email, password }) });
+        const data = await res.json();
+        if (data.ok) { authSuccess(data.user); }
+        else { authSetError(data.error || 'Signup failed — try again.'); }
+      } catch { authSetError('Network error — check your connection.'); }
+      finally { btn.disabled = false; btn.textContent = 'Create Account →'; }
     } else {
-      const inp = document.getElementById('authInput');
-      inp.classList.add('error');
-      document.getElementById('authError').textContent = 'Incorrect code — try again';
-      setTimeout(() => inp.classList.remove('error'), 400);
-      inp.value = '';
-      inp.focus();
+      btn.disabled = true;
+      btn.textContent = 'Signing in…';
+      try {
+        const res  = await fetch('/api/auth/login', { method: 'POST', headers: {'Content-Type':'application/json'}, credentials: 'include', body: JSON.stringify({ email, password }) });
+        const data = await res.json();
+        if (data.ok) { authSuccess(data.user); }
+        else { authSetError(data.error || 'Sign in failed — try again.'); }
+      } catch { authSetError('Network error — check your connection.'); }
+      finally { btn.disabled = false; btn.textContent = 'Sign In →'; }
     }
+  }
+
+  function authSuccess(user) {
+    document.getElementById('authGate').classList.add('hidden');
+    document.getElementById('authError').textContent = '';
+    if (user && user.name) {
+      document.getElementById('homeEyebrow').textContent = user.name;
+    }
+    initBudget();
+    loadTransactions(false);
+  }
+
+  async function authLogout() {
+    try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }); } catch {}
+    showScreen('home');
+    document.getElementById('authGate').classList.remove('hidden');
+    document.getElementById('authEmail').value    = '';
+    document.getElementById('authPassword').value = '';
+    document.getElementById('authName').value     = '';
+    document.getElementById('authError').textContent = '';
+    document.getElementById('homeEyebrow').textContent = 'Booher Velocity';
+    _authMode = 'signup';
+    authToggleMode();
+    setTimeout(() => document.getElementById('authEmail').focus(), 100);
   }
 
   async function bootAuth() {
-    const stored = localStorage.getItem(AUTH_KEY);
-    if (stored === AUTH_HASH) {
-      document.getElementById('authGate').classList.add('hidden');
-      // Data is safe to load
-      initBudget();
-      loadTransactions(false);
-    } else {
-      // Show gate — don't load data yet
-      document.getElementById('authGate').classList.remove('hidden');
-      setTimeout(() => document.getElementById('authInput').focus(), 100);
-    }
+    try {
+      const res  = await fetch('/api/auth/me', { credentials: 'include' });
+      const data = await res.json();
+      if (data.ok && data.user) {
+        authSuccess(data.user);
+        return;
+      }
+    } catch {}
+    document.getElementById('authGate').classList.remove('hidden');
+    setTimeout(() => document.getElementById('authEmail').focus(), 100);
   }
 
   bootAuth();

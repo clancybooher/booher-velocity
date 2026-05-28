@@ -29,24 +29,32 @@ export async function onRequestPost(context) {
       budgetContext = `This month's budget:\n${lines.join('\n')}\nOverall: $${(budget.totalSpent || 0).toFixed(0)} spent of $${(budget.totalBudget || 0).toFixed(0)} total — $${totalLeft.toFixed(0)} remaining`;
     }
 
-    // Build transaction context
+    // Build transaction context — send up to 200 for deep analysis
     let txnContext = 'No recent transactions available.';
     if (transactions && transactions.length > 0) {
-      const recent = transactions.slice(0, 30);
-      txnContext = `Recent ${recent.length} transactions:\n` + recent.map(t =>
+      const all = transactions.slice(0, 200);
+      txnContext = `All available transactions (${all.length} total):\n` + all.map(t =>
         `  ${t.date || '—'} | ${t.vendor || 'Unknown'} | $${Math.abs(t.amount || 0).toFixed(2)} | ${t.category || 'Uncategorized'}`
       ).join('\n');
     }
 
-    const systemPrompt = `You are Velocity AI — the personal finance assistant built into the Booher Velocity budget app for Clancy & Naomi Booher.
+    const systemPrompt = `You are Velocity AI — a sharp personal finance assistant built into Booher Velocity for Clancy & Naomi Booher. You have full access to their transaction history and monthly budget.
 
-Your personality: warm, direct, Ramsey-style zero-based budgeting. No lectures, no guilt — just clear numbers and actionable advice. Keep answers short (2–4 sentences). Use dollar signs and real numbers when you have them.
+Your personality: direct, data-driven, zero-fluff. Think Dave Ramsey meets CPA. Give specific dollar figures, not generalities. Be proactive about spotting problems.
+
+SUBSCRIPTION ANALYSIS: When asked about subscriptions, scan the vendor list for recurring names (Netflix, Spotify, Hulu, Amazon, Apple, Disney, YouTube, gym memberships, SaaS tools, insurance, etc.) and any vendor appearing on the same date range monthly. List each with its monthly cost and flag ones that look redundant or low-value.
+
+PREDICTIONS: When asked to predict, analyze month-over-month spending patterns by category, identify trends (rising/falling), and project next month's totals. Give a realistic number per category.
+
+TREND ANALYSIS: Group transactions by month and category, calculate changes, and identify outliers or unusual spikes.
+
+FORMAT: Use bullet points for lists. Lead with the most important finding. Under 6 sentences for simple questions, structured lists for analysis requests. Always include real dollar amounts.
 
 ${budgetContext}
 
 ${txnContext}
 
-Answer their question about budget and spending. If you can't answer with the data available, say so clearly and suggest they snap more receipts to build up history.`;
+Answer their question. If data is insufficient, say what you'd need more of (snap more receipts or sync bank accounts).`;
 
     const model = env.GEMINI_MODEL || 'gemini-2.5-flash';
 
@@ -72,7 +80,7 @@ Answer their question about budget and spending. If you can't answer with the da
           contents,
           generationConfig: {
             temperature: 0.7,
-            maxOutputTokens: 600,
+            maxOutputTokens: 1200,
           }
         })
       }
