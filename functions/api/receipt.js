@@ -1,5 +1,7 @@
+function kvKey(userId, key) { return `user:${userId}:${key}`; }
+
 export async function onRequestPost(context) {
-  const { request, env } = context;
+  const { request, env, data } = context;
 
   const CORS = {
     'Content-Type': 'application/json',
@@ -103,7 +105,8 @@ Rules:
     // Write to Cloudflare KV (primary storage)
     if (env.VELOCITY_KV) {
       try {
-        const raw     = await env.VELOCITY_KV.get('ledger');
+        const ledgerKey = data.userId ? kvKey(data.userId, 'ledger') : 'ledger';
+        const raw     = await env.VELOCITY_KV.get(ledgerKey);
         const entries = raw ? JSON.parse(raw) : [];
         entries.push({
           id:         crypto.randomUUID().replace(/-/g, '').slice(0, 12),
@@ -115,7 +118,7 @@ Rules:
           notes:      result.note,
           created_at: new Date().toISOString(),
         });
-        await env.VELOCITY_KV.put('ledger', JSON.stringify(entries));
+        await env.VELOCITY_KV.put(ledgerKey, JSON.stringify(entries));
       } catch (e) {
         console.error('KV write failed:', e.message);
       }

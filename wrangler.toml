@@ -6,3 +6,8 @@ pages_build_output_dir = "."
 [[kv_namespaces]]
 binding = "VELOCITY_KV"
 id = "8377d67f2e2a40d799ea0b8594aa8652"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "velocity-db"
+database_id = "034a0ad8-1bcd-4685-b78d-9a8471a4f0eb"

@@ -778,6 +778,16 @@
     .auth-gate.signup-mode .auth-field-name { display: block; }
     .auth-gate.signup-mode .auth-sub-signin { display: none; }
     .auth-gate.signin-mode .auth-sub-signup { display: none; }
+    /* Forgot / reset panels */
+    .auth-panel { display: none; width: 100%; flex-direction: column; gap: 10px; }
+    .auth-panel.visible { display: flex; }
+    .auth-code-box {
+      background: var(--bg-alt); border: 1.5px solid var(--border);
+      border-radius: 16px; padding: 16px 20px; text-align: center;
+    }
+    .auth-code-label { font-size: 12px; color: var(--text-faint); margin-bottom: 6px; letter-spacing: 0.08em; text-transform: uppercase; }
+    .auth-code-value { font-size: 30px; font-weight: 900; letter-spacing: 0.18em; color: var(--wine); }
+    .auth-code-note { font-size: 12px; color: var(--text-faint); margin-top: 6px; line-height: 1.4; }
     /* Header user display */
     .home-header-row {
       display: flex; align-items: center; justify-content: space-between;
@@ -802,7 +812,8 @@
     <div class="auth-title">Booher <span>Velocity</span></div>
     <div class="auth-sub auth-sub-signin">Budget &amp; spending tracker.<br>Sign in to continue.</div>
     <div class="auth-sub auth-sub-signup">Create your account to get started.</div>
-    <div class="auth-form">
+    <!-- Sign in / Sign up form -->
+    <div class="auth-form" id="authMainForm">
       <input id="authName" class="auth-input auth-field-name" type="text"
         placeholder="Your name" autocomplete="name"
         onkeydown="if(event.key==='Enter')authSubmit()">
@@ -817,6 +828,46 @@
       <div class="auth-toggle">
         <span id="authToggleText">Don't have an account?</span>
         <a id="authToggleLink" onclick="authToggleMode()">Create one</a>
+      </div>
+      <div class="auth-toggle" style="margin-top:-4px">
+        <a onclick="authShowForgot()">Forgot password?</a>
+      </div>
+    </div>
+
+    <!-- Forgot password panel -->
+    <div class="auth-panel" id="authForgotPanel">
+      <div class="auth-sub" style="margin-top:-8px">Enter your email and we'll send you a reset code.</div>
+      <input id="forgotEmail" class="auth-input" type="email" placeholder="Email address" autocomplete="email"
+        onkeydown="if(event.key==='Enter')authForgotSubmit()">
+      <button class="btn-auth" id="forgotBtn" onclick="authForgotSubmit()">Send Reset Code →</button>
+      <div class="auth-error" id="forgotError"></div>
+      <!-- Shows the code when no email is configured -->
+      <div class="auth-code-box" id="forgotCodeBox" style="display:none">
+        <div class="auth-code-label">Your reset code</div>
+        <div class="auth-code-value" id="forgotCodeValue"></div>
+        <div class="auth-code-note">Copy this code — you'll need it on the next screen.<br>Expires in 1 hour.</div>
+      </div>
+      <div class="auth-toggle" style="margin-top:4px">
+        <a onclick="authShowReset()">I have a code →</a>
+      </div>
+      <div class="auth-toggle">
+        <a onclick="authBackToSignin()">← Back to sign in</a>
+      </div>
+    </div>
+
+    <!-- Reset password panel -->
+    <div class="auth-panel" id="authResetPanel">
+      <div class="auth-sub" style="margin-top:-8px">Enter your email, the reset code, and your new password.</div>
+      <input id="resetEmail" class="auth-input" type="email" placeholder="Email address" autocomplete="email">
+      <input id="resetCode" class="auth-input" type="text" placeholder="Reset code" autocomplete="one-time-code"
+        style="text-transform:uppercase; letter-spacing:0.12em"
+        onkeydown="if(event.key==='Enter')authResetSubmit()">
+      <input id="resetPassword" class="auth-input" type="password" placeholder="New password (8+ chars)" autocomplete="new-password"
+        onkeydown="if(event.key==='Enter')authResetSubmit()">
+      <button class="btn-auth" id="resetBtn" onclick="authResetSubmit()">Set New Password →</button>
+      <div class="auth-error" id="resetError"></div>
+      <div class="auth-toggle">
+        <a onclick="authShowForgot()">← Back</a>
       </div>
     </div>
   </div>
@@ -1936,6 +1987,119 @@
         else { authSetError(data.error || 'Sign in failed — try again.'); }
       } catch { authSetError('Network error — check your connection.'); }
       finally { btn.disabled = false; btn.textContent = 'Sign In →'; }
+    }
+  }
+
+  // ── Forgot / Reset password ────────────────────────────────────────────
+  function authShowForgot() {
+    document.getElementById('authMainForm').style.display  = 'none';
+    document.getElementById('authResetPanel').classList.remove('visible');
+    document.getElementById('authForgotPanel').classList.add('visible');
+    document.getElementById('forgotError').textContent = '';
+    document.getElementById('forgotCodeBox').style.display = 'none';
+    // Pre-fill email if already typed
+    const existing = document.getElementById('authEmail').value.trim();
+    if (existing) document.getElementById('forgotEmail').value = existing;
+    setTimeout(() => document.getElementById('forgotEmail').focus(), 50);
+  }
+
+  function authShowReset() {
+    document.getElementById('authForgotPanel').classList.remove('visible');
+    document.getElementById('authResetPanel').classList.add('visible');
+    // Pre-fill email
+    const fe = document.getElementById('forgotEmail').value.trim();
+    if (fe) document.getElementById('resetEmail').value = fe;
+    // Pre-fill code if shown
+    const code = document.getElementById('forgotCodeValue').textContent.trim();
+    if (code) document.getElementById('resetCode').value = code;
+    document.getElementById('resetError').textContent = '';
+    setTimeout(() => document.getElementById(code ? 'resetPassword' : 'resetCode').focus(), 50);
+  }
+
+  function authBackToSignin() {
+    document.getElementById('authForgotPanel').classList.remove('visible');
+    document.getElementById('authResetPanel').classList.remove('visible');
+    document.getElementById('authMainForm').style.display = '';
+    document.getElementById('authError').textContent = '';
+    setTimeout(() => document.getElementById('authEmail').focus(), 50);
+  }
+
+  async function authForgotSubmit() {
+    const btn   = document.getElementById('forgotBtn');
+    const email = document.getElementById('forgotEmail').value.trim();
+    const errEl = document.getElementById('forgotError');
+    errEl.textContent = '';
+    if (!email) { errEl.textContent = 'Enter your email address.'; return; }
+
+    btn.disabled = true; btn.textContent = 'Sending…';
+    try {
+      const res  = await fetch('/api/auth/forgot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) { errEl.textContent = data.error || 'Something went wrong.'; return; }
+
+      if (data.noAccount) {
+        errEl.textContent = 'No account found with that email.';
+        return;
+      }
+
+      if (data.emailSent) {
+        errEl.style.color = 'var(--green)';
+        errEl.textContent = 'Code sent! Check your email.';
+        document.getElementById('forgotCodeBox').style.display = 'none';
+      } else if (data.code) {
+        // No email configured — show code on screen
+        document.getElementById('forgotCodeValue').textContent = data.code;
+        document.getElementById('forgotCodeBox').style.display = '';
+      }
+
+    } catch {
+      errEl.textContent = 'Network error — check your connection.';
+    } finally {
+      btn.disabled = false; btn.textContent = 'Send Reset Code →';
+    }
+  }
+
+  async function authResetSubmit() {
+    const btn         = document.getElementById('resetBtn');
+    const email       = document.getElementById('resetEmail').value.trim();
+    const code        = document.getElementById('resetCode').value.trim();
+    const newPassword = document.getElementById('resetPassword').value;
+    const errEl       = document.getElementById('resetError');
+    errEl.textContent = '';
+
+    if (!email || !code || !newPassword) { errEl.textContent = 'All fields are required.'; return; }
+    if (newPassword.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; return; }
+
+    btn.disabled = true; btn.textContent = 'Resetting…';
+    try {
+      const res  = await fetch('/api/auth/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code, newPassword }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.ok) { errEl.textContent = data.error || 'Reset failed — try again.'; return; }
+
+      // Success — go back to sign in with a success hint
+      authBackToSignin();
+      document.getElementById('authEmail').value = email;
+      document.getElementById('authError').style.color = 'var(--green)';
+      document.getElementById('authError').textContent = 'Password reset! Sign in with your new password.';
+      setTimeout(() => {
+        document.getElementById('authError').style.color = '';
+        document.getElementById('authError').textContent = '';
+      }, 5000);
+
+    } catch {
+      errEl.textContent = 'Network error — check your connection.';
+    } finally {
+      btn.disabled = false; btn.textContent = 'Set New Password →';
     }
   }
 
