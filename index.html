@@ -15,7 +15,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&display=swap" rel="stylesheet">
 
   <style>
-    /* ── Reset & base ─────────────────────────────────────────── */
+    /* ── Reset & base ─────────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
@@ -34,30 +34,22 @@
       --shadow-card: 0 1px 4px rgba(0,0,0,0.05), 0 6px 28px rgba(0,0,0,0.08);
       --radius-xl:   28px;
       --radius-2xl:  36px;
-      --nav-h:       56px;
+      --nav-h:       60px;
       --safe-top:    env(safe-area-inset-top, 0px);
       --safe-bottom: env(safe-area-inset-bottom, 0px);
     }
 
-    html, body {
-      height: 100%;
-      width: 100%;
-      overflow: hidden;
-    }
+    html, body { height: 100%; width: 100%; overflow: hidden; }
 
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       background: var(--bg);
       color: var(--text);
       -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
     }
 
-    /* ── Ambient background ───────────────────────────────────── */
-    .bg-ambient {
-      position: fixed; inset: 0; z-index: 0;
-      pointer-events: none; overflow: hidden;
-    }
+    /* ── Ambient background ───────────────────────────────────────────── */
+    .bg-ambient { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
     .bg-ambient::before {
       content: ''; position: absolute;
       width: 520px; height: 520px; border-radius: 50%;
@@ -75,7 +67,7 @@
     @keyframes drift1 { from { transform: translate(0,0) scale(1); } to { transform: translate(-40px,60px) scale(1.15); } }
     @keyframes drift2 { from { transform: translate(0,0) scale(1); } to { transform: translate(50px,-40px) scale(1.1); } }
 
-    /* ── App shell ────────────────────────────────────────────── */
+    /* ── App shell ────────────────────────────────────────────────────── */
     .app {
       position: relative; z-index: 1;
       height: 100svh;
@@ -84,25 +76,34 @@
       overflow: hidden;
     }
 
-    /* ── Screens ──────────────────────────────────────────────── */
-    .screens {
-      flex: 1; position: relative;
-      overflow: hidden; min-height: 0;
-    }
+    /* ── Screens ──────────────────────────────────────────────────────── */
+    .screens { flex: 1; position: relative; overflow: hidden; min-height: 0; }
 
     .screen {
       position: absolute; inset: 0;
       overflow-y: auto; overflow-x: hidden;
       -webkit-overflow-scrolling: touch;
       overscroll-behavior: contain;
-      padding: calc(var(--safe-top) + 24px) 20px 24px;
+      padding: calc(var(--safe-top) + 20px) 20px 24px;
       display: flex; flex-direction: column; gap: 16px;
       opacity: 0; pointer-events: none;
       transition: opacity 0.18s ease;
     }
     .screen.active { opacity: 1; pointer-events: auto; }
 
-    /* ── Bottom nav ───────────────────────────────────────────── */
+    /* ── Back button ──────────────────────────────────────────────────── */
+    .back-btn {
+      display: flex; align-items: center; gap: 6px;
+      background: none; border: none; cursor: pointer;
+      color: var(--wine); font-family: inherit;
+      font-size: 14px; font-weight: 600;
+      padding: 8px 0; -webkit-tap-highlight-color: transparent;
+      align-self: flex-start; margin-bottom: -4px;
+    }
+    .back-btn:active { opacity: 0.6; }
+    .back-btn svg { flex-shrink: 0; }
+
+    /* ── Bottom nav ───────────────────────────────────────────────────── */
     .bottom-nav {
       flex-shrink: 0;
       height: calc(var(--nav-h) + var(--safe-bottom));
@@ -120,8 +121,8 @@
       align-items: center; justify-content: center; gap: 3px;
       background: none; border: none; cursor: pointer;
       color: var(--text-faint); font-family: inherit;
-      font-size: 10px; font-weight: 600;
-      letter-spacing: 0.07em; text-transform: uppercase;
+      font-size: 9.5px; font-weight: 600;
+      letter-spacing: 0.06em; text-transform: uppercase;
       -webkit-tap-highlight-color: transparent;
       transition: color 0.15s ease;
       position: relative;
@@ -134,31 +135,22 @@
       background: var(--wine); border-radius: 0 0 2px 2px;
       transition: width 0.2s ease;
     }
-    .nav-btn.active::after { width: 28px; }
+    .nav-btn.active::after { width: 24px; }
     .nav-btn svg { transition: transform 0.15s cubic-bezier(0.34,1.4,0.64,1); }
     .nav-btn.active svg { transform: scale(1.1); }
 
-    /* Settings button — narrow, icon-only, right-aligned */
-    .nav-btn-settings {
-      flex: 0 0 60px;
-      opacity: 0.65;
-    }
-    .nav-btn-settings.active { opacity: 1; }
-    .nav-btn-settings .nav-label { display: none; }
-
-    /* ── Section label ────────────────────────────────────────── */
+    /* ── Section label ────────────────────────────────────────────────── */
     .section-label {
       font-size: 11px; font-weight: 700;
       letter-spacing: 0.10em; text-transform: uppercase;
       color: var(--text-faint); padding: 0 2px;
     }
 
-    /* ── Home header ──────────────────────────────────────────── */
+    /* ── Home header ──────────────────────────────────────────────────── */
     .home-header { text-align: center; padding-top: 4px; }
     .home-eyebrow {
       font-size: 11px; font-weight: 600; letter-spacing: 0.18em;
-      text-transform: uppercase; color: var(--wine);
-      opacity: 0.85; margin-bottom: 4px;
+      text-transform: uppercase; color: var(--wine); opacity: 0.85; margin-bottom: 4px;
     }
     .home-title {
       font-size: clamp(26px, 7vw, 34px);
@@ -166,18 +158,15 @@
     }
     .home-title span { color: var(--wine); }
 
-    /* ── Screen header ────────────────────────────────────────── */
+    /* ── Screen header ────────────────────────────────────────────────── */
     .screen-header {
       display: flex; align-items: center;
       justify-content: space-between; padding-bottom: 4px;
     }
-    .screen-header-title {
-      font-size: 22px; font-weight: 800;
-      letter-spacing: -0.02em; color: var(--text);
-    }
+    .screen-header-title { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; color: var(--text); }
     .screen-header-sub { font-size: 13px; color: var(--text-faint); margin-top: 2px; }
 
-    /* ── Glass card ───────────────────────────────────────────── */
+    /* ── Glass card ───────────────────────────────────────────────────── */
     .glass-card {
       width: 100%; background: var(--bg-card);
       border: 1px solid var(--border); border-radius: var(--radius-2xl);
@@ -189,7 +178,7 @@
       box-shadow: 0 1px 4px rgba(0,0,0,0.05), 0 6px 28px rgba(22,163,74,0.13);
     }
 
-    /* ── Snap area ────────────────────────────────────────────── */
+    /* ── Snap area ────────────────────────────────────────────────────── */
     .snap-area { display: flex; flex-direction: column; gap: 12px; }
     #cameraInput, #libraryInput { display: none; }
 
@@ -228,7 +217,21 @@
     .btn-library:disabled { opacity: 0.4; pointer-events: none; }
     .btn-library .lib-icon { flex-shrink: 0; color: var(--wine); }
 
-    /* ── Preview ──────────────────────────────────────────────── */
+    /* ── Receipt result card ──────────────────────────────────────────── */
+    .receipt-result {
+      display: none; flex-direction: column; gap: 8px;
+      background: var(--green-bg); border: 1px solid rgba(22,163,74,0.2);
+      border-radius: 18px; padding: 16px;
+      animation: fadeUp 0.35s cubic-bezier(0.34,1.3,0.64,1) forwards;
+    }
+    .receipt-result.visible { display: flex; }
+    .receipt-result-vendor { font-size: 17px; font-weight: 800; color: var(--text); }
+    .receipt-result-row { display: flex; justify-content: space-between; font-size: 14px; }
+    .receipt-result-label { color: var(--text-faint); }
+    .receipt-result-value { font-weight: 600; color: var(--text); }
+    .receipt-result-cat { color: var(--green); }
+
+    /* ── Preview ──────────────────────────────────────────────────────── */
     .preview-card { width: 100%; display: none; flex-direction: column; }
     .preview-card.visible { display: flex; }
     .preview-gap { height: 14px; }
@@ -243,7 +246,7 @@
     }
     .preview-meta { padding: 10px 4px 0; font-size: 12px; color: var(--text-faint); }
 
-    /* ── Status states ────────────────────────────────────────── */
+    /* ── Status states ────────────────────────────────────────────────── */
     .status-area { width: 100%; padding-top: 14px; display: none; flex-direction: column; align-items: center; gap: 10px; }
     .status-area.visible { display: flex; }
     .status-loading { display: none; flex-direction: column; align-items: center; gap: 10px; }
@@ -292,7 +295,7 @@
     .btn-reset.visible { display: block; }
     .btn-reset:active { opacity: 0.7; transform: scale(0.97); }
 
-    /* ── Transaction card ─────────────────────────────────────── */
+    /* ── Transaction card ─────────────────────────────────────────────── */
     .txn-card {
       width: 100%; background: var(--bg-card);
       border: 1px solid var(--border); border-radius: 20px;
@@ -319,26 +322,19 @@
       background: var(--green-bg); color: var(--green);
       letter-spacing: 0.01em; white-space: nowrap;
     }
-
     .txn-chevron { color: var(--text-faint); flex-shrink: 0; opacity: 0.4; }
 
-    /* ── Empty state ──────────────────────────────────────────── */
+    /* ── Empty state ──────────────────────────────────────────────────── */
     .empty-state { text-align: center; padding: 36px 20px; color: var(--text-faint); font-size: 14px; line-height: 1.6; }
     .empty-state-icon { font-size: 30px; margin-bottom: 10px; }
 
-    /* ── Budget panel ─────────────────────────────────────────── */
+    /* ── Budget panel ─────────────────────────────────────────────────── */
     .budget-card {
       background: var(--bg-card); border: 1px solid var(--border);
       border-radius: var(--radius-2xl); box-shadow: var(--shadow-card); padding: 20px;
     }
-    .budget-panel-header {
-      display: flex; justify-content: space-between; align-items: baseline;
-      margin-bottom: 12px;
-    }
-    .budget-panel-title {
-      font-size: 11px; font-weight: 700; letter-spacing: 0.10em;
-      text-transform: uppercase; color: var(--text-faint);
-    }
+    .budget-panel-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
+    .budget-panel-title { font-size: 11px; font-weight: 700; letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-faint); }
     .budget-total-badge { font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
     .budget-total-positive { background: rgba(22,163,74,0.11); color: #16A34A; }
     .budget-total-negative { background: rgba(124,32,51,0.09); color: var(--wine); }
@@ -353,7 +349,7 @@
     .budget-bar-wrap { width: 100%; height: 3px; background: rgba(0,0,0,0.07); border-radius: 2px; }
     .budget-bar { height: 3px; border-radius: 2px; transition: width 0.4s ease; }
 
-    /* ── Transactions screen ──────────────────────────────────── */
+    /* ── Transactions screen ──────────────────────────────────────────── */
     .refresh-btn {
       background: var(--bg-alt); border: 1px solid var(--border); border-radius: 12px;
       color: var(--text-muted); font-family: inherit; font-size: 12px; font-weight: 600;
@@ -364,7 +360,7 @@
     .refresh-btn:active { transform: scale(0.96); }
     .refresh-btn.spinning svg { animation: spin 0.75s linear infinite; }
 
-    /* ── Settings screen ──────────────────────────────────────── */
+    /* ── Settings screen ──────────────────────────────────────────────── */
     .settings-note {
       font-size: 13px; color: var(--text-faint);
       background: var(--bg-alt); border: 1px solid var(--border);
@@ -407,7 +403,7 @@
     .btn-save-budget:active { transform: scale(0.97); }
     .btn-save-budget:disabled { opacity: 0.5; pointer-events: none; }
 
-    /* ── Google Sheet link ────────────────────────────────────── */
+    /* ── Google Sheet link ────────────────────────────────────────────── */
     .btn-sheet {
       display: flex; align-items: center; justify-content: center; gap: 10px;
       width: 100%; padding: 14px 20px;
@@ -420,7 +416,7 @@
     }
     .btn-sheet:active { transform: scale(0.97); opacity: 0.85; }
 
-    /* ── Category picker overlay ──────────────────────────────── */
+    /* ── Category picker overlay ──────────────────────────────────────── */
     .overlay-backdrop {
       position: fixed; inset: 0;
       background: rgba(28,22,20,0.45);
@@ -445,7 +441,6 @@
 
     .sheet-handle-wrap { padding: 12px 0 8px; display: flex; justify-content: center; }
     .sheet-handle { width: 36px; height: 4px; border-radius: 2px; background: var(--border); }
-
     .sheet-header { padding: 0 20px 14px; border-bottom: 1px solid var(--border); }
     .sheet-title { font-size: 17px; font-weight: 800; letter-spacing: -0.02em; color: var(--text); }
     .sheet-vendor { font-size: 13px; color: var(--text-faint); margin-top: 3px; }
@@ -475,7 +470,168 @@
     }
     .cat-btn.selected .cat-check { opacity: 1; transform: scale(1); }
 
-    /* ── Toast ────────────────────────────────────────────────── */
+    /* ── Chat screen ──────────────────────────────────────────────────── */
+    #screen-chat {
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .chat-top-header {
+      flex-shrink: 0;
+      padding: calc(var(--safe-top) + 16px) 20px 14px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(250,248,244,0.96);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+    .chat-top-title { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; color: var(--text); }
+    .chat-top-sub { font-size: 12px; color: var(--text-faint); margin-top: 2px; }
+
+    .chat-scroller {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .chat-empty {
+      display: flex; flex-direction: column;
+      align-items: center; text-align: center;
+      padding: 32px 16px 0;
+      gap: 10px;
+    }
+    .chat-empty-icon { font-size: 36px; }
+    .chat-empty-title {
+      font-size: 17px; font-weight: 700; color: var(--text);
+      letter-spacing: -0.01em;
+    }
+    .chat-empty-sub { font-size: 13px; color: var(--text-faint); line-height: 1.5; }
+
+    .chat-chips {
+      display: flex; flex-direction: column; gap: 8px;
+      width: 100%; margin-top: 8px;
+    }
+    .chat-chip {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 12px 16px;
+      font-family: inherit; font-size: 14px; font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer; text-align: left;
+      transition: background 0.12s ease, transform 0.1s ease, border-color 0.12s ease;
+      -webkit-tap-highlight-color: transparent;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .chat-chip:active { background: var(--bg-alt); transform: scale(0.98); border-color: var(--wine); }
+
+    /* Message bubbles */
+    .chat-msg-wrap {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      animation: fadeUp 0.22s ease forwards;
+    }
+    .chat-msg-wrap.user { flex-direction: row-reverse; }
+
+    .chat-bubble {
+      max-width: 82%;
+      padding: 12px 16px;
+      border-radius: 20px;
+      font-size: 15px;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+    .chat-bubble.ai {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+      color: var(--text);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+    .chat-bubble.user {
+      background: linear-gradient(135deg, var(--wine), var(--wine-dark));
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    .chat-bubble-time {
+      font-size: 10px;
+      color: var(--text-faint);
+      margin: 2px 6px 0;
+      flex-shrink: 0;
+      align-self: flex-end;
+    }
+
+    /* Typing indicator */
+    .typing-indicator {
+      display: flex; align-items: center; gap: 4px;
+      padding: 14px 18px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px; border-bottom-left-radius: 4px;
+      max-width: 72px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+    .typing-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--text-faint);
+      animation: typingBounce 1.2s ease-in-out infinite;
+    }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingBounce {
+      0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+      40%            { transform: translateY(-5px); opacity: 1; }
+    }
+
+    /* Chat input area */
+    .chat-footer {
+      flex-shrink: 0;
+      display: flex; align-items: flex-end; gap: 10px;
+      padding: 10px 16px calc(12px + var(--safe-bottom));
+      border-top: 1px solid var(--border);
+      background: rgba(250,248,244,0.96);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+
+    .chat-input {
+      flex: 1;
+      background: var(--bg-alt);
+      border: 1.5px solid var(--border);
+      border-radius: 22px;
+      padding: 11px 16px;
+      font-family: inherit; font-size: 15px; color: var(--text);
+      resize: none; outline: none;
+      max-height: 110px; overflow-y: auto;
+      line-height: 1.4;
+      transition: border-color 0.15s;
+      -webkit-appearance: none;
+    }
+    .chat-input:focus { border-color: var(--wine); }
+    .chat-input::placeholder { color: var(--text-faint); }
+
+    .chat-send-btn {
+      width: 44px; height: 44px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--wine), var(--wine-dark));
+      border: none; border-radius: 50%;
+      color: white; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 14px var(--wine-glow);
+      transition: transform 0.12s cubic-bezier(0.34,1.56,0.64,1), opacity 0.12s;
+      -webkit-tap-highlight-color: transparent;
+      flex-shrink: 0;
+    }
+    .chat-send-btn:active { transform: scale(0.9); }
+    .chat-send-btn:disabled { opacity: 0.35; pointer-events: none; }
+
+    /* ── Toast ────────────────────────────────────────────────────────── */
     .toast {
       position: fixed;
       bottom: calc(var(--nav-h) + var(--safe-bottom) + 16px);
@@ -497,7 +653,7 @@
 <div class="app">
   <div class="screens">
 
-    <!-- ══ Screen: Home ══════════════════════════════════════════ -->
+    <!-- ══ Screen: Home ══════════════════════════════════════════════════ -->
     <div id="screen-home" class="screen active">
 
       <div class="home-header">
@@ -536,7 +692,7 @@
         <div class="status-area" id="statusArea">
           <div class="status-loading" id="statusLoading">
             <div class="spinner"></div>
-            <p class="loading-text">Sending to Velocity AI…</p>
+            <p class="loading-text">Velocity AI reading receipt…</p>
           </div>
           <div class="status-success" id="statusSuccess">
             <div class="checkmark-wrap">
@@ -545,12 +701,29 @@
                 <path class="checkmark-tick" d="M15 24.5L21 31L33 18"/>
               </svg>
             </div>
-            <p class="success-title">Sent to Velocity AI</p>
-            <p class="success-detail">Budget updating…<br><span id="successTimestamp"></span></p>
+            <p class="success-title">Logged to Velocity</p>
+            <p class="success-detail" id="successDetail">Saved to your budget &amp; Google Sheet</p>
           </div>
           <div class="status-error" id="statusError">
             <div class="error-icon">⚠️</div>
             <p class="error-text" id="errorText">Something went wrong.</p>
+          </div>
+        </div>
+
+        <!-- Receipt result -->
+        <div class="receipt-result" id="receiptResult">
+          <div class="receipt-result-vendor" id="rrVendor"></div>
+          <div class="receipt-result-row">
+            <span class="receipt-result-label">Amount</span>
+            <span class="receipt-result-value" id="rrAmount"></span>
+          </div>
+          <div class="receipt-result-row">
+            <span class="receipt-result-label">Date</span>
+            <span class="receipt-result-value" id="rrDate"></span>
+          </div>
+          <div class="receipt-result-row">
+            <span class="receipt-result-label">Category</span>
+            <span class="receipt-result-value receipt-result-cat" id="rrCategory"></span>
           </div>
         </div>
 
@@ -578,14 +751,62 @@
         <div id="budgetRows"></div>
       </div>
 
-      <a href="#" id="sheetBtn" class="btn-sheet" target="_blank" rel="noopener noreferrer">
+      <a href="https://docs.google.com/spreadsheets/d/1dMrEE6-efTiXw5wGG0Qzzfh8HpTgDV2pBpHA_6td7QA/edit" id="sheetBtn" class="btn-sheet" target="_blank" rel="noopener noreferrer">
         <span>📊</span> View Google Sheet
       </a>
 
     </div><!-- /screen-home -->
 
-    <!-- ══ Screen: Transactions ══════════════════════════════════ -->
+    <!-- ══ Screen: Chat ══════════════════════════════════════════════════ -->
+    <div id="screen-chat" class="screen">
+
+      <div class="chat-top-header">
+        <div class="chat-top-title">💸 Velocity AI</div>
+        <div class="chat-top-sub">Ask anything about your budget</div>
+      </div>
+
+      <div class="chat-scroller" id="chatScroller">
+        <div id="chatEmpty" class="chat-empty">
+          <div class="chat-empty-icon">💬</div>
+          <div class="chat-empty-title">Your budget, explained</div>
+          <div class="chat-empty-sub">Ask me anything about your spending,<br>savings, or where your money goes.</div>
+          <div class="chat-chips">
+            <button class="chat-chip" onclick="sendChip(this)">💡 How can we save more money this month?</button>
+            <button class="chat-chip" onclick="sendChip(this)">📊 What did we spend the most on?</button>
+            <button class="chat-chip" onclick="sendChip(this)">🛒 How's our grocery budget looking?</button>
+            <button class="chat-chip" onclick="sendChip(this)">⚠️ Where are we overspending?</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-footer">
+        <textarea
+          id="chatInput"
+          class="chat-input"
+          placeholder="Ask about your budget…"
+          rows="1"
+          onkeydown="handleChatKey(event)"
+          oninput="autogrowInput(this)"
+        ></textarea>
+        <button class="chat-send-btn" id="chatSendBtn" onclick="sendChatMessage()" aria-label="Send">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M4 10L16 10M16 10L11 5M16 10L11 15" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+
+    </div><!-- /screen-chat -->
+
+    <!-- ══ Screen: Transactions ══════════════════════════════════════════ -->
     <div id="screen-transactions" class="screen">
+
+      <button class="back-btn" onclick="showScreen('home')" aria-label="Back to Home">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M11 14L6 9L11 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Home
+      </button>
+
       <div class="screen-header">
         <div>
           <div class="screen-header-title">Transactions</div>
@@ -599,32 +820,60 @@
           Refresh
         </button>
       </div>
+
       <div id="allTransactions">
         <div class="empty-state">
           <div class="empty-state-icon">⏳</div>
           <p>Loading transactions…</p>
         </div>
       </div>
+
     </div><!-- /screen-transactions -->
 
-    <!-- ══ Screen: Settings ══════════════════════════════════════ -->
+    <!-- ══ Screen: Settings ══════════════════════════════════════════════ -->
     <div id="screen-settings" class="screen">
+
+      <button class="back-btn" onclick="showScreen('home')" aria-label="Back to Home">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M11 14L6 9L11 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Home
+      </button>
+
       <div class="screen-header">
         <div>
           <div class="screen-header-title">Budget Settings</div>
           <div class="screen-header-sub">Monthly envelope amounts</div>
         </div>
       </div>
-      <div class="settings-note">These amounts take effect June 1</div>
+
+      <div class="settings-note">Amounts update Google Sheet on save</div>
       <div class="settings-card" id="settingsRows"></div>
       <button class="btn-save-budget" id="saveBudgetBtn" onclick="saveBudget()">Save Budget</button>
       <div style="height:8px"></div>
+
     </div><!-- /screen-settings -->
 
   </div><!-- /screens -->
 
-  <!-- ── Bottom nav ─────────────────────────────────────────────── -->
+  <!-- ── Bottom nav ───────────────────────────────────────────────────── -->
   <nav class="bottom-nav" role="navigation" aria-label="Main navigation">
+
+    <button class="nav-btn active" id="nav-home" onclick="showScreen('home')" aria-label="Home">
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M3 9.5L11 3L19 9.5V19C19 19.55 18.55 20 18 20H14V15H8V20H4C3.45 20 3 19.55 3 19V9.5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="nav-label">Home</span>
+    </button>
+
+    <button class="nav-btn" id="nav-chat" onclick="showScreen('chat')" aria-label="Chat">
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M19 3H3C2.45 3 2 3.45 2 4V16C2 16.55 2.45 17 3 17H7V20.5L12.5 17H19C19.55 17 20 16.55 20 16V4C20 3.45 19.55 3 19 3Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <line x1="7" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        <line x1="7" y1="11.5" x2="12" y2="11.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+      </svg>
+      <span class="nav-label">AI Chat</span>
+    </button>
 
     <button class="nav-btn" id="nav-transactions" onclick="showScreen('transactions')" aria-label="Transactions">
       <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -633,21 +882,22 @@
         <line x1="6" y1="11.5" x2="13" y2="11.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
         <line x1="6" y1="15"   x2="10" y2="15"   stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
       </svg>
-      <span class="nav-label">Transactions</span>
+      <span class="nav-label">History</span>
     </button>
 
-    <button class="nav-btn nav-btn-settings" id="nav-settings" onclick="showScreen('settings')" aria-label="Budget Settings">
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <button class="nav-btn" id="nav-settings" onclick="showScreen('settings')" aria-label="Budget Settings">
+      <svg width="21" height="21" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.4"/>
         <path d="M16.2 10c0-.3 0-.6-.1-.9l1.4-1.1a.4.4 0 0 0 .1-.5l-1.4-2.4a.4.4 0 0 0-.5-.2l-1.7.7a6 6 0 0 0-1.5-.9l-.3-1.8A.4.4 0 0 0 11.8 2.6h-2.8a.4.4 0 0 0-.4.3l-.3 1.8a6 6 0 0 0-1.5.9L5.1 4.9a.4.4 0 0 0-.5.2L3.2 7.5a.4.4 0 0 0 .1.5l1.4 1.1c0 .3-.1.6-.1.9s0 .6.1.9L3.3 12a.4.4 0 0 0-.1.5l1.4 2.4c.1.2.3.3.5.2l1.7-.7c.5.4 1 .7 1.5.9l.3 1.8c0 .2.2.3.4.3h2.8c.2 0 .4-.1.4-.3l.3-1.8c.5-.2 1-.5 1.5-.9l1.7.7a.4.4 0 0 0 .5-.2l1.4-2.4a.4.4 0 0 0-.1-.5l-1.4-1.1c.1-.3.1-.6.1-.9z" stroke="currentColor" stroke-width="1.4"/>
       </svg>
+      <span class="nav-label">Budget</span>
     </button>
 
   </nav>
 
 </div><!-- /app -->
 
-<!-- ── Category picker overlay ─────────────────────────────────── -->
+<!-- ── Category picker overlay ─────────────────────────────────────── -->
 <div id="categoryOverlay" class="overlay-backdrop" onclick="handleOverlayTap(event)" role="dialog" aria-modal="true" aria-label="Change category">
   <div class="category-sheet" id="categorySheet">
     <div class="sheet-handle-wrap"><div class="sheet-handle"></div></div>
@@ -659,15 +909,13 @@
   </div>
 </div>
 
-<!-- ── Toast ──────────────────────────────────────────────────────── -->
+<!-- ── Toast ──────────────────────────────────────────────────────────── -->
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
-  // ── Constants ──────────────────────────────────────────────────
-  const BOT_TOKEN  = '8824065705:AAEJTnuE2MhNfBcj0I9YG45ljSlNypKsYLE';
-  const CHAT_ID    = '8340882784';
-  const SHEET_URL  = 'https://docs.google.com/spreadsheets/d/1dMrEE6-efTiXw5wGG0Qzzfh8HpTgDV2pBpHA_6td7QA/edit';
-  const SHEET_ID   = SHEET_URL.match(/\/d\/([^/]+)/)?.[1];
+  // ── Constants ──────────────────────────────────────────────────────────
+  const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1dMrEE6-efTiXw5wGG0Qzzfh8HpTgDV2pBpHA_6td7QA/edit';
+  const SHEET_ID  = SHEET_URL.match(/\/d\/([^/]+)/)?.[1];
   const BUDGET_LAUNCH = new Date('2026-06-01');
 
   const CATEGORIES = [
@@ -693,19 +941,20 @@
     'Gifts & Giving': 100, 'Miscellaneous': 100,
   };
 
-  // ── App state ──────────────────────────────────────────────────
-  let currentFile   = null;
-  let _pollTimer    = null;
-  let _transactions = [];
-  let _pickerTarget = null;
-  let _liveBudget   = null;
+  // ── App state ──────────────────────────────────────────────────────────
+  let currentFile    = null;
+  let _pollTimer     = null;
+  let _transactions  = [];
+  let _pickerTarget  = null;
+  let _liveBudget    = null;
+  let _chatHistory   = [];
+  let _chatTyping    = false;
 
-  // ── Boot ───────────────────────────────────────────────────────
-  document.getElementById('sheetBtn').href = SHEET_URL;
+  // ── Boot ──────────────────────────────────────────────────────────────
   initBudget();
   loadTransactions(false);
 
-  // ── Screen navigation ──────────────────────────────────────────
+  // ── Screen navigation ──────────────────────────────────────────────────
   function showScreen(name) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -714,22 +963,28 @@
     if (btn) btn.classList.add('active');
     if (name === 'transactions' && _transactions.length === 0) loadTransactions(false);
     if (name === 'settings') renderSettings();
+    if (name === 'chat') {
+      setTimeout(() => {
+        const s = document.getElementById('chatScroller');
+        s.scrollTop = s.scrollHeight;
+      }, 80);
+    }
   }
 
-  // ── Camera / Library triggers ──────────────────────────────────
+  // ── Camera / Library ──────────────────────────────────────────────────
   function triggerCamera()  { document.getElementById('cameraInput').click(); }
   function triggerLibrary() { document.getElementById('libraryInput').click(); }
 
   document.getElementById('cameraInput').addEventListener('change', function(e) {
     const f = e.target.files[0]; if (!f) return;
-    currentFile = f; showPreview(f); uploadToTelegram(f);
+    currentFile = f; showPreview(f); uploadReceipt(f);
   });
   document.getElementById('libraryInput').addEventListener('change', function(e) {
     const f = e.target.files[0]; if (!f) return;
-    currentFile = f; showPreview(f); uploadToTelegram(f);
+    currentFile = f; showPreview(f); uploadReceipt(f);
   });
 
-  // ── Preview ────────────────────────────────────────────────────
+  // ── Preview ────────────────────────────────────────────────────────────
   function showPreview(file) {
     const reader = new FileReader();
     reader.onload = function(e) {
@@ -740,30 +995,46 @@
     reader.readAsDataURL(file);
   }
 
-  // ── Telegram upload ────────────────────────────────────────────
-  async function uploadToTelegram(file) {
+  // ── Upload receipt to Cloudflare Worker → Gemini ───────────────────────
+  async function uploadReceipt(file) {
     setStatus('loading');
-    const now = new Date();
+
     const fd = new FormData();
-    fd.append('chat_id', CHAT_ID);
-    fd.append('photo', file, file.name || 'receipt.jpg');
-    fd.append('caption', `📸 Receipt — ${formatDateTime(now)}\n\nProcessing via Velocity AI 🤖\n#receipt #budget`);
+    fd.append('image', file, file.name || 'receipt.jpg');
+
     try {
-      const res  = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, { method: 'POST', body: fd });
+      const res  = await fetch('/api/receipt', { method: 'POST', body: fd });
       const data = await res.json();
-      if (!res.ok || !data.ok) throw new Error(data.description || `HTTP ${res.status}`);
+
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || `HTTP ${res.status}`);
+      }
+
+      // Show parsed receipt info
+      document.getElementById('rrVendor').textContent    = data.vendor;
+      document.getElementById('rrAmount').textContent    = `$${data.amount.toFixed(2)}`;
+      document.getElementById('rrDate').textContent      = fmtShort(data.date) || data.date;
+      const cat = CAT_MAP[data.category] || { emoji: '📦', label: data.category };
+      document.getElementById('rrCategory').textContent  = `${cat.emoji} ${cat.label}`;
+      document.getElementById('receiptResult').classList.add('visible');
+
       setStatus('success');
-      document.getElementById('successTimestamp').textContent = formatDateTime(now);
+      document.getElementById('successDetail').textContent =
+        `${data.vendor} · $${data.amount.toFixed(2)} · ${cat.emoji} ${cat.label}`;
       document.getElementById('mainCard').classList.add('glow-success');
       document.getElementById('resetBtn').classList.add('visible');
       document.getElementById('snapBtn').disabled = true;
       document.getElementById('libraryBtn').disabled = true;
+
+      // Reload transactions and budget
+      setTimeout(() => loadTransactions(false), 1500);
       startBudgetPolling();
+
     } catch (err) {
-      console.error('Telegram error:', err);
+      console.error('Receipt error:', err);
       setStatus('error');
-      document.getElementById('errorText').textContent = `Error: ${err.message}. Tap to retry.`;
-      document.getElementById('statusError').onclick = () => uploadToTelegram(currentFile);
+      document.getElementById('errorText').textContent = `${err.message}. Tap to retry.`;
+      document.getElementById('statusError').onclick = () => uploadReceipt(currentFile);
       document.getElementById('resetBtn').classList.add('visible');
     }
   }
@@ -783,6 +1054,7 @@
     document.getElementById('previewImg').src = '';
     document.getElementById('previewCard').classList.remove('visible');
     document.getElementById('statusArea').classList.remove('visible');
+    document.getElementById('receiptResult').classList.remove('visible');
     ['Loading','Success','Error'].forEach(s => document.getElementById('status'+s).classList.remove('visible'));
     document.getElementById('mainCard').classList.remove('glow-success');
     document.getElementById('snapBtn').disabled = false;
@@ -790,7 +1062,107 @@
     document.getElementById('resetBtn').classList.remove('visible');
   }
 
-  // ── CSV parser ─────────────────────────────────────────────────
+  // ── Chat ───────────────────────────────────────────────────────────────
+  function handleChatKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendChatMessage();
+    }
+  }
+
+  function autogrowInput(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 110) + 'px';
+  }
+
+  function sendChip(btn) {
+    const msg = btn.textContent.replace(/^[\p{Emoji}\s]+/u, '').trim();
+    document.getElementById('chatInput').value = msg;
+    sendChatMessage();
+  }
+
+  async function sendChatMessage() {
+    const input = document.getElementById('chatInput');
+    const msg   = input.value.trim();
+    if (!msg || _chatTyping) return;
+
+    // Hide empty state
+    const empty = document.getElementById('chatEmpty');
+    if (empty) empty.style.display = 'none';
+
+    // Add user message
+    appendChatBubble('user', msg);
+    _chatHistory.push({ role: 'user', content: msg });
+    input.value = '';
+    input.style.height = 'auto';
+
+    // Show typing
+    _chatTyping = true;
+    document.getElementById('chatSendBtn').disabled = true;
+    const typingEl = appendTypingIndicator();
+
+    try {
+      const res  = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: msg,
+          budget: _liveBudget,
+          transactions: _transactions,
+          history: _chatHistory.slice(-14),
+        }),
+      });
+      const data = await res.json();
+
+      typingEl.remove();
+
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || 'AI unavailable');
+      }
+
+      appendChatBubble('ai', data.reply);
+      _chatHistory.push({ role: 'ai', content: data.reply });
+
+    } catch (err) {
+      typingEl.remove();
+      appendChatBubble('ai', `Sorry, I couldn't connect right now. Make sure the app is deployed to Cloudflare. (${err.message})`);
+    }
+
+    _chatTyping = false;
+    document.getElementById('chatSendBtn').disabled = false;
+  }
+
+  function appendChatBubble(role, text) {
+    const scroller = document.getElementById('chatScroller');
+    const wrap = document.createElement('div');
+    wrap.className = `chat-msg-wrap ${role}`;
+
+    const bubble = document.createElement('div');
+    bubble.className = `chat-bubble ${role}`;
+    bubble.textContent = text;
+
+    wrap.appendChild(bubble);
+    scroller.appendChild(wrap);
+    scroller.scrollTop = scroller.scrollHeight;
+    return wrap;
+  }
+
+  function appendTypingIndicator() {
+    const scroller = document.getElementById('chatScroller');
+    const wrap = document.createElement('div');
+    wrap.className = 'chat-msg-wrap ai';
+    wrap.id = 'typingWrap';
+    wrap.innerHTML = `<div class="typing-indicator">
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+    </div>`;
+    scroller.appendChild(wrap);
+    scroller.scrollTop = scroller.scrollHeight;
+    return wrap;
+  }
+
+  // ── CSV parser ─────────────────────────────────────────────────────────
   function parseCSVRow(row) {
     const out = []; let inQ = false, cur = '';
     for (let i = 0; i < row.length; i++) {
@@ -803,7 +1175,7 @@
     return out;
   }
 
-  // ── Sheets fetch ───────────────────────────────────────────────
+  // ── Sheets fetch (read) ────────────────────────────────────────────────
   function sheetsUrl(tab) {
     return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tab)}&t=${Date.now()}`;
   }
@@ -857,11 +1229,11 @@
     } catch { return null; }
   }
 
-  // ── Budget render ──────────────────────────────────────────────
+  // ── Budget render ──────────────────────────────────────────────────────
   function renderBudget(liveData) {
-    _liveBudget      = liveData;
-    const isLive     = !!liveData;
-    const showTBD    = !isLive && new Date() < BUDGET_LAUNCH;
+    _liveBudget  = liveData;
+    const isLive = !!liveData;
+    const showTBD = !isLive && new Date() < BUDGET_LAUNCH;
     let cats, totalBudget = 0, totalSpent = 0;
 
     if (liveData) {
@@ -914,7 +1286,7 @@
     }
     document.getElementById('budgetRows').innerHTML = rowsHtml;
     const title = document.getElementById('budgetPanelTitle');
-    if (title) title.textContent = isLive ? "This Month's Budget  •  LIVE" : "This Month's Budget";
+    if (title) title.textContent = isLive ? "This Month's Budget  ·  LIVE" : "This Month's Budget";
   }
 
   async function initBudget() {
@@ -932,15 +1304,12 @@
     }, 5000);
   }
 
-  // ── Load transactions ──────────────────────────────────────────
+  // ── Load transactions ──────────────────────────────────────────────────
   async function loadTransactions(showSpinner) {
     const btn = document.getElementById('refreshBtn');
     if (showSpinner && btn) btn.classList.add('spinning');
-
     const txns = await fetchTransactionsFromSheets();
-
     if (showSpinner && btn) btn.classList.remove('spinning');
-
     if (txns) {
       _transactions = txns;
       renderHomeTransactions();
@@ -988,7 +1357,7 @@
     </div>`;
   }
 
-  // ── Category picker ────────────────────────────────────────────
+  // ── Category picker ────────────────────────────────────────────────────
   function openPickerById(id) {
     const txn = _transactions.find(t => t.id === id);
     if (!txn) return;
@@ -1022,27 +1391,32 @@
   async function selectCategory(newCat) {
     if (!_pickerTarget || newCat === _pickerTarget.category) { closePicker(); return; }
     const txn = _pickerTarget;
-    const idx  = _transactions.findIndex(t => t.id === txn.id);
+    const idx = _transactions.findIndex(t => t.id === txn.id);
     if (idx !== -1) _transactions[idx] = { ...txn, category: newCat };
     renderHomeTransactions();
     renderAllTransactions();
     closePicker();
 
     const c   = CAT_MAP[newCat] || { emoji: '📦', label: newCat };
-    const msg = `🏷️ Recategorize: "${txn.vendor}" (${txn.date}, $${Math.abs(txn.amount).toFixed(2)}) → ${c.emoji} ${newCat}`;
+    showToast(`${c.emoji} Moved to ${c.label}`);
+
     try {
-      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      await fetch('/api/sheets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: CHAT_ID, text: msg }),
+        body: JSON.stringify({
+          action: 'recategorize',
+          vendor: txn.vendor,
+          amount: txn.amount,
+          newCategory: newCat,
+        }),
       });
-      showToast(`${c.emoji} Moved to ${c.label}`);
-    } catch {
-      showToast('Saved — sync pending');
+    } catch (err) {
+      showToast('Saved locally — sync pending');
     }
   }
 
-  // ── Budget settings ────────────────────────────────────────────
+  // ── Budget settings ────────────────────────────────────────────────────
   function renderSettings() {
     const liveVals = (_liveBudget && _liveBudget.cats)
       ? Object.fromEntries(Object.entries(_liveBudget.cats).map(([k, v]) => [k, v.budget]))
@@ -1063,16 +1437,27 @@
   async function saveBudget() {
     const btn = document.getElementById('saveBudgetBtn');
     btn.disabled = true; btn.textContent = 'Saving…';
-    const parts = [...document.querySelectorAll('.settings-input')]
-      .map(inp => `${inp.dataset.cat}=$${(parseFloat(inp.value) || 0).toFixed(0)}`);
+
+    const categories = [...document.querySelectorAll('.settings-input')].map(inp => ({
+      category: inp.dataset.cat,
+      amount: parseFloat(inp.value) || 0,
+    }));
+
     try {
-      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      const res = await fetch('/api/sheets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: CHAT_ID, text: `💰 Update monthly budgets:\n${parts.join('\n')}` }),
+        body: JSON.stringify({ action: 'update_budget', categories }),
       });
-      showToast('Budget saved! Updating…');
-      setTimeout(async () => { const l = await fetchBudgetFromSheets(); if (l) renderBudget(l); }, 4000);
+      if (res.ok) {
+        showToast('Budget saved!');
+        setTimeout(async () => {
+          const l = await fetchBudgetFromSheets();
+          if (l) renderBudget(l);
+        }, 2000);
+      } else {
+        showToast('Saved — check Sheets connection');
+      }
     } catch {
       showToast('Could not save — check connection');
     } finally {
@@ -1080,7 +1465,7 @@
     }
   }
 
-  // ── Toast ──────────────────────────────────────────────────────
+  // ── Toast ──────────────────────────────────────────────────────────────
   let _toastTimer;
   function showToast(msg) {
     const el = document.getElementById('toast');
@@ -1089,13 +1474,13 @@
     _toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
   }
 
-  // ── Helpers ────────────────────────────────────────────────────
+  // ── Helpers ────────────────────────────────────────────────────────────
   function formatDateTime(d) {
     return d.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
   }
   function fmtShort(str) {
     if (!str) return '';
-    const d = new Date(str);
+    const d = new Date(str + 'T12:00:00');
     return isNaN(d) ? str : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   }
   function escH(s) {
@@ -1105,7 +1490,7 @@
     return String(s).replace(/'/g,"&#39;").replace(/"/g,'&quot;');
   }
 
-  // ── Service worker ─────────────────────────────────────────────
+  // ── Service worker ─────────────────────────────────────────────────────
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   }
