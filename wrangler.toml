@@ -1,0 +1,8 @@
+name = "booher-velocity"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "."
+
+[[kv_namespaces]]
+binding = "VELOCITY_KV"
+id = "8377d67f2e2a40d799ea0b8594aa8652"
