@@ -1734,11 +1734,29 @@
   async function selectCategory(newCat) {
     if (!_pickerTarget || newCat === _pickerTarget.category) { closePicker(); return; }
     const txn = _pickerTarget;
+    const oldCat = txn.category;
+    const txnAmount = Math.abs(txn.amount || 0);
+
     const idx = _transactions.findIndex(t => t.id === txn.id);
     if (idx !== -1) _transactions[idx] = { ...txn, category: newCat };
     renderHomeTransactions();
     renderAllTransactions();
     closePicker();
+
+    // Optimistic budget update — instant, no server wait
+    if (_liveBudget && _liveBudget.cats) {
+      if (_liveBudget.cats[oldCat]) {
+        _liveBudget.cats[oldCat].spent = Math.max(0, (_liveBudget.cats[oldCat].spent || 0) - txnAmount);
+        _liveBudget.cats[oldCat].remaining = (_liveBudget.cats[oldCat].budget || 0) - _liveBudget.cats[oldCat].spent;
+      }
+      if (!_liveBudget.cats[newCat]) {
+        _liveBudget.cats[newCat] = { budget: DEFAULT_BUDGETS[newCat] || 0, spent: 0, remaining: DEFAULT_BUDGETS[newCat] || 0 };
+      }
+      _liveBudget.cats[newCat].spent = (_liveBudget.cats[newCat].spent || 0) + txnAmount;
+      _liveBudget.cats[newCat].remaining = (_liveBudget.cats[newCat].budget || 0) - _liveBudget.cats[newCat].spent;
+      _liveBudget.totalSpent = Object.values(_liveBudget.cats).reduce((sum, c) => sum + (c.spent || 0), 0);
+      renderBudget(_liveBudget);
+    }
 
     const c = CAT_MAP[newCat] || { label: newCat };
     showToast(`Moved to ${c.label}`);
@@ -1750,6 +1768,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: txn.id, category: newCat }),
       });
+      // Silent background reconcile with server
       const live = await fetchBudgetFromAPI();
       if (live) renderBudget(live);
     } catch {
@@ -2115,6 +2134,9 @@
 
   async function authLogout() {
     try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }); } catch {}
+    _transactions = [];
+    _liveBudget   = null;
+    _chatHistory  = [];
     showScreen('home');
     document.getElementById('authGate').classList.remove('hidden');
     document.getElementById('authEmail').value    = '';

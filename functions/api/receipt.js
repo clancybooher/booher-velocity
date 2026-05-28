@@ -103,9 +103,9 @@ Rules:
     };
 
     // Write to Cloudflare KV (primary storage)
-    if (env.VELOCITY_KV) {
+    if (env.VELOCITY_KV && data.userId) {
       try {
-        const ledgerKey = data.userId ? kvKey(data.userId, 'ledger') : 'ledger';
+        const ledgerKey = kvKey(data.userId, 'ledger');
         const raw     = await env.VELOCITY_KV.get(ledgerKey);
         const entries = raw ? JSON.parse(raw) : [];
         entries.push({
