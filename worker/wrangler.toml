@@ -1,0 +1,28 @@
+name = "booher-velocity"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+# KV namespace for all state (ledger, budgets, cursor, conversation history)
+[[kv_namespaces]]
+binding = "VELOCITY_KV"
+id = "PLACEHOLDER_KV_ID"
+preview_id = "PLACEHOLDER_KV_PREVIEW_ID"
+
+# Teller mTLS client certificate for outbound bank API calls
+[[mtls_certificates]]
+binding = "TELLER_MTLS"
+certificate_id = "PLACEHOLDER_CERT_ID"
+
+# Hourly bank sync trigger
+[triggers]
+crons = ["0 * * * *"]
+
+# Secrets (set via: wrangler secret put SECRET_NAME)
+# GEMINI_API_KEY
+# TELEGRAM_BOT_TOKEN
+# TELEGRAM_CHAT_ID
+# TELLER_ACCESS_TOKEN
+# GOOGLE_SHEETS_ID
+# GOOGLE_SERVICE_ACCOUNT_JSON
+# WEBHOOK_SECRET
