@@ -100,19 +100,24 @@ Rules:
       note: String(parsed.note || '').trim(),
     };
 
-    // Write to Google Sheets via GAS webhook (non-fatal if it fails)
-    if (env.GAS_WEBHOOK_URL) {
+    // Write to Cloudflare KV (primary storage)
+    if (env.VELOCITY_KV) {
       try {
-        const gasRes = await fetch(env.GAS_WEBHOOK_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'add_transaction', ...result }),
+        const raw     = await env.VELOCITY_KV.get('ledger');
+        const entries = raw ? JSON.parse(raw) : [];
+        entries.push({
+          id:         crypto.randomUUID().replace(/-/g, '').slice(0, 12),
+          type:       'receipt',
+          date:       result.date,
+          vendor:     result.vendor,
+          amount:     -result.amount,
+          category:   result.category,
+          notes:      result.note,
+          created_at: new Date().toISOString(),
         });
-        if (!gasRes.ok) {
-          console.error('GAS write failed:', await gasRes.text());
-        }
+        await env.VELOCITY_KV.put('ledger', JSON.stringify(entries));
       } catch (e) {
-        console.error('GAS fetch failed:', e.message);
+        console.error('KV write failed:', e.message);
       }
     }
 

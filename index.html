@@ -702,7 +702,7 @@
               </svg>
             </div>
             <p class="success-title">Logged to Velocity</p>
-            <p class="success-detail" id="successDetail">Saved to your budget &amp; Google Sheet</p>
+            <p class="success-detail" id="successDetail">Saved to your budget</p>
           </div>
           <div class="status-error" id="statusError">
             <div class="error-icon">⚠️</div>
@@ -751,9 +751,9 @@
         <div id="budgetRows"></div>
       </div>
 
-      <a href="https://docs.google.com/spreadsheets/d/1dMrEE6-efTiXw5wGG0Qzzfh8HpTgDV2pBpHA_6td7QA/edit" id="sheetBtn" class="btn-sheet" target="_blank" rel="noopener noreferrer">
-        <span>📊</span> View Google Sheet
-      </a>
+      <button class="btn-sheet" id="syncBankBtn" onclick="syncBank()">
+        <span>🏦</span> Sync Bank Accounts
+      </button>
 
     </div><!-- /screen-home -->
 
@@ -847,7 +847,7 @@
         </div>
       </div>
 
-      <div class="settings-note">Amounts update Google Sheet on save</div>
+      <div class="settings-note">Monthly envelope amounts — saved to Velocity</div>
       <div class="settings-card" id="settingsRows"></div>
       <button class="btn-save-budget" id="saveBudgetBtn" onclick="saveBudget()">Save Budget</button>
       <div style="height:8px"></div>
@@ -914,9 +914,7 @@
 
 <script>
   // ── Constants ──────────────────────────────────────────────────────────
-  const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1dMrEE6-efTiXw5wGG0Qzzfh8HpTgDV2pBpHA_6td7QA/edit';
-  const SHEET_ID  = SHEET_URL.match(/\/d\/([^/]+)/)?.[1];
-  const BUDGET_LAUNCH = new Date('2026-06-01');
+  const BUDGET_LAUNCH = new Date('2026-01-01'); // already launched
 
   const CATEGORIES = [
     { key: 'Groceries',                   emoji: '🛒', label: 'Groceries' },
@@ -1162,70 +1160,32 @@
     return wrap;
   }
 
-  // ── CSV parser ─────────────────────────────────────────────────────────
-  function parseCSVRow(row) {
-    const out = []; let inQ = false, cur = '';
-    for (let i = 0; i < row.length; i++) {
-      const ch = row[i];
-      if (ch === '"') { if (inQ && row[i+1] === '"') { cur += '"'; i++; } else { inQ = !inQ; } }
-      else if (ch === ',' && !inQ) { out.push(cur.trim()); cur = ''; }
-      else cur += ch;
-    }
-    out.push(cur.trim());
-    return out;
-  }
-
-  // ── Sheets fetch (read) ────────────────────────────────────────────────
-  function sheetsUrl(tab) {
-    return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tab)}&t=${Date.now()}`;
-  }
-
-  async function fetchBudgetFromSheets() {
+  // ── API fetch (KV-backed) ──────────────────────────────────────────────
+  async function fetchBudgetFromAPI() {
     try {
-      const res = await fetch(sheetsUrl('Budget'));
+      const res  = await fetch('/api/budget');
       if (!res.ok) return null;
-      const lines = (await res.text()).trim().split('\n');
-      if (lines.length < 2) return null;
-      const cats = {}; let totalBudget = 0, totalSpent = 0;
-      for (let i = 1; i < lines.length; i++) {
-        const c   = parseCSVRow(lines[i]);
-        const cat = c[0]; if (!cat || cat === 'TOTAL') continue;
-        const budget = parseFloat(c[1]) || 0;
-        const spent  = parseFloat(c[2]) || 0;
-        const rem    = parseFloat(c[3]);
-        cats[cat]    = { budget, spent, remaining: isNaN(rem) ? budget - spent : rem };
-        totalBudget += budget; totalSpent += spent;
-      }
-      if (!Object.keys(cats).length) return null;
-      return { cats, totalBudget, totalSpent };
+      const data = await res.json();
+      if (!data.ok || !data.cats) return null;
+      return { cats: data.cats, totalBudget: data.totalBudget, totalSpent: data.totalSpent };
     } catch { return null; }
   }
 
-  async function fetchTransactionsFromSheets() {
+  async function fetchTransactionsFromAPI() {
     try {
-      const res = await fetch(sheetsUrl('Transactions'));
+      const res  = await fetch('/api/transactions');
       if (!res.ok) return null;
-      const lines = (await res.text()).trim().split('\n');
-      if (lines.length < 2) return null;
-      const hdrs  = parseCSVRow(lines[0]).map(h => h.toLowerCase().replace(/[^a-z]/g, ''));
-      const col   = name => hdrs.findIndex(h => h.includes(name));
-      const iDate = col('date');
-      const iVend = Math.max(col('vendor'), col('merchant'), col('name'));
-      const iAmt  = col('amount');
-      const iCat  = col('cat');
-      const txns  = [];
-      for (let i = lines.length - 1; i >= 1 && txns.length < 50; i--) {
-        const c = parseCSVRow(lines[i]);
-        if (!c[iVend > -1 ? iVend : 1]) continue;
-        txns.push({
-          id:       `row-${i}`,
-          date:     iDate >= 0 ? c[iDate] : '',
-          vendor:   iVend >= 0 ? c[iVend] : 'Unknown',
-          amount:   iAmt  >= 0 ? (parseFloat(c[iAmt]) || 0) : 0,
-          category: iCat  >= 0 ? c[iCat]  : '',
-        });
-      }
-      return txns;
+      const data = await res.json();
+      if (!data.ok) return null;
+      return (data.transactions || []).slice(0, 100).map(e => ({
+        id:       e.id,
+        date:     e.date,
+        vendor:   e.vendor,
+        amount:   e.amount,
+        category: e.category,
+        notes:    e.notes,
+        type:     e.type,
+      }));
     } catch { return null; }
   }
 
@@ -1290,7 +1250,7 @@
   }
 
   async function initBudget() {
-    renderBudget(await fetchBudgetFromSheets());
+    renderBudget(await fetchBudgetFromAPI());
   }
 
   function startBudgetPolling() {
@@ -1298,9 +1258,9 @@
     clearInterval(_pollTimer);
     _pollTimer = setInterval(async () => {
       n++;
-      const live = await fetchBudgetFromSheets();
+      const live = await fetchBudgetFromAPI();
       if (live) renderBudget(live);
-      if (n >= 24) clearInterval(_pollTimer);
+      if (n >= 6) clearInterval(_pollTimer); // 6× at 5s = 30s polling
     }, 5000);
   }
 
@@ -1308,7 +1268,7 @@
   async function loadTransactions(showSpinner) {
     const btn = document.getElementById('refreshBtn');
     if (showSpinner && btn) btn.classList.add('spinning');
-    const txns = await fetchTransactionsFromSheets();
+    const txns = await fetchTransactionsFromAPI();
     if (showSpinner && btn) btn.classList.remove('spinning');
     if (txns) {
       _transactions = txns;
@@ -1401,16 +1361,14 @@
     showToast(`${c.emoji} Moved to ${c.label}`);
 
     try {
-      await fetch('/api/sheets', {
-        method: 'POST',
+      await fetch('/api/transactions', {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'recategorize',
-          vendor: txn.vendor,
-          amount: txn.amount,
-          newCategory: newCat,
-        }),
+        body: JSON.stringify({ id: txn.id, category: newCat }),
       });
+      // Refresh budget after recategorize
+      const live = await fetchBudgetFromAPI();
+      if (live) renderBudget(live);
     } catch (err) {
       showToast('Saved locally — sync pending');
     }
@@ -1444,24 +1402,49 @@
     }));
 
     try {
-      const res = await fetch('/api/sheets', {
+      const res = await fetch('/api/budget', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'update_budget', categories }),
+        body: JSON.stringify({ categories }),
       });
       if (res.ok) {
         showToast('Budget saved!');
         setTimeout(async () => {
-          const l = await fetchBudgetFromSheets();
+          const l = await fetchBudgetFromAPI();
           if (l) renderBudget(l);
-        }, 2000);
+        }, 800);
       } else {
-        showToast('Saved — check Sheets connection');
+        showToast('Could not save — check connection');
       }
     } catch {
       showToast('Could not save — check connection');
     } finally {
       btn.disabled = false; btn.textContent = 'Save Budget';
+    }
+  }
+
+  // ── Sync Bank ──────────────────────────────────────────────────────────
+  async function syncBank() {
+    const btn = document.getElementById('syncBankBtn');
+    if (btn) { btn.textContent = '⏳ Syncing…'; btn.disabled = true; }
+    try {
+      const res  = await fetch('/api/sync', { method: 'POST' });
+      const data = await res.json();
+      if (data.ok) {
+        const n = data.new_count || 0;
+        showToast(n > 0 ? `✅ ${n} new transaction${n !== 1 ? 's' : ''} pulled` : '✅ Already up to date');
+        if (n > 0) {
+          await loadTransactions(false);
+          const live = await fetchBudgetFromAPI();
+          if (live) renderBudget(live);
+        }
+      } else {
+        showToast('⚠️ Sync failed: ' + (data.error || 'unknown error'));
+      }
+    } catch (err) {
+      showToast('⚠️ ' + err.message);
+    } finally {
+      if (btn) { btn.textContent = '🏦 Sync Bank Accounts'; btn.disabled = false; }
     }
   }
 

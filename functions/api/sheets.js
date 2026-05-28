@@ -1,42 +1,65 @@
-// Proxies writes to Google Sheets via a Google Apps Script web app.
-// GAS_WEBHOOK_URL is set in Cloudflare Pages environment variables.
+// /api/sheets — KV-backed budget and recategorize operations
+// (Formerly proxied to Google Apps Script; now reads/writes Cloudflare KV directly)
+
+const CORS = {
+  'Content-Type': 'application/json',
+  'Access-Control-Allow-Origin': '*',
+};
+
+const CATEGORIES = [
+  'Groceries', 'Dining Out & Coffee', 'Utilities & Bills', 'Transportation & Gas',
+  'Entertainment & Date Nights', 'Home & Maintenance', 'Health & Personal Care',
+  'Travel & Vacations', 'Savings & Investments', 'Gifts & Giving', 'Miscellaneous',
+];
+
+const DEFAULT_BUDGETS = {
+  'Groceries': 800, 'Dining Out & Coffee': 300, 'Utilities & Bills': 400,
+  'Transportation & Gas': 250, 'Entertainment & Date Nights': 150,
+  'Home & Maintenance': 200, 'Health & Personal Care': 100,
+  'Travel & Vacations': 200, 'Savings & Investments': 500,
+  'Gifts & Giving': 100, 'Miscellaneous': 100,
+};
+
 export async function onRequestPost(context) {
   const { request, env } = context;
-
-  const CORS = {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-  };
-
-  if (!env.GAS_WEBHOOK_URL) {
-    return new Response(JSON.stringify({ error: 'GAS_WEBHOOK_URL not configured — see SETUP.md' }), { status: 503, headers: CORS });
+  if (!env.VELOCITY_KV) {
+    return new Response(JSON.stringify({ error: 'VELOCITY_KV not bound' }), { status: 503, headers: CORS });
   }
 
   try {
     const body = await request.json();
 
-    // Validate action
-    const allowed = ['update_budget', 'recategorize'];
-    if (!allowed.includes(body.action)) {
-      return new Response(JSON.stringify({ error: 'Unknown action' }), { status: 400, headers: CORS });
+    if (body.action === 'update_budget') {
+      const categories = body.categories || [];
+      const existing   = await env.VELOCITY_KV.get('budgets');
+      const budgets    = existing ? JSON.parse(existing) : { ...DEFAULT_BUDGETS };
+      for (const { category, amount } of categories) {
+        if (CATEGORIES.includes(category)) budgets[category] = parseFloat(amount) || 0;
+      }
+      await env.VELOCITY_KV.put('budgets', JSON.stringify(budgets));
+      return new Response(JSON.stringify({ ok: true, action: 'budget_updated' }), { headers: CORS });
     }
 
-    const gasRes = await fetch(env.GAS_WEBHOOK_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-
-    if (!gasRes.ok) {
-      const errText = await gasRes.text();
-      return new Response(JSON.stringify({ error: 'GAS error', detail: errText }), { status: 502, headers: CORS });
+    if (body.action === 'recategorize') {
+      const raw     = await env.VELOCITY_KV.get('ledger');
+      const entries = raw ? JSON.parse(raw) : [];
+      // Find by vendor + amount match (last occurrence, like the GAS version)
+      for (let i = entries.length - 1; i >= 0; i--) {
+        const vendorMatch = String(entries[i].vendor).toLowerCase().trim() === String(body.vendor).toLowerCase().trim();
+        const amtMatch    = Math.abs(Math.abs(parseFloat(entries[i].amount)) - Math.abs(parseFloat(body.amount))) < 0.02;
+        if (vendorMatch && amtMatch) {
+          entries[i].category = body.newCategory;
+          await env.VELOCITY_KV.put('ledger', JSON.stringify(entries));
+          return new Response(JSON.stringify({ ok: true, action: 'recategorized' }), { headers: CORS });
+        }
+      }
+      return new Response(JSON.stringify({ ok: false, error: 'Transaction not found' }), { headers: CORS });
     }
 
-    const data = await gasRes.json();
-    return new Response(JSON.stringify(data), { headers: CORS });
+    return new Response(JSON.stringify({ ok: false, error: 'Unknown action: ' + body.action }), { status: 400, headers: CORS });
 
   } catch (err) {
-    console.error('Sheets proxy error:', err);
+    console.error('Data error:', err);
     return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: CORS });
   }
 }
