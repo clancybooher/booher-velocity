@@ -1,25 +1,31 @@
-function kvKey(userId, key) { return `user:${userId}:${key}`; }
+// POST /api/receipt — multipart { image, person? }
+// Gemini reads the photo (receipt OR just a picture of what was bought),
+// the photo is stored in KV, and a DRAFT entry comes back for the user to
+// confirm. Nothing hits the ledger until the client saves it via
+// POST /api/transactions.
+
+const JSON_HEADERS = { 'Content-Type': 'application/json' };
+
+export const CATEGORIES = [
+  'Groceries', 'Dining Out & Coffee', 'Utilities & Bills', 'Transportation & Gas',
+  'Entertainment & Date Nights', 'Home & Maintenance', 'Health & Personal Care',
+  'Travel & Vacations', 'Savings & Investments', 'Gifts & Giving', 'Miscellaneous',
+];
 
 export async function onRequestPost(context) {
-  const { request, env, data } = context;
-
-  const CORS = {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-  };
+  const { request, env } = context;
 
   if (!env.GEMINI_API_KEY) {
-    return new Response(JSON.stringify({ error: 'GEMINI_API_KEY not configured' }), { status: 503, headers: CORS });
+    return new Response(JSON.stringify({ error: 'GEMINI_API_KEY not configured' }), { status: 503, headers: JSON_HEADERS });
   }
 
   try {
     const formData = await request.formData();
     const imageFile = formData.get('image');
     if (!imageFile) {
-      return new Response(JSON.stringify({ error: 'No image provided' }), { status: 400, headers: CORS });
+      return new Response(JSON.stringify({ error: 'No image provided' }), { status: 400, headers: JSON_HEADERS });
     }
 
-    // Convert image to base64
     const imageBuffer = await imageFile.arrayBuffer();
     const bytes = new Uint8Array(imageBuffer);
     let binary = '';
@@ -41,20 +47,19 @@ export async function onRequestPost(context) {
           contents: [{
             parts: [
               {
-                text: `You are a receipt parser for a personal budget app. Extract data from this receipt image.
+                text: `You are the expense parser for a family budget app. The image is either a store receipt OR a photo of an item that was purchased.
 
-Return ONLY a JSON object — no markdown, no code blocks, no explanation. Just raw JSON.
-
-Format:
-{"vendor": "Store Name", "amount": 12.34, "date": "YYYY-MM-DD", "category": "Category Name", "note": "optional brief note"}
+Return ONLY a JSON object — no markdown, no code blocks. Format:
+{"vendor": "Store Name", "amount": 12.34, "date": "YYYY-MM-DD", "category": "Category Name", "note": "what was bought"}
 
 Rules:
-- vendor: the store or merchant name, properly capitalized
-- amount: the final total paid as a decimal number (not a string)
-- date: the purchase date in YYYY-MM-DD format; if not visible, use today's date
-- category: pick exactly one from this list:
-  Groceries | Dining Out & Coffee | Utilities & Bills | Transportation & Gas | Entertainment & Date Nights | Home & Maintenance | Health & Personal Care | Travel & Vacations | Savings & Investments | Gifts & Giving | Miscellaneous
-- note: a very short note about what was purchased (1 line max), or empty string if nothing notable`
+- If it's a RECEIPT: vendor = merchant name properly capitalized, amount = final total paid, date = purchase date (YYYY-MM-DD).
+- If it's a PHOTO OF AN ITEM (no receipt visible): describe the item briefly in note, set vendor to the brand/store if identifiable else "Unknown", and set amount to the price if visible on a tag, else 0.
+- If the date is not visible, use today's date.
+- amount must be a decimal number, not a string.
+- category: pick exactly one from:
+  ${CATEGORIES.join(' | ')}
+- note: very short (1 line max), or empty string.`
               },
               { inlineData: { mimeType, data: base64Image } }
             ]
@@ -69,14 +74,13 @@ Rules:
 
     if (!geminiRes.ok) {
       const errText = await geminiRes.text();
-      return new Response(JSON.stringify({ error: 'Gemini API error', detail: errText }), { status: 502, headers: CORS });
+      return new Response(JSON.stringify({ error: 'AI error', detail: errText }), { status: 502, headers: JSON_HEADERS });
     }
 
     const geminiData = await geminiRes.json();
     const text = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
-
     if (!text) {
-      return new Response(JSON.stringify({ error: 'No response from AI' }), { status: 502, headers: CORS });
+      return new Response(JSON.stringify({ error: 'No response from AI' }), { status: 502, headers: JSON_HEADERS });
     }
 
     let parsed;
@@ -84,60 +88,29 @@ Rules:
       parsed = JSON.parse(text);
     } catch {
       const match = text.match(/\{[\s\S]*\}/);
-      if (match) {
-        try { parsed = JSON.parse(match[0]); } catch { parsed = null; }
-      }
+      if (match) { try { parsed = JSON.parse(match[0]); } catch { parsed = null; } }
     }
 
-    if (!parsed || !parsed.vendor) {
-      return new Response(JSON.stringify({ error: 'Could not parse receipt', raw: text }), { status: 422, headers: CORS });
+    if (!parsed) {
+      return new Response(JSON.stringify({ error: 'Could not read that photo', raw: text }), { status: 422, headers: JSON_HEADERS });
     }
+
+    // Store the photo so it stays attached to the expense
+    const photoId = crypto.randomUUID().replace(/-/g, '').slice(0, 16);
+    await env.VELOCITY_KV.put(`photo:${photoId}`, JSON.stringify({ mime: mimeType, data: base64Image }));
 
     const today = new Date().toISOString().split('T')[0];
-    const result = {
-      vendor: String(parsed.vendor || 'Unknown').trim(),
+    const draft = {
+      vendor: String(parsed.vendor || 'Unknown').trim() || 'Unknown',
       amount: Math.abs(parseFloat(parsed.amount) || 0),
       date: parsed.date && /^\d{4}-\d{2}-\d{2}$/.test(parsed.date) ? parsed.date : today,
-      category: parsed.category || 'Miscellaneous',
+      category: CATEGORIES.includes(parsed.category) ? parsed.category : 'Miscellaneous',
       note: String(parsed.note || '').trim(),
     };
 
-    // Write to Cloudflare KV (primary storage)
-    if (env.VELOCITY_KV && data.userId) {
-      try {
-        const ledgerKey = kvKey(data.userId, 'ledger');
-        const raw     = await env.VELOCITY_KV.get(ledgerKey);
-        const entries = raw ? JSON.parse(raw) : [];
-        entries.push({
-          id:         crypto.randomUUID().replace(/-/g, '').slice(0, 12),
-          type:       'receipt',
-          date:       result.date,
-          vendor:     result.vendor,
-          amount:     -result.amount,
-          category:   result.category,
-          notes:      result.note,
-          created_at: new Date().toISOString(),
-        });
-        await env.VELOCITY_KV.put(ledgerKey, JSON.stringify(entries));
-      } catch (e) {
-        console.error('KV write failed:', e.message);
-      }
-    }
-
-    return new Response(JSON.stringify({ ok: true, ...result }), { headers: CORS });
+    return new Response(JSON.stringify({ ok: true, draft, photoId }), { headers: JSON_HEADERS });
 
   } catch (err) {
-    console.error('Receipt error:', err);
-    return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: CORS });
+    return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: JSON_HEADERS });
   }
-}
-
-export async function onRequestOptions() {
-  return new Response(null, {
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    }
-  });
 }

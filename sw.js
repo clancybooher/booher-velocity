@@ -1,25 +1,30 @@
-// Booher Velocity — minimal service worker for PWA install
-const CACHE = 'velocity-v2';
-const ASSETS = ['/', '/index.html', '/manifest.json'];
+// Velocity service worker — network-first so deploys show up immediately,
+// cached shell as offline fallback. API calls are never cached.
+const CACHE = 'velocity-v10';
 
-self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
-  self.skipWaiting();
-});
+self.addEventListener('install', () => self.skipWaiting());
 
 self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    )
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+      .then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 self.addEventListener('fetch', e => {
-  if (e.request.url.includes('api.telegram.org')) return;
-  if (e.request.url.includes('fonts.googleapis.com')) return;
+  const url = new URL(e.request.url);
+  if (e.request.method !== 'GET' || url.pathname.startsWith('/api/')) return;
+
   e.respondWith(
-    caches.match(e.request).then(cached => cached || fetch(e.request))
+    fetch(e.request)
+      .then(res => {
+        if (res.ok && url.origin === location.origin) {
+          const copy = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, copy));
+        }
+        return res;
+      })
+      .catch(() => caches.match(e.request))
   );
 });

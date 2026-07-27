@@ -4,3 +4,5 @@ agent/
 
 # macOS
 .DS_Store
+.backup/
+.wrangler/
