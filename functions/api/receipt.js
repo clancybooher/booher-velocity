@@ -7,9 +7,10 @@
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
 
 export const CATEGORIES = [
-  'Groceries', 'Dining Out & Coffee', 'Utilities & Bills', 'Transportation & Gas',
-  'Entertainment & Date Nights', 'Home & Maintenance', 'Health & Personal Care',
-  'Travel & Vacations', 'Savings & Investments', 'Gifts & Giving', 'Miscellaneous',
+  'Groceries', 'Dates', 'Clancy Fun', 'Naomi Fun', 'Dog Food',
+  'House & Projects', 'Rent', 'Subscriptions', 'Everything Else',
+  'Biz: Diesel', 'Biz: Advertising', 'Biz: Coffee Shop', 'Biz: Tesla',
+  'Biz: Trailer', 'Biz: Bills & Subs',
 ];
 
 export async function onRequestPost(context) {
@@ -22,6 +23,7 @@ export async function onRequestPost(context) {
   try {
     const formData = await request.formData();
     const imageFile = formData.get('image');
+    const person = formData.get('person') === 'Naomi' ? 'Naomi' : 'Clancy';
     if (!imageFile) {
       return new Response(JSON.stringify({ error: 'No image provided' }), { status: 400, headers: JSON_HEADERS });
     }
@@ -59,6 +61,15 @@ Rules:
 - amount must be a decimal number, not a string.
 - category: pick exactly one from:
   ${CATEGORIES.join(' | ')}
+- Category hints for this family (${person} is the one submitting this expense):
+  * Grocery stores (food) → Groceries
+  * Restaurant/coffee/dessert for two people → Dates
+  * A solo treat, hobby, or personal purchase → "${person} Fun"
+  * Pet or dog supplies → Dog Food
+  * Hardware store, home improvement, furniture → House & Projects
+  * Diesel or gas station fuel → Biz: Diesel (they run a window & door business with a work truck)
+  * Google/Facebook/online ads → Biz: Advertising
+  * Anything that doesn't clearly fit → Everything Else
 - note: very short (1 line max), or empty string.`
               },
               { inlineData: { mimeType, data: base64Image } }
@@ -104,7 +115,7 @@ Rules:
       vendor: String(parsed.vendor || 'Unknown').trim() || 'Unknown',
       amount: Math.abs(parseFloat(parsed.amount) || 0),
       date: parsed.date && /^\d{4}-\d{2}-\d{2}$/.test(parsed.date) ? parsed.date : today,
-      category: CATEGORIES.includes(parsed.category) ? parsed.category : 'Miscellaneous',
+      category: CATEGORIES.includes(parsed.category) ? parsed.category : 'Everything Else',
       note: String(parsed.note || '').trim(),
     };
 

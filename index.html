@@ -124,6 +124,7 @@
       font-size: 16px; font-weight: 700; overflow: hidden;
     }
     .txn-thumb.naomi { background: #E0F2F7; color: var(--naomi); }
+    .txn-thumb.bills { background: #EFEAE3; color: var(--text-mid); }
     .txn-thumb img { width: 100%; height: 100%; object-fit: cover; }
     .txn-mid { flex: 1; min-width: 0; }
     .txn-vendor { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -225,6 +226,16 @@
     .budget-row .name { font-size: 14px; font-weight: 600; flex: 1; }
     .budget-row input { width: 110px; padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 10px; background: var(--card); text-align: right; outline: none; }
     .budget-row input:focus { border-color: var(--wine); }
+    .budget-group { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-faint); margin: 16px 0 8px; }
+
+    /* Recurring bill rows */
+    .rec-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; }
+    .rec-row input, .rec-row select { padding: 10px 10px; border: 1.5px solid var(--line); border-radius: 10px; background: var(--card); outline: none; font-size: 14px; }
+    .rec-row input:focus, .rec-row select:focus { border-color: var(--wine); }
+    .rec-name { flex: 1; min-width: 0; }
+    .rec-amt { width: 82px; text-align: right; }
+    .rec-cat { width: 118px; color: var(--text-mid); }
+    .rec-del { color: var(--red); font-size: 20px; font-weight: 700; padding: 0 4px; flex-shrink: 0; }
 
     /* Spinner + toast */
     .spin-back { position: fixed; inset: 0; z-index: 90; background: rgba(250,248,244,0.85); display: none; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
@@ -283,11 +294,17 @@
   <input type="file" accept="image/*" id="fileLibrary" hidden>
 
 <script>
-const CATEGORIES = [
-  'Groceries', 'Dining Out & Coffee', 'Utilities & Bills', 'Transportation & Gas',
-  'Entertainment & Date Nights', 'Home & Maintenance', 'Health & Personal Care',
-  'Travel & Vacations', 'Savings & Investments', 'Gifts & Giving', 'Miscellaneous',
-];
+const GROUPS = {
+  Personal: [
+    'Groceries', 'Dates', 'Clancy Fun', 'Naomi Fun', 'Dog Food',
+    'House & Projects', 'Rent', 'Subscriptions', 'Everything Else',
+  ],
+  Business: [
+    'Biz: Diesel', 'Biz: Advertising', 'Biz: Coffee Shop', 'Biz: Tesla',
+    'Biz: Trailer', 'Biz: Bills & Subs',
+  ],
+};
+const CATEGORIES = [...GROUPS.Personal, ...GROUPS.Business];
 
 const $ = id => document.getElementById(id);
 const fmt = n => '$' + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -450,9 +467,10 @@ function personToggleHTML() {
 
 function txnRowHTML(t) {
   const initial = (t.person || 'C')[0];
+  const thumbClass = t.person === 'Naomi' ? 'naomi' : t.person === 'Bills' ? 'bills' : '';
   const thumb = t.photoId
-    ? `<div class="txn-thumb ${t.person === 'Naomi' ? 'naomi' : ''}"><img src="/api/photo/${t.photoId}" loading="lazy" alt=""></div>`
-    : `<div class="txn-thumb ${t.person === 'Naomi' ? 'naomi' : ''}">${initial}</div>`;
+    ? `<div class="txn-thumb ${thumbClass}"><img src="/api/photo/${t.photoId}" loading="lazy" alt=""></div>`
+    : `<div class="txn-thumb ${thumbClass}">${initial}</div>`;
   return `
     <button class="txn" data-txn="${t.id}">
       ${thumb}
@@ -470,30 +488,47 @@ function renderHome() {
   const nowMonth = new Date().toISOString().slice(0, 7);
   const txns = monthTxns(nowMonth);
   const total = txns.reduce((s, t) => s + Math.abs(t.amount), 0);
-  const cTotal = txns.filter(t => t.person !== 'Naomi').reduce((s, t) => s + Math.abs(t.amount), 0);
-  const nTotal = total - cTotal;
+  const cTotal = txns.filter(t => t.person === 'Clancy').reduce((s, t) => s + Math.abs(t.amount), 0);
+  const nTotal = txns.filter(t => t.person === 'Naomi').reduce((s, t) => s + Math.abs(t.amount), 0);
+  const bTotal = total - cTotal - nTotal;
 
   const byCat = {};
   txns.forEach(t => { byCat[t.category] = (byCat[t.category] || 0) + Math.abs(t.amount); });
-  const cats = Object.keys({ ...byCat, ...state.budgets })
-    .sort((a, b) => (byCat[b] || 0) - (byCat[a] || 0));
+  const visible = new Set(Object.keys({ ...byCat, ...state.budgets }));
 
-  const catHTML = cats.length === 0
+  const catCard = c => {
+    const spent = byCat[c] || 0;
+    const budget = state.budgets[c] || 0;
+    let barHTML = '', sub = '';
+    if (budget > 0) {
+      const pct = Math.min(100, spent / budget * 100);
+      const cls = spent > budget ? 'over' : pct >= 80 ? 'warn' : '';
+      barHTML = `<div class="bar"><div class="bar-fill ${cls}" style="width:${pct}%"></div></div>`;
+      sub = spent > budget
+        ? `<div class="cat-sub">${fmt0(spent - budget)} over the ${fmt0(budget)} budget</div>`
+        : `<div class="cat-sub">${fmt0(budget - spent)} left of ${fmt0(budget)}</div>`;
+    }
+    return `<div class="cat-card"><div class="cat-top"><div class="cat-name">${esc(c)}</div><div class="cat-amt">${fmt(spent)}</div></div>${sub}${barHTML}</div>`;
+  };
+
+  const groupSection = (name, catList) => {
+    const cats = catList.filter(c => visible.has(c))
+      .sort((a, b) => (byCat[b] || 0) - (byCat[a] || 0));
+    // catch categories renamed/removed from the app but still present in data
+    if (name === 'Personal') {
+      const known = new Set(CATEGORIES);
+      [...visible].filter(c => !known.has(c)).forEach(c => cats.push(c));
+    }
+    if (!cats.length) return '';
+    const spent = cats.reduce((s, c) => s + (byCat[c] || 0), 0);
+    const budget = cats.reduce((s, c) => s + (state.budgets[c] || 0), 0);
+    const head = budget > 0 ? `${fmt0(spent)} of ${fmt0(budget)}` : fmt0(spent);
+    return `<div class="section-title">${name} <span style="text-transform:none;letter-spacing:0">${head}</span></div>` + cats.map(catCard).join('');
+  };
+
+  const catHTML = visible.size === 0
     ? `<div class="empty">Nothing yet this month.<br>Tap the camera to snap your first receipt.</div>`
-    : cats.map(c => {
-        const spent = byCat[c] || 0;
-        const budget = state.budgets[c] || 0;
-        let barHTML = '', sub = '';
-        if (budget > 0) {
-          const pct = Math.min(100, spent / budget * 100);
-          const cls = spent > budget ? 'over' : pct >= 80 ? 'warn' : '';
-          barHTML = `<div class="bar"><div class="bar-fill ${cls}" style="width:${pct}%"></div></div>`;
-          sub = spent > budget
-            ? `<div class="cat-sub">${fmt0(spent - budget)} over the ${fmt0(budget)} budget</div>`
-            : `<div class="cat-sub">${fmt0(budget - spent)} left of ${fmt0(budget)}</div>`;
-        }
-        return `<div class="cat-card"><div class="cat-top"><div class="cat-name">${esc(c)}</div><div class="cat-amt">${fmt(spent)}</div></div>${sub}${barHTML}</div>`;
-      }).join('');
+    : groupSection('Personal', GROUPS.Personal) + groupSection('Business', GROUPS.Business);
 
   const recent = state.txns.slice(0, 5).map(txnRowHTML).join('');
 
@@ -508,24 +543,25 @@ function renderHome() {
     <div class="hero">
       <div class="hero-label">Spent in ${monthLabel(nowMonth).split(' ')[0]}</div>
       <div class="hero-amount">${fmt(total)}</div>
-      <div class="hero-split"><b class="c">Clancy ${fmt0(cTotal)}</b> &nbsp;·&nbsp; <b class="n">Naomi ${fmt0(nTotal)}</b></div>
+      <div class="hero-split"><b class="c">Clancy ${fmt0(cTotal)}</b> &nbsp;·&nbsp; <b class="n">Naomi ${fmt0(nTotal)}</b>${bTotal > 0 ? ` &nbsp;·&nbsp; <b>Bills ${fmt0(bTotal)}</b>` : ''}</div>
     </div>
-    <div class="section-title">Categories <button id="btnBudgets">Edit budgets</button></div>
     ${catHTML}
     ${recent ? `<div class="section-title">Recent</div>${recent}` : ''}
   `;
 }
 
 function renderHistory() {
-  const txns = monthTxns(state.month).filter(t =>
+  const monthAll = monthTxns(state.month);
+  const txns = monthAll.filter(t =>
     state.filter === 'All' ? true :
-    state.filter === 'Clancy' || state.filter === 'Naomi' ? t.person === state.filter :
+    ['Clancy', 'Naomi', 'Bills'].includes(state.filter) ? t.person === state.filter :
     t.category === state.filter
   );
   const total = txns.reduce((s, t) => s + Math.abs(t.amount), 0);
 
-  const usedCats = [...new Set(monthTxns(state.month).map(t => t.category))];
-  const chips = ['All', 'Clancy', 'Naomi', ...usedCats].map(f =>
+  const usedCats = [...new Set(monthAll.map(t => t.category))];
+  const hasBills = monthAll.some(t => t.person === 'Bills');
+  const chips = ['All', 'Clancy', 'Naomi', ...(hasBills ? ['Bills'] : []), ...usedCats].map(f =>
     `<button class="chip ${state.filter === f ? 'on' : ''}" data-filter="${esc(f)}">${esc(f)}</button>`).join('');
 
   let listHTML = '';
@@ -602,7 +638,7 @@ function openSnapMenu() {
   `);
   $('optCamera').onclick = () => { closeSheet(); $('fileCamera').click(); };
   $('optLibrary').onclick = () => { closeSheet(); $('fileLibrary').click(); };
-  $('optManual').onclick = () => { closeSheet(); openConfirm({ vendor: '', amount: '', date: new Date().toISOString().slice(0, 10), category: 'Miscellaneous', note: '' }, null); };
+  $('optManual').onclick = () => { closeSheet(); openConfirm({ vendor: '', amount: '', date: new Date().toISOString().slice(0, 10), category: 'Everything Else', note: '' }, null); };
 }
 
 /* Image → compress → parse */
@@ -613,6 +649,7 @@ async function handleImage(file) {
     const blob = await compressImage(file);
     const fd = new FormData();
     fd.append('image', blob, 'receipt.jpg');
+    fd.append('person', state.person);
     const res = await api('receipt', { method: 'POST', body: fd });
     spin(false);
     openConfirm(res.draft, res.photoId);
@@ -646,8 +683,12 @@ function compressImage(file) {
 
 /* Confirm / edit card — used for new snaps, manual adds, and editing */
 function openConfirm(draft, photoId, existingId) {
-  const cats = CATEGORIES.map(c =>
-    `<button class="cat-chip ${c === draft.category ? 'on' : ''}" data-cat="${esc(c)}">${esc(c)}</button>`).join('');
+  const chip = c => `<button class="cat-chip ${c === draft.category ? 'on' : ''}" data-cat="${esc(c)}">${esc(c.replace('Biz: ', ''))}</button>`;
+  const cats = `
+    <div class="budget-group" style="margin-top:4px">Personal</div>
+    <div class="cat-grid">${GROUPS.Personal.map(chip).join('')}</div>
+    <div class="budget-group">Business</div>
+    <div class="cat-grid">${GROUPS.Business.map(chip).join('')}</div>`;
   const photo = photoId ? `<img class="confirm-photo" src="/api/photo/${photoId}" alt="">` : '';
   const person = draft.person || state.person;
 
@@ -663,14 +704,14 @@ function openConfirm(draft, photoId, existingId) {
       <div class="field" style="max-width:130px"><label>Amount</label><input id="fAmount" type="number" inputmode="decimal" step="0.01" value="${draft.amount || ''}" placeholder="0.00"></div>
     </div>
     <div class="field"><label>Date</label><input id="fDate" type="date" value="${esc(draft.date)}"></div>
-    <div class="field"><label>Category</label><div class="cat-grid" id="catGrid">${cats}</div></div>
+    <div class="field"><label>Category</label><div id="catGrid">${cats}</div></div>
     <div class="field"><label>Note (optional)</label><input id="fNote" value="${esc(draft.note || draft.notes || '')}" placeholder=""></div>
     <button class="btn-primary" id="btnSave">${existingId ? 'Save changes' : 'Save expense'}</button>
     ${existingId ? '<button class="btn-danger" id="btnDelete">Delete</button>' : ''}
     <button class="btn-ghost" id="btnCancel">Cancel</button>
   `);
 
-  let selCat = draft.category || 'Miscellaneous';
+  let selCat = draft.category || 'Everything Else';
   let selPerson = person;
   document.querySelectorAll('#catGrid .cat-chip').forEach(b => b.onclick = () => {
     selCat = b.dataset.cat;
@@ -735,14 +776,17 @@ function openDetail(id) {
 
 /* Budgets editor */
 function openBudgets() {
-  const rows = CATEGORIES.map(c => `
+  const row = c => `
     <div class="budget-row">
-      <div class="name">${esc(c)}</div>
+      <div class="name">${esc(c.replace('Biz: ', ''))}</div>
       <input type="number" inputmode="decimal" placeholder="—" data-budget="${esc(c)}" value="${state.budgets[c] || ''}">
-    </div>`).join('');
+    </div>`;
+  const rows = `
+    <div class="budget-group">Personal</div>${GROUPS.Personal.map(row).join('')}
+    <div class="budget-group">Business</div>${GROUPS.Business.map(row).join('')}`;
   openSheet(`
     <div class="sheet-title">Monthly budgets</div>
-    <div style="font-size:13px;color:var(--text-mid);margin-bottom:14px">Optional — leave blank to just track spending.</div>
+    <div style="font-size:13px;color:var(--text-mid);margin-bottom:14px">Leave blank to just track spending without a target.</div>
     ${rows}
     <button class="btn-primary" id="btnSaveBudgets">Save budgets</button>
     <button class="btn-ghost" id="btnCancelB">Cancel</button>
@@ -764,10 +808,62 @@ function openBudgets() {
   };
 }
 
+/* Recurring bills editor */
+function openRecurring() {
+  spin(true, 'Loading bills…');
+  api('recurring').then(res => {
+    spin(false);
+    const bills = res.bills || [];
+    const catOpts = sel => CATEGORIES.map(c =>
+      `<option value="${esc(c)}" ${c === sel ? 'selected' : ''}>${esc(c.replace('Biz: ', ''))}</option>`).join('');
+    const row = (b = { label: '', amount: '', category: 'Biz: Bills & Subs' }) => `
+      <div class="rec-row">
+        <input class="rec-name" placeholder="Bill name" value="${esc(b.label)}">
+        <input class="rec-amt" type="number" inputmode="decimal" placeholder="0" value="${b.amount || ''}">
+        <select class="rec-cat">${catOpts(b.category)}</select>
+        <button class="rec-del">×</button>
+      </div>`;
+    openSheet(`
+      <div class="sheet-title">Monthly bills</div>
+      <div style="font-size:13px;color:var(--text-mid);margin-bottom:14px">These post themselves on the 1st of every month, tagged "Bills" — no snapping needed.</div>
+      <div id="recRows">${bills.map(b => row(b)).join('')}</div>
+      <button class="btn-ghost" id="btnAddRec" style="text-align:left;color:var(--wine)">+ Add a bill</button>
+      <button class="btn-primary" id="btnSaveRec">Save bills</button>
+      <button class="btn-ghost" id="btnCancelRec">Cancel</button>
+    `);
+    const bindDels = () => document.querySelectorAll('.rec-del').forEach(d =>
+      d.onclick = () => d.closest('.rec-row').remove());
+    bindDels();
+    $('btnAddRec').onclick = () => {
+      $('recRows').insertAdjacentHTML('beforeend', row());
+      bindDels();
+    };
+    $('btnCancelRec').onclick = closeSheet;
+    $('btnSaveRec').onclick = async () => {
+      const out = [];
+      document.querySelectorAll('.rec-row').forEach(r => {
+        const label = r.querySelector('.rec-name').value.trim();
+        const amount = parseFloat(r.querySelector('.rec-amt').value);
+        const category = r.querySelector('.rec-cat').value;
+        if (label && amount > 0) out.push({ label, amount, category });
+      });
+      try {
+        await api('recurring', { method: 'PUT', body: JSON.stringify({ bills: out }) });
+        closeSheet();
+        toast('Bills saved — they post on the 1st');
+      } catch (e) { if (e.message !== 'locked') toast(e.message); }
+    };
+  }).catch(e => { spin(false); if (e.message !== 'locked') toast(e.message); });
+}
+
 /* Settings */
 function openSettings() {
   openSheet(`
     <div class="sheet-title">Settings</div>
+    <button class="snap-opt" id="optRecurring">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      Monthly bills (auto-post)
+    </button>
     <button class="snap-opt" id="optBudgets2">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
       Monthly budgets
@@ -778,6 +874,7 @@ function openSettings() {
     </button>
     <div style="text-align:center;font-size:12px;color:var(--text-faint);margin-top:12px">Velocity · Booher family budget</div>
   `);
+  $('optRecurring').onclick = () => { closeSheet(); openRecurring(); };
   $('optBudgets2').onclick = () => { closeSheet(); openBudgets(); };
   $('optLogout').onclick = async () => {
     try { await fetch('/api/auth/pin', { method: 'DELETE' }); } catch {}

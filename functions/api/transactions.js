@@ -17,8 +17,37 @@ async function writeLedger(env, entries) {
   await env.VELOCITY_KV.put(LEDGER_KEY, JSON.stringify(entries));
 }
 
+// On the first app use of a new month, post the recurring bills
+// (household:recurring) into the ledger, dated the 1st and tagged "Bills".
+async function postRecurringBills(env) {
+  const ym = new Date().toISOString().slice(0, 7);
+  const flagKey = `recurring:posted:${ym}`;
+  if (await env.VELOCITY_KV.get(flagKey)) return;
+
+  const raw = await env.VELOCITY_KV.get('household:recurring');
+  const bills = raw ? JSON.parse(raw) : [];
+  await env.VELOCITY_KV.put(flagKey, '1');
+  if (!bills.length) return;
+
+  const entries = await readLedger(env);
+  const now = new Date().toISOString();
+  bills.forEach(b => entries.push({
+    id: crypto.randomUUID().replace(/-/g, '').slice(0, 12),
+    date: `${ym}-01`,
+    vendor: b.label,
+    amount: -Math.abs(b.amount),
+    category: b.category || 'Biz: Bills & Subs',
+    person: 'Bills',
+    notes: 'Monthly bill (auto)',
+    photoId: null,
+    created_at: now,
+  }));
+  await writeLedger(env, entries);
+}
+
 export async function onRequestGet({ env }) {
   try {
+    await postRecurringBills(env);
     const entries = await readLedger(env);
     entries.sort((a, b) => b.date.localeCompare(a.date) || (b.created_at || '').localeCompare(a.created_at || ''));
     return new Response(JSON.stringify({ ok: true, transactions: entries }), { headers: JSON_HEADERS });
@@ -36,8 +65,8 @@ export async function onRequestPost({ request, env }) {
       date: body.date && /^\d{4}-\d{2}-\d{2}$/.test(body.date) ? body.date : today,
       vendor: String(body.vendor || 'Unknown').trim() || 'Unknown',
       amount: -Math.abs(parseFloat(body.amount) || 0),
-      category: body.category || 'Miscellaneous',
-      person: body.person === 'Naomi' ? 'Naomi' : 'Clancy',
+      category: body.category || 'Everything Else',
+      person: ['Naomi', 'Bills'].includes(body.person) ? body.person : 'Clancy',
       notes: String(body.notes || body.note || '').trim(),
       photoId: body.photoId || null,
       created_at: new Date().toISOString(),
@@ -64,7 +93,7 @@ export async function onRequestPatch({ request, env }) {
 
     const e = entries[idx];
     if (body.category !== undefined) e.category = body.category;
-    if (body.person !== undefined) e.person = body.person === 'Naomi' ? 'Naomi' : 'Clancy';
+    if (body.person !== undefined) e.person = ['Naomi', 'Bills'].includes(body.person) ? body.person : 'Clancy';
     if (body.vendor !== undefined) e.vendor = String(body.vendor).trim() || e.vendor;
     if (body.notes !== undefined) e.notes = String(body.notes).trim();
     if (body.date !== undefined && /^\d{4}-\d{2}-\d{2}$/.test(body.date)) e.date = body.date;
