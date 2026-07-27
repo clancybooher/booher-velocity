@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="theme-color" content="#FAF8F4">
-  <title>Velocity</title>
+  <title>Money is Fun</title>
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -97,6 +97,29 @@
 
     .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-faint); margin: 22px 0 10px; display: flex; justify-content: space-between; align-items: center; }
     .section-title button { font-size: 12px; font-weight: 600; color: var(--wine); text-transform: none; letter-spacing: 0; }
+
+    /* Player cards */
+    .players { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 18px; }
+    .player { background: var(--card); border-radius: var(--radius); padding: 12px 14px; text-align: left; box-shadow: 0 1px 2px rgba(0,0,0,0.04); min-width: 0; }
+    .player-head { display: flex; justify-content: space-between; align-items: baseline; }
+    .player-name { font-size: 12.5px; font-weight: 700; }
+    .player.clancy .player-name { color: var(--wine); }
+    .player.naomi .player-name { color: var(--naomi); }
+    .lead-tag { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--green); }
+    .player-fun { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; margin: 2px 0 7px; }
+    .player-fun span { font-size: 11px; font-weight: 600; color: var(--text-faint); letter-spacing: 0; }
+    .player-sub { font-size: 11px; color: var(--text-faint); margin-top: 6px; }
+    .bar-fill.wine { background: var(--wine); }
+    .bar-fill.teal { background: var(--naomi); }
+
+    /* Awards */
+    .award-row { display: flex; align-items: center; gap: 14px; background: var(--card); border-radius: var(--radius); padding: 13px 16px; margin-bottom: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+    .award-row.locked { opacity: 0.55; }
+    .award-medal { width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: var(--wine-soft); color: var(--wine); }
+    .award-row.locked .award-medal { background: var(--line); color: var(--text-faint); }
+    .award-name { font-size: 14.5px; font-weight: 700; }
+    .award-desc { font-size: 12px; color: var(--text-faint); margin-top: 1px; }
+    .award-prog { font-size: 11.5px; font-weight: 600; color: var(--text-mid); margin-left: auto; flex-shrink: 0; }
 
     /* Top-4 grid */
     .top-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -265,7 +288,7 @@
 
   <!-- Lock -->
   <div id="lock">
-    <div class="lock-logo">Velocity</div>
+    <div class="lock-logo">Money is Fun</div>
     <div class="lock-msg" id="lockMsg">Enter PIN</div>
     <div class="pin-dots" id="pinDots"></div>
     <div class="keypad" id="keypad"></div>
@@ -564,6 +587,29 @@ function renderHome() {
     return `<div class="top-card"><div class="top-name">${esc(c.replace('Biz: ', ''))}</div><div class="top-amt">${fmt0(spent)}</div>${bar}<div class="top-sub">${sub}</div></div>`;
   };
 
+  // Clancy & Naomi player cards — each one's fun-money budget this month
+  const playerCard = (p, cls, barCls) => {
+    const budget = state.budgets[`${p} Fun`] || 0;
+    const spentFun = txns.filter(t => t.category === `${p} Fun`).reduce((s, t) => s + Math.abs(t.amount), 0);
+    const left = Math.max(0, budget - spentFun);
+    const monthTotal = p === 'Clancy' ? cTotal : nTotal;
+    const pct = budget > 0 ? Math.min(100, spentFun / budget * 100) : 0;
+    return { p, cls, barCls, budget, spentFun, left, monthTotal, pct,
+      ratio: budget > 0 ? left / budget : 0 };
+  };
+  const pc = playerCard('Clancy', 'clancy', 'wine');
+  const pn = playerCard('Naomi', 'naomi', 'teal');
+  const leader = (pc.budget > 0 && pn.budget > 0 && pc.ratio !== pn.ratio)
+    ? (pc.ratio > pn.ratio ? 'Clancy' : 'Naomi') : null;
+  const playerHTML = d => `
+    <button class="player ${d.cls}" data-pfilter="${d.p}">
+      <div class="player-head"><div class="player-name">${d.p}</div>${leader === d.p ? '<div class="lead-tag">In the lead</div>' : ''}</div>
+      <div class="player-fun">${fmt0(d.left)} <span>fun left</span></div>
+      ${d.budget > 0 ? `<div class="bar" style="margin-top:0"><div class="bar-fill ${d.barCls}" style="width:${d.pct}%"></div></div>` : ''}
+      <div class="player-sub">${fmt0(d.monthTotal)} spent this month</div>
+    </button>`;
+  const playersHTML = `<div class="players">${playerHTML(pc)}${playerHTML(pn)}</div>`;
+
   const allHTML = groupSection('Personal', GROUPS.Personal) + groupSection('Business', GROUPS.Business);
   const catHTML = visible.size === 0
     ? `<div class="empty">Nothing yet this month.<br>Tap the camera to snap your first receipt.</div>`
@@ -575,10 +621,15 @@ function renderHome() {
 
   return `
     <div class="top-row">
-      <div class="brand">Velocity</div>
+      <div class="brand">Money is Fun</div>
+      <div style="display:flex">
+      <button class="icon-btn" id="btnAwards" aria-label="Awards">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
+      </button>
       <button class="icon-btn" id="btnSettings" aria-label="Settings">
         <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </button>
+      </div>
     </div>
     ${personToggleHTML()}
     <div class="hero">
@@ -586,6 +637,7 @@ function renderHome() {
       <div class="hero-amount">${fmt(total)}</div>
       <div class="hero-split"><b class="c">Clancy ${fmt0(cTotal)}</b> &nbsp;·&nbsp; <b class="n">Naomi ${fmt0(nTotal)}</b>${bTotal > 0 ? ` &nbsp;·&nbsp; <b>Bills ${fmt0(bTotal)}</b>` : ''}</div>
     </div>
+    ${playersHTML}
     ${catHTML}
     ${recent ? `<div class="section-title">Recent</div>${recent}` : ''}
   `;
@@ -642,6 +694,12 @@ function bindContent() {
   const s = $('btnSettings'); if (s) s.onclick = openSettings;
   const bb = $('btnBudgets'); if (bb) bb.onclick = openBudgets;
   const ba = $('btnAll'); if (ba) ba.onclick = () => { state.showAll = !state.showAll; render(); };
+  const aw = $('btnAwards'); if (aw) aw.onclick = openAwards;
+  document.querySelectorAll('[data-pfilter]').forEach(b => b.onclick = () => {
+    state.filter = b.dataset.pfilter;
+    state.month = new Date().toISOString().slice(0, 7);
+    setScreen('history');
+  });
   const mp = $('mPrev'), mn = $('mNext');
   if (mp) mp.onclick = () => { state.month = shiftMonth(state.month, -1); state.filter = 'All'; render(); };
   if (mn) mn.onclick = () => { state.month = shiftMonth(state.month, 1); state.filter = 'All'; render(); };
@@ -785,10 +843,13 @@ function openConfirm(draft, photoId, existingId) {
         toast('Updated');
       } else {
         await api('transactions', { method: 'POST', body: JSON.stringify({ ...payload, photoId: photoId || null }) });
-        toast('Saved — ' + payload.category);
       }
       closeSheet();
       await loadData();
+      if (!existingId) {
+        const streak = calcStreak();
+        toast(streak >= 2 ? `Saved — ${streak}-day streak` : 'Saved — ' + payload.category.replace('Biz: ', ''));
+      }
       render();
     } catch (e) {
       $('btnSave').disabled = false;
@@ -814,6 +875,71 @@ function openDetail(id) {
   const t = state.txns.find(x => x.id === id);
   if (!t) return;
   openConfirm({ vendor: t.vendor, amount: Math.abs(t.amount), date: t.date, category: t.category, notes: t.notes, person: t.person }, t.photoId, t.id);
+}
+
+/* ── Awards ─────────────────────────────────────────────── */
+function calcStreak() {
+  const days = new Set(state.txns.filter(t => t.person !== 'Bills').map(t => t.date));
+  const iso = d => d.toISOString().slice(0, 10);
+  const d = new Date();
+  let streak = 0;
+  if (!days.has(iso(d))) d.setDate(d.getDate() - 1); // today not logged yet still counts a run ending yesterday
+  while (days.has(iso(d))) { streak++; d.setDate(d.getDate() - 1); }
+  return streak;
+}
+
+function calcAwards() {
+  const real = state.txns.filter(t => t.person !== 'Bills');
+  const n = real.length;
+  const nowM = new Date().toISOString().slice(0, 7);
+  const prevM = shiftMonth(nowM, -1);
+  const inM = (t, m) => t.date && t.date.startsWith(m);
+  const spent = (m, cat) => state.txns
+    .filter(t => inM(t, m) && (!cat || t.category === cat))
+    .reduce((s, t) => s + Math.abs(t.amount), 0);
+  const budgetTotal = Object.values(state.budgets).reduce((s, v) => s + v, 0);
+  const prevHasData = state.txns.some(t => inM(t, prevM));
+  const streak = calcStreak();
+  const datesNow = real.filter(t => inM(t, nowM) && t.category === 'Dates').length;
+  const cNow = real.filter(t => inM(t, nowM) && t.person === 'Clancy').length;
+  const nNow = real.filter(t => inM(t, nowM) && t.person === 'Naomi').length;
+  const groBudget = state.budgets['Groceries'] || 0;
+
+  return [
+    { name: 'First Snap', desc: 'Log your first expense', earned: n >= 1, prog: `${Math.min(n, 1)}/1` },
+    { name: 'Ten In', desc: 'Log 10 expenses', earned: n >= 10, prog: `${Math.min(n, 10)}/10` },
+    { name: 'Fifty Club', desc: 'Log 50 expenses', earned: n >= 50, prog: `${Math.min(n, 50)}/50` },
+    { name: 'Century', desc: 'Log 100 expenses', earned: n >= 100, prog: `${Math.min(n, 100)}/100` },
+    { name: 'Three-Day Streak', desc: 'Log something 3 days in a row', earned: streak >= 3, prog: `${Math.min(streak, 3)}/3 days` },
+    { name: 'Week Streak', desc: 'Seven days in a row', earned: streak >= 7, prog: `${Math.min(streak, 7)}/7 days` },
+    { name: 'Date Night Regulars', desc: 'Four date nights in one month', earned: datesNow >= 4, prog: `${Math.min(datesNow, 4)}/4 this month` },
+    { name: 'Team Effort', desc: 'You each log 5+ in a month', earned: cNow >= 5 && nNow >= 5, prog: `C ${Math.min(cNow, 5)}/5 · N ${Math.min(nNow, 5)}/5` },
+    { name: 'Grocery Guru', desc: 'A full month with groceries under budget', earned: prevHasData && groBudget > 0 && spent(prevM, 'Groceries') <= groBudget, prog: prevHasData ? `${fmt0(spent(prevM, 'Groceries'))} of ${fmt0(groBudget)} last month` : 'Needs a full month' },
+    { name: 'Clean Month', desc: 'Finish a whole month under total budget', earned: prevHasData && budgetTotal > 0 && spent(prevM) <= budgetTotal, prog: prevHasData ? `${fmt0(spent(prevM))} of ${fmt0(budgetTotal)} last month` : 'Needs a full month' },
+  ];
+}
+
+function openAwards() {
+  const awards = calcAwards();
+  const earned = awards.filter(a => a.earned);
+  const medal = `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>`;
+  const row = a => `
+    <div class="award-row ${a.earned ? '' : 'locked'}">
+      <div class="award-medal">${medal}</div>
+      <div style="min-width:0">
+        <div class="award-name">${esc(a.name)}</div>
+        <div class="award-desc">${esc(a.desc)}</div>
+      </div>
+      <div class="award-prog">${a.earned ? 'Earned' : esc(a.prog)}</div>
+    </div>`;
+  const streak = calcStreak();
+  openSheet(`
+    <div class="sheet-title">Awards</div>
+    <div style="font-size:13px;color:var(--text-mid);margin-bottom:14px">${earned.length} of ${awards.length} earned${streak >= 2 ? ` · ${streak}-day logging streak` : ''}</div>
+    ${awards.map(row).join('')}
+    <button class="btn-ghost" id="btnCloseAwards">Close</button>
+  `);
+  $('btnCloseAwards').onclick = closeSheet;
 }
 
 /* Budgets editor */
@@ -914,7 +1040,7 @@ function openSettings() {
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
       Lock app
     </button>
-    <div style="text-align:center;font-size:12px;color:var(--text-faint);margin-top:12px">Velocity · Booher family budget</div>
+    <div style="text-align:center;font-size:12px;color:var(--text-faint);margin-top:12px">Money is Fun · Booher family budget</div>
   `);
   $('optRecurring').onclick = () => { closeSheet(); openRecurring(); };
   $('optBudgets2').onclick = () => { closeSheet(); openBudgets(); };

@@ -1,8 +1,9 @@
-# Velocity — Booher family budget
+# Money is Fun — Booher family budget
 
-Dead-simple expense tracker for Clancy & Naomi. Snap a receipt (or a photo of
-the thing you bought), the AI reads it, you tap Save. One shared ledger, each
-expense tagged Clancy or Naomi.
+Dead-simple expense tracker for Clancy & Naomi (formerly "Velocity"; repo name
+kept). Snap a receipt (or a photo of the thing you bought), the AI reads it,
+you tap Save. One shared ledger, each expense tagged Clancy or Naomi, with
+player cards, awards, and logging streaks to keep it fun.
 
 **Live app:** deployed on Cloudflare Pages from this repo (push to `main` deploys).
 
