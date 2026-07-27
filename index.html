@@ -98,6 +98,14 @@
     .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-faint); margin: 22px 0 10px; display: flex; justify-content: space-between; align-items: center; }
     .section-title button { font-size: 12px; font-weight: 600; color: var(--wine); text-transform: none; letter-spacing: 0; }
 
+    /* Top-4 grid */
+    .top-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .top-card { background: var(--card); border-radius: var(--radius); padding: 12px 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); min-width: 0; }
+    .top-name { font-size: 12.5px; font-weight: 600; color: var(--text-mid); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .top-amt { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; margin: 2px 0 7px; }
+    .top-sub { font-size: 11px; color: var(--text-faint); margin-top: 6px; }
+    .btn-all { display: block; width: 100%; text-align: center; padding: 12px; margin-top: 4px; font-size: 13px; font-weight: 600; color: var(--text-mid); }
+
     /* Category cards */
     .cat-card { background: var(--card); border-radius: var(--radius); padding: 13px 16px; margin-bottom: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
     .cat-top { display: flex; justify-content: space-between; align-items: baseline; }
@@ -317,6 +325,7 @@ const state = {
   screen: 'home',
   month: new Date().toISOString().slice(0, 7), // YYYY-MM
   filter: 'All',
+  showAll: false,
   pinMode: null, // 'enter' | 'create' | 'confirm'
   pinBuf: '',
   pinFirst: '',
@@ -526,9 +535,41 @@ function renderHome() {
     return `<div class="section-title">${name} <span style="text-transform:none;letter-spacing:0">${head}</span></div>` + cats.map(catCard).join('');
   };
 
+  // Top 4 most-used categories: ranked by how often you snap them
+  // (this month + last month, auto bills excluded), core weeklies as fallback
+  const prevMonth = shiftMonth(nowMonth, -1);
+  const useCount = {};
+  state.txns.forEach(t => {
+    if (t.person === 'Bills' || !t.date) return;
+    if (!t.date.startsWith(nowMonth) && !t.date.startsWith(prevMonth)) return;
+    useCount[t.category] = (useCount[t.category] || 0) + 1;
+  });
+  const ranked = Object.keys(useCount)
+    .sort((a, b) => useCount[b] - useCount[a] || (byCat[b] || 0) - (byCat[a] || 0));
+  ['Groceries', 'Dates', 'Clancy Fun', 'Naomi Fun'].forEach(c => { if (!ranked.includes(c)) ranked.push(c); });
+  const top4 = ranked.slice(0, 4);
+
+  const topTile = c => {
+    const spent = byCat[c] || 0;
+    const budget = state.budgets[c] || 0;
+    let bar = '', sub = '';
+    if (budget > 0) {
+      const pct = Math.min(100, spent / budget * 100);
+      const cls = spent > budget ? 'over' : pct >= 80 ? 'warn' : '';
+      bar = `<div class="bar" style="margin-top:0"><div class="bar-fill ${cls}" style="width:${pct}%"></div></div>`;
+      sub = spent > budget ? `${fmt0(spent - budget)} over` : `${fmt0(budget - spent)} left of ${fmt0(budget)}`;
+    } else {
+      sub = 'no budget set';
+    }
+    return `<div class="top-card"><div class="top-name">${esc(c.replace('Biz: ', ''))}</div><div class="top-amt">${fmt0(spent)}</div>${bar}<div class="top-sub">${sub}</div></div>`;
+  };
+
+  const allHTML = groupSection('Personal', GROUPS.Personal) + groupSection('Business', GROUPS.Business);
   const catHTML = visible.size === 0
     ? `<div class="empty">Nothing yet this month.<br>Tap the camera to snap your first receipt.</div>`
-    : groupSection('Personal', GROUPS.Personal) + groupSection('Business', GROUPS.Business);
+    : `<div class="top-grid">${top4.map(topTile).join('')}</div>
+       <button class="btn-all" id="btnAll">${state.showAll ? 'Hide categories ▴' : 'All categories ▾'}</button>
+       ${state.showAll ? allHTML : ''}`;
 
   const recent = state.txns.slice(0, 5).map(txnRowHTML).join('');
 
@@ -600,6 +641,7 @@ function bindContent() {
   document.querySelectorAll('[data-filter]').forEach(b => b.onclick = () => { state.filter = b.dataset.filter; render(); });
   const s = $('btnSettings'); if (s) s.onclick = openSettings;
   const bb = $('btnBudgets'); if (bb) bb.onclick = openBudgets;
+  const ba = $('btnAll'); if (ba) ba.onclick = () => { state.showAll = !state.showAll; render(); };
   const mp = $('mPrev'), mn = $('mNext');
   if (mp) mp.onclick = () => { state.month = shiftMonth(state.month, -1); state.filter = 'All'; render(); };
   if (mn) mn.onclick = () => { state.month = shiftMonth(state.month, 1); state.filter = 'All'; render(); };
