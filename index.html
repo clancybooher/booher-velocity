@@ -286,8 +286,13 @@
 </head>
 <body>
 
+  <!-- Boot splash — shown until we know whether a session exists -->
+  <div id="splash" style="position:fixed;inset:0;z-index:110;background:var(--bg);display:flex;align-items:center;justify-content:center">
+    <div class="lock-logo">Money is Fun</div>
+  </div>
+
   <!-- Lock -->
-  <div id="lock">
+  <div id="lock" class="hidden">
     <div class="lock-logo">Money is Fun</div>
     <div class="lock-msg" id="lockMsg">Enter PIN</div>
     <div class="pin-dots" id="pinDots"></div>
@@ -404,6 +409,7 @@ function renderDots() {
 function showLock(mode) {
   state.pinMode = mode;
   state.pinBuf = '';
+  $('splash').style.display = 'none';
   $('lock').classList.remove('hidden');
   $('app').classList.remove('active');
   const msg = $('lockMsg');
@@ -449,6 +455,7 @@ async function pinKey(k) {
 }
 
 async function unlock() {
+  $('splash').style.display = 'none';
   $('lock').classList.add('hidden');
   $('app').classList.add('active');
   await loadData();
@@ -613,7 +620,8 @@ function renderHome() {
   const allHTML = groupSection('Personal', GROUPS.Personal) + groupSection('Business', GROUPS.Business);
   const catHTML = visible.size === 0
     ? `<div class="empty">Nothing yet this month.<br>Tap the camera to snap your first receipt.</div>`
-    : `<div class="top-grid">${top4.map(topTile).join('')}</div>
+    : `<div class="section-title">Top categories</div>
+       <div class="top-grid">${top4.map(topTile).join('')}</div>
        <button class="btn-all" id="btnAll">${state.showAll ? 'Hide categories ▴' : 'All categories ▾'}</button>
        ${state.showAll ? allHTML : ''}`;
 
@@ -1074,6 +1082,13 @@ renderDots();
 })();
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+
+// iOS resumes the PWA from memory — refresh data whenever the app comes back
+function refreshIfUnlocked() {
+  if ($('app').classList.contains('active')) loadData().then(render);
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshIfUnlocked(); });
+window.addEventListener('pageshow', e => { if (e.persisted) refreshIfUnlocked(); });
 </script>
 </body>
 </html>
