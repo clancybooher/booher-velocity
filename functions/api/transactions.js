@@ -72,6 +72,7 @@ export async function onRequestPost({ request, env }) {
       created_at: new Date().toISOString(),
     };
 
+    // Re-read right before writing so a save from the other phone isn't lost
     const entries = await readLedger(env);
     entries.push(entry);
     await writeLedger(env, entries);

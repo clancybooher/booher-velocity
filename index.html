@@ -79,6 +79,20 @@
     .icon-btn { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 12px; color: var(--text-mid); }
     .icon-btn:active { background: var(--line); }
 
+    /* Who-bar */
+    .who-bar {
+      display: flex; align-items: center; justify-content: space-between; width: 100%;
+      background: var(--card); border-radius: 999px; padding: 10px 16px; margin: 14px 0 18px;
+      font-size: 13.5px; font-weight: 600; color: var(--text-mid);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    .who-bar.clancy b { color: var(--wine); }
+    .who-bar.naomi b { color: var(--naomi); }
+    .who-change { font-size: 12px; font-weight: 700; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.05em; }
+
+    /* Sync banner */
+    .sync-note { text-align: center; font-size: 11.5px; color: var(--text-faint); margin: -8px 0 12px; }
+
     /* Person toggle */
     .person-toggle { display: flex; background: #EFEAE3; border-radius: 999px; padding: 3px; margin: 14px 0 18px; }
     .person-toggle button {
@@ -349,7 +363,8 @@ const fmt0 = n => '$' + Math.round(Math.abs(n)).toLocaleString('en-US');
 const state = {
   txns: [],
   budgets: {},
-  person: localStorage.getItem('velocity_person') || 'Clancy',
+  person: localStorage.getItem('velocity_person') || null, // null → ask whose phone this is
+  lastSync: 0,
   screen: 'home',
   month: new Date().toISOString().slice(0, 7), // YYYY-MM
   filter: 'All',
@@ -460,6 +475,44 @@ async function unlock() {
   $('app').classList.add('active');
   await loadData();
   render();
+  if (!state.person) askWhoseParty();
+  startAutoSync();
+}
+
+/* One-time per phone: whose phone is this? */
+function askWhoseParty() {
+  openSheet(`
+    <div class="sheet-title">Whose phone is this?</div>
+    <div style="font-size:13px;color:var(--text-mid);margin-bottom:16px">Everything you log from this phone gets tagged to you. You can change it anytime in Settings.</div>
+    <button class="snap-opt" data-whose="Clancy" style="justify-content:center;color:var(--wine)">This is Clancy's phone</button>
+    <button class="snap-opt" data-whose="Naomi" style="justify-content:center;color:var(--naomi)">This is Naomi's phone</button>
+  `);
+  document.querySelectorAll('[data-whose]').forEach(b => b.onclick = () => {
+    state.person = b.dataset.whose;
+    localStorage.setItem('velocity_person', state.person);
+    closeSheet();
+    toast(`Set to ${state.person}`);
+    render();
+  });
+}
+
+/* Keep both phones in step: poll while the app is open */
+let syncTimer = null;
+function startAutoSync() {
+  if (syncTimer) clearInterval(syncTimer);
+  syncTimer = setInterval(() => {
+    if (!document.hidden && $('app').classList.contains('active') && !$('sheetBack').classList.contains('open')) {
+      syncNow();
+    }
+  }, 20000);
+}
+
+async function syncNow() {
+  const before = state.txns.length;
+  await loadData();
+  const added = state.txns.length - before;
+  render();
+  return added;
 }
 
 /* ── Data ───────────────────────────────────────────────── */
@@ -496,12 +549,14 @@ function render() {
   bindContent();
 }
 
-function personToggleHTML() {
+function whoBarHTML() {
+  const p = state.person || 'nobody yet';
+  const cls = state.person === 'Naomi' ? 'naomi' : 'clancy';
   return `
-    <div class="person-toggle">
-      <button data-person="Clancy" class="${state.person === 'Clancy' ? 'on clancy' : ''}">Clancy</button>
-      <button data-person="Naomi" class="${state.person === 'Naomi' ? 'on naomi' : ''}">Naomi</button>
-    </div>`;
+    <button class="who-bar ${cls}" id="btnWho">
+      <span>Logging as <b>${esc(p)}</b></span>
+      <span class="who-change">Change</span>
+    </button>`;
 }
 
 function txnRowHTML(t) {
@@ -631,6 +686,9 @@ function renderHome() {
     <div class="top-row">
       <div class="brand">Money is Fun</div>
       <div style="display:flex">
+      <button class="icon-btn" id="btnSync" aria-label="Refresh">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      </button>
       <button class="icon-btn" id="btnAwards" aria-label="Awards">
         <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
       </button>
@@ -639,7 +697,7 @@ function renderHome() {
       </button>
       </div>
     </div>
-    ${personToggleHTML()}
+    ${whoBarHTML()}
     <div class="hero">
       <div class="hero-label">Spent in ${monthLabel(nowMonth).split(' ')[0]}</div>
       <div class="hero-amount">${fmt(total)}</div>
@@ -692,17 +750,19 @@ function renderHistory() {
 }
 
 function bindContent() {
-  document.querySelectorAll('[data-person]').forEach(b => b.onclick = () => {
-    state.person = b.dataset.person;
-    localStorage.setItem('velocity_person', state.person);
-    render();
-  });
+  const who = $('btnWho'); if (who) who.onclick = askWhoseParty;
   document.querySelectorAll('[data-txn]').forEach(b => b.onclick = () => openDetail(b.dataset.txn));
   document.querySelectorAll('[data-filter]').forEach(b => b.onclick = () => { state.filter = b.dataset.filter; render(); });
   const s = $('btnSettings'); if (s) s.onclick = openSettings;
   const bb = $('btnBudgets'); if (bb) bb.onclick = openBudgets;
   const ba = $('btnAll'); if (ba) ba.onclick = () => { state.showAll = !state.showAll; render(); };
   const aw = $('btnAwards'); if (aw) aw.onclick = openAwards;
+  const sy = $('btnSync'); if (sy) sy.onclick = async () => {
+    sy.style.opacity = '0.4';
+    const added = await syncNow();
+    toast(added > 0 ? `${added} new ${added === 1 ? 'expense' : 'expenses'}` : 'Up to date');
+    const s2 = $('btnSync'); if (s2) s2.style.opacity = '';
+  };
   document.querySelectorAll('[data-pfilter]').forEach(b => b.onclick = () => {
     state.filter = b.dataset.pfilter;
     state.month = new Date().toISOString().slice(0, 7);
@@ -757,7 +817,7 @@ async function handleImage(file) {
     const blob = await compressImage(file);
     const fd = new FormData();
     fd.append('image', blob, 'receipt.jpg');
-    fd.append('person', state.person);
+    fd.append('person', state.person || 'Clancy');
     const res = await api('receipt', { method: 'POST', body: fd });
     spin(false);
     openConfirm(res.draft, res.photoId);
@@ -798,7 +858,7 @@ function openConfirm(draft, photoId, existingId) {
     <div class="budget-group">Business</div>
     <div class="cat-grid">${GROUPS.Business.map(chip).join('')}</div>`;
   const photo = photoId ? `<img class="confirm-photo" src="/api/photo/${photoId}" alt="">` : '';
-  const person = draft.person || state.person;
+  const person = draft.person || state.person || 'Clancy';
 
   openSheet(`
     <div class="sheet-title">${existingId ? 'Edit expense' : 'Save expense'}</div>
@@ -1085,10 +1145,29 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
 
 // iOS resumes the PWA from memory — refresh data whenever the app comes back
 function refreshIfUnlocked() {
-  if ($('app').classList.contains('active')) loadData().then(render);
+  if ($('app').classList.contains('active')) syncNow();
 }
 document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshIfUnlocked(); });
 window.addEventListener('pageshow', e => { if (e.persisted) refreshIfUnlocked(); });
+
+// Pull down at the top of the list to refresh
+(function pullToRefresh() {
+  const el = $('content');
+  let startY = 0, pulling = false;
+  el.addEventListener('touchstart', e => {
+    pulling = el.scrollTop <= 0;
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+  el.addEventListener('touchend', async e => {
+    if (!pulling) return;
+    pulling = false;
+    const dy = e.changedTouches[0].clientY - startY;
+    if (dy > 70 && el.scrollTop <= 0) {
+      const added = await syncNow();
+      toast(added > 0 ? `${added} new ${added === 1 ? 'expense' : 'expenses'}` : 'Up to date');
+    }
+  }, { passive: true });
+})();
 </script>
 </body>
 </html>
