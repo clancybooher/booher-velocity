@@ -15,23 +15,25 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --wine: #8A2437;
-      --wine-dark: #5E1826;
-      --wine-soft: #F7EDEF;
-      --bg: #F7F6F3;
-      --card: #FFFFFF;
-      --ink: #12151A;          /* deep charcoal-navy — trust */
-      --text: #12151A;
-      --text-mid: #5F6570;
-      --text-faint: #9AA0AA;
-      --line: #E6E4DF;
-      --line-soft: #EFEDE8;
-      --teal: #0F766E;         /* positive / on-track */
-      --teal-soft: #E6F2F0;
-      --green: #0F766E;
-      --red: #BE3A3A;
-      --amber: #A9631A;
-      --naomi: #1F6F8B;
+      --wine: #8C3A44;
+      --wine-dark: #6B2B34;
+      --wine-soft: #F4EAEA;
+      /* Warm paper, not white. Ink is a soft espresso, never pure black. */
+      --bg: #F5F2EC;
+      --card: #FDFCFA;
+      --ink: #2E2A26;          /* warm espresso — reads soft, still authoritative */
+      --ink-deep: #241F1B;
+      --text: #2E2A26;
+      --text-mid: #6D655C;
+      --text-faint: #A29889;
+      --line: #E5DFD5;
+      --line-soft: #EFEAE1;
+      --teal: #4A7C6F;         /* muted sage — calm positive */
+      --teal-soft: #E8F0EC;
+      --green: #4A7C6F;
+      --red: #B4574C;          /* clay, not alarm red */
+      --amber: #B07D4A;        /* warm ochre */
+      --naomi: #4A7A8C;        /* dusty blue */
       --radius: 12px;
       --radius-lg: 18px;
       /* Depth comes from hairlines and spacing, not drop shadows */
@@ -76,7 +78,7 @@
     .lock-msg.err { color: var(--red); font-weight: 600; }
     .pin-dots { display: flex; gap: 15px; height: 13px; }
     .pin-dot { width: 11px; height: 11px; border-radius: 50%; border: 1.5px solid var(--text-faint); transition: all 0.18s var(--ease); }
-    .pin-dot.filled { background: var(--text); border-color: var(--text); transform: scale(1.12); }
+    .pin-dot.filled { background: var(--wine); border-color: var(--wine); transform: scale(1.12); }
     .keypad { display: grid; grid-template-columns: repeat(3, 74px); gap: 16px; }
     .key {
       height: 66px; border-radius: 50%; background: var(--card);
@@ -220,8 +222,8 @@
     .bar-fill { height: 100%; border-radius: 99px; background: var(--teal); transition: width 0.6s var(--ease); }
     .bar-fill.warn { background: var(--amber); }
     .bar-fill.over { background: var(--red); }
-    .bar-fill.wine { background: var(--wine); }
-    .bar-fill.teal { background: var(--naomi); }
+    .bar-fill.wine { background: var(--wine); opacity: 0.85; }
+    .bar-fill.teal { background: var(--naomi); opacity: 0.85; }
 
     /* Transaction rows */
     .txn {
@@ -262,7 +264,7 @@
       box-shadow: var(--shadow-sm); flex-shrink: 0;
       transition: all 0.15s var(--ease);
     }
-    .chip.on { background: var(--text); color: var(--bg); font-weight: 600; }
+    .chip.on { background: var(--ink); color: var(--card); font-weight: 600; }
 
     /* ── Bottom nav ──────────────────────────────────────── */
     .bottom-nav {
@@ -335,7 +337,7 @@
       background: var(--card); color: var(--text-mid); border: 1px solid var(--line);
       transition: all 0.15s var(--ease);
     }
-    .cat-chip.on { background: var(--text); color: var(--bg); border-color: var(--text); font-weight: 600; }
+    .cat-chip.on { background: var(--ink); color: var(--card); border-color: var(--text); font-weight: 600; }
 
     .confirm-photo { width: 100%; max-height: 200px; object-fit: contain; border-radius: 14px; background: var(--card); margin-bottom: 14px; }
     .save-hint { display: none; font-size: 13px; font-weight: 600; color: var(--red); text-align: center; margin-top: 10px; }
@@ -345,18 +347,20 @@
 
     /* Weekly pace strip */
     .week-strip {
-      background: var(--ink); color: #fff;
-      border-radius: var(--radius); padding: 16px 18px 14px; margin-bottom: 10px;
+      background: var(--card); border: var(--hairline);
+      border-radius: var(--radius); padding: 17px 18px 16px; margin-bottom: 10px;
     }
     .week-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-    .week-label { font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.11em; }
-    .week-amt { font-size: 26px; font-weight: 620; letter-spacing: -0.035em; margin-top: 6px; line-height: 1; }
-    .week-amt.over { color: #F6A9A9; }
-    .week-right { font-size: 12.5px; font-weight: 550; color: rgba(255,255,255,0.62); letter-spacing: -0.01em; }
-    .week-bar { height: 3px; background: rgba(255,255,255,0.16); border-radius: 99px; margin-top: 15px; overflow: hidden; }
-    .week-note { font-size: 11.5px; font-weight: 500; color: rgba(255,255,255,0.5); margin-top: 10px; letter-spacing: -0.005em; }
-    .week-bar-fill { height: 100%; border-radius: 99px; background: #fff; transition: width 0.6s var(--ease); }
-    .week-bar-fill.over { background: #F6A9A9; }
+    .week-label { font-size: 10.5px; font-weight: 600; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.1em; }
+    .week-amt { font-size: 27px; font-weight: 600; letter-spacing: -0.035em; margin-top: 8px; line-height: 1; color: var(--ink); }
+    .week-amt.over { color: var(--red); }
+    .week-right { font-size: 12.5px; font-weight: 550; color: var(--text-mid); letter-spacing: -0.01em; }
+    .week-bar { height: 3px; background: var(--line); border-radius: 99px; margin-top: 16px; overflow: hidden; }
+    .week-note { font-size: 11.5px; font-weight: 500; color: var(--text-mid); margin-top: 12px; letter-spacing: -0.005em; }
+    .week-what { font-size: 11px; font-weight: 500; color: var(--text-faint); margin-top: 4px; letter-spacing: -0.005em; }
+    .week-bar-fill { height: 100%; border-radius: 99px; background: var(--teal); transition: width 0.6s var(--ease); }
+    .week-bar-fill.warn { background: var(--amber); }
+    .week-bar-fill.over { background: var(--red); }
 
     /* Goals */
     .goal-card {
@@ -396,7 +400,7 @@
 
     .btn-primary {
       width: 100%; padding: 15px; border-radius: 13px;
-      background: var(--text); color: var(--bg); font-size: 15px; font-weight: 600;
+      background: var(--ink); color: var(--card); font-size: 15px; font-weight: 600;
       letter-spacing: -0.015em; margin-top: 10px;
       box-shadow: var(--shadow-sm);
       transition: transform 0.14s var(--ease), opacity 0.14s var(--ease);
@@ -444,7 +448,7 @@
     .spin-label { font-size: 15px; font-weight: 600; color: var(--text-mid); }
     #toast {
       position: fixed; left: 50%; bottom: calc(var(--safe-bottom) + 100px);
-      background: var(--text); color: var(--bg); font-size: 13.5px; font-weight: 550;
+      background: var(--ink-deep); color: var(--card); font-size: 13.5px; font-weight: 550;
       letter-spacing: -0.015em;
       padding: 11px 18px; border-radius: 999px; z-index: 95;
       box-shadow: var(--shadow-lg);
@@ -858,15 +862,16 @@ function renderHome() {
     <div class="week-strip">
       <div class="week-head">
         <div>
-          <div class="week-label">Left this week</div>
+          <div class="week-label">Left to spend this week</div>
           <div class="week-amt ${weekLeft < 0 ? 'over' : ''}">${weekLeft < 0 ? fmt0(-weekLeft) + ' over' : fmt0(weekLeft)}</div>
         </div>
         <div class="week-right">${fmt0(weekSpent)} of ${fmt0(weeklyBudget)}</div>
       </div>
-      <div class="week-bar"><div class="week-bar-fill ${weekLeft < 0 ? 'over' : ''}" style="width:${Math.max(weekPct, weekSpent > 0 ? 2 : 0)}%"></div></div>
+      <div class="week-bar"><div class="week-bar-fill ${weekLeft < 0 ? 'over' : weekPct >= 80 ? 'warn' : ''}" style="width:${Math.max(weekPct, weekSpent > 0 ? 2 : 0)}%"></div></div>
       <div class="week-note">${weekDaysLeft === 0 ? 'Last day of the week'
         : weekLeft < 0 ? `${weekDaysLeft} ${weekDaysLeft === 1 ? 'day' : 'days'} left in the week`
         : `${fmt0(weekLeft / Math.max(weekDaysLeft, 1))} a day for the next ${weekDaysLeft} ${weekDaysLeft === 1 ? 'day' : 'days'}`}</div>
+      <div class="week-what">Covers groceries, dates, and both fun budgets</div>
     </div>` : '';
 
   const catHTML = visible.size === 0
