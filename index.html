@@ -15,25 +15,25 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --wine: #8C3A44;
-      --wine-dark: #6B2B34;
-      --wine-soft: #F4EAEA;
-      /* Warm paper, not white. Ink is a soft espresso, never pure black. */
-      --bg: #F5F2EC;
-      --card: #FDFCFA;
-      --ink: #2E2A26;          /* warm espresso — reads soft, still authoritative */
-      --ink-deep: #241F1B;
-      --text: #2E2A26;
-      --text-mid: #6D655C;
-      --text-faint: #A29889;
-      --line: #E5DFD5;
-      --line-soft: #EFEAE1;
-      --teal: #4A7C6F;         /* muted sage — calm positive */
-      --teal-soft: #E8F0EC;
-      --green: #4A7C6F;
-      --red: #B4574C;          /* clay, not alarm red */
-      --amber: #B07D4A;        /* warm ochre */
-      --naomi: #4A7A8C;        /* dusty blue */
+      --wine: #8E4A4A;         /* enji — muted crimson */
+      --wine-dark: #6B3636;
+      --wine-soft: #F0E7E4;
+      /* washi paper, sumi ink, and pigments — nothing pure, nothing loud */
+      --bg: #F2EFE9;           /* kinari — undyed paper */
+      --card: #F2EFE9;         /* no card: content sits on the paper */
+      --ink: #33302B;          /* sumi — soft black with warmth */
+      --ink-deep: #211F1C;
+      --text: #33302B;
+      --text-mid: #7A736A;
+      --text-faint: #A9A297;
+      --line: #DDD8CE;         /* the thin rule, used sparingly */
+      --line-soft: #E8E4DB;
+      --teal: #6B8E7F;         /* matcha */
+      --teal-soft: #E7EDE8;
+      --green: #6B8E7F;
+      --red: #A85B52;          /* akane — madder */
+      --amber: #B8925C;        /* kihada */
+      --naomi: #6C8494;        /* kachi — indigo grey */
       --radius: 12px;
       --radius-lg: 18px;
       /* Depth comes from hairlines and spacing, not drop shadows */
@@ -91,10 +91,10 @@
     /* ── App shell ───────────────────────────────────────── */
     #app { display: none; flex-direction: column; height: 100%; }
     #app.active { display: flex; }
-    .content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: calc(var(--safe-top) + 16px) 18px 110px; }
+    .content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: calc(var(--safe-top) + 20px) 26px 120px; }
 
     .top-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
-    .brand { font-size: 16px; font-weight: 620; letter-spacing: -0.03em; color: var(--ink); }
+    .brand { font-size: 13px; font-weight: 400; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-mid); }
     .icon-btn {
       width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;
       border-radius: 10px; color: var(--text-mid);
@@ -128,54 +128,61 @@
     .person-toggle button.on.naomi { color: var(--naomi); }
 
     /* Month hero */
-    .hero { text-align: center; margin: 26px 0 28px; }
-    .hero-label { font-size: 11px; font-weight: 600; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.1em; }
-    .hero-amount { font-size: 46px; font-weight: 620; letter-spacing: -0.042em; margin-top: 10px; line-height: 1; color: var(--ink); }
-    .hero-amount .cents { font-size: 0.56em; font-weight: 550; color: var(--text-mid); letter-spacing: -0.02em; }
-    .hero-split {
-      display: inline-flex; align-items: center; gap: 10px;
-      font-size: 12.5px; font-weight: 500; color: var(--text-mid); margin-top: 14px;
+    /* ma — the number is given room, and sits left like a brushstroke */
+    .hero { text-align: left; margin: 44px 0 52px; }
+    .hero-label {
+      font-size: 10.5px; font-weight: 400; color: var(--text-faint);
+      text-transform: uppercase; letter-spacing: 0.22em;
     }
-    .hero-split .dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
-    .hero-split .seg { display: inline-flex; align-items: center; gap: 6px; }
-    .hero-split b { font-weight: 600; color: var(--ink); }
+    .hero-amount {
+      font-size: 54px; font-weight: 250; letter-spacing: -0.03em;
+      margin-top: 18px; line-height: 1; color: var(--ink);
+    }
+    .hero-amount .cents { font-size: 0.42em; font-weight: 300; color: var(--text-faint); letter-spacing: 0; margin-left: 1px; }
+    .hero-split {
+      display: flex; align-items: center; gap: 20px;
+      font-size: 11.5px; font-weight: 400; color: var(--text-mid); margin-top: 26px;
+      letter-spacing: 0.02em;
+    }
+    .hero-split .dot { width: 4px; height: 4px; border-radius: 50%; flex-shrink: 0; }
+    .hero-split .seg { display: inline-flex; align-items: center; gap: 7px; }
+    .hero-split b { font-weight: 500; color: var(--ink); }
 
     .section-title {
-      font-size: 11.5px; font-weight: 650; text-transform: uppercase; letter-spacing: 0.09em;
-      color: var(--text-faint); margin: 26px 0 10px;
+      font-size: 10px; font-weight: 400; text-transform: uppercase; letter-spacing: 0.24em;
+      color: var(--text-faint); margin: 52px 0 4px;
       display: flex; justify-content: space-between; align-items: center;
+      padding-bottom: 14px; border-bottom: 1px solid var(--line);
     }
-    .section-title button { font-size: 12px; font-weight: 600; color: var(--text-mid); text-transform: none; letter-spacing: -0.01em; }
-    .section-title button:active { color: var(--wine); }
+    .section-title button { font-size: 11px; font-weight: 400; color: var(--text-mid); text-transform: none; letter-spacing: 0.02em; }
+    .section-title button:active { opacity: 0.5; }
 
     /* Player cards */
     .players {
-      display: grid; grid-template-columns: 1fr 1fr;
-      background: var(--card); border: var(--hairline); border-radius: var(--radius);
-      overflow: hidden; margin-bottom: 10px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 28px;
+      margin-bottom: 0; padding-top: 4px;
     }
     .player {
-      padding: 14px 16px 15px; text-align: left; min-width: 0;
-      transition: background 0.15s var(--ease);
+      padding: 0; text-align: left; min-width: 0;
+      transition: opacity 0.2s var(--ease);
     }
-    .player:first-child { border-right: var(--hairline); }
-    .player:active { background: var(--line-soft); }
-    .player-head { display: flex; justify-content: space-between; align-items: center; gap: 6px; min-height: 18px; }
+    .player:active { opacity: 0.55; }
+    .player-head { display: flex; justify-content: space-between; align-items: center; gap: 6px; min-height: 16px; }
     .player-name {
-      display: inline-flex; align-items: center; gap: 6px;
-      font-size: 12px; font-weight: 600; letter-spacing: -0.01em; color: var(--text-mid);
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: 11px; font-weight: 400; letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--text-faint);
     }
-    .player-name::before { content: ''; width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+    .player-name::before { content: ''; width: 4px; height: 4px; border-radius: 50%; flex-shrink: 0; }
     .player.clancy .player-name::before { background: var(--wine); }
     .player.naomi .player-name::before { background: var(--naomi); }
     .lead-tag {
-      font-size: 9px; font-weight: 650; text-transform: uppercase; letter-spacing: 0.06em;
-      color: var(--teal); background: var(--teal-soft);
-      padding: 3px 7px; border-radius: 4px; white-space: nowrap;
+      font-size: 9px; font-weight: 400; text-transform: uppercase; letter-spacing: 0.12em;
+      color: var(--teal); white-space: nowrap;
     }
-    .player-fun { font-size: 23px; font-weight: 620; letter-spacing: -0.038em; margin: 6px 0 0; line-height: 1; }
-    .player-fun span { font-size: 11px; font-weight: 500; color: var(--text-faint); letter-spacing: -0.01em; margin-left: 3px; }
-    .player-sub { font-size: 11.5px; color: var(--text-faint); margin-top: 8px; letter-spacing: -0.005em; }
+    .player-fun { font-size: 26px; font-weight: 280; letter-spacing: -0.025em; margin: 13px 0 0; line-height: 1; color: var(--ink); }
+    .player-fun span { font-size: 10.5px; font-weight: 400; color: var(--text-faint); letter-spacing: 0.02em; margin-left: 5px; }
+    .player-sub { font-size: 11px; color: var(--text-faint); margin-top: 11px; letter-spacing: 0.01em; }
 
     /* Awards */
     .award-row { display: flex; align-items: center; gap: 14px; background: var(--card); border-radius: var(--radius); padding: 13px 16px; margin-bottom: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
@@ -187,23 +194,20 @@
     .award-prog { font-size: 11.5px; font-weight: 600; color: var(--text-mid); margin-left: auto; flex-shrink: 0; }
 
     /* Top-4 grid */
-    /* Grouped list — one surface, hairline separated (Apple Finance pattern) */
-    .group {
-      background: var(--card); border-radius: var(--radius);
-      border: var(--hairline); overflow: hidden;
-    }
+    /* No containers. Content rests on the paper, divided by a single rule. */
+    .group { }
     .row {
       display: block; width: 100%; text-align: left;
-      padding: 14px 16px; border-bottom: var(--hairline);
-      transition: background 0.15s var(--ease);
+      padding: 20px 0 19px; border-bottom: 1px solid var(--line-soft);
+      transition: opacity 0.2s var(--ease);
     }
     .row:last-child { border-bottom: none; }
-    .row:active { background: var(--line-soft); }
+    .row:active { opacity: 0.55; }
     .row-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
-    .row-name { font-size: 14.5px; font-weight: 500; letter-spacing: -0.015em; }
-    .row-amt { font-size: 15px; font-weight: 620; letter-spacing: -0.02em; flex-shrink: 0; }
-    .row-sub { font-size: 12px; color: var(--text-faint); margin-top: 8px; letter-spacing: -0.005em; }
-    .row-sub.over { color: var(--red); font-weight: 550; }
+    .row-name { font-size: 15px; font-weight: 400; letter-spacing: 0.005em; color: var(--ink); }
+    .row-amt { font-size: 15px; font-weight: 500; letter-spacing: -0.01em; flex-shrink: 0; color: var(--ink); }
+    .row-sub { font-size: 11.5px; color: var(--text-faint); margin-top: 9px; letter-spacing: 0.01em; font-weight: 400; }
+    .row-sub.over { color: var(--red); }
     .btn-all {
       display: block; width: 100%; text-align: center; padding: 14px; margin-top: 8px;
       font-size: 13px; font-weight: 550; color: var(--text-mid); letter-spacing: -0.015em;
@@ -217,9 +221,9 @@
     .cat-name { font-size: 14px; font-weight: 550; }
     .cat-amt { font-size: 14px; font-weight: 650; }
     .cat-sub { font-size: 11.5px; color: var(--text-faint); margin-top: 3px; }
-    /* Progress: color carries meaning — teal on track, amber close, red over */
-    .bar { height: 3px; background: var(--line); border-radius: 99px; margin-top: 10px; overflow: hidden; }
-    .bar-fill { height: 100%; border-radius: 99px; background: var(--teal); transition: width 0.6s var(--ease); }
+    /* A single fine line — the ink stroke, not a filled meter */
+    .bar { height: 1.5px; background: var(--line); margin-top: 13px; overflow: hidden; }
+    .bar-fill { height: 100%; background: var(--teal); transition: width 0.8s var(--ease); }
     .bar-fill.warn { background: var(--amber); }
     .bar-fill.over { background: var(--red); }
     .bar-fill.wine { background: var(--wine); opacity: 0.85; }
@@ -229,17 +233,18 @@
     .txn {
       display: flex; align-items: center; gap: 12px;
       background: var(--card); border-radius: var(--radius);
-      padding: 12px 14px; margin-bottom: 6px;
-      border: var(--hairline);
+      padding: 16px 0; margin-bottom: 0;
+      border-bottom: 1px solid var(--line-soft); border-radius: 0;
       width: 100%; text-align: left;
-      transition: background 0.15s var(--ease);
+      transition: opacity 0.2s var(--ease);
     }
-    .txn:active { background: var(--line-soft); }
+    .txn:active { opacity: 0.55; }
     .txn-thumb {
-      width: 40px; height: 40px; border-radius: 11px; flex-shrink: 0;
-      background: var(--wine-soft); color: var(--wine);
+      width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+      background: transparent; color: var(--wine);
+      border: 1px solid var(--line);
       display: flex; align-items: center; justify-content: center;
-      font-size: 14px; font-weight: 650; overflow: hidden;
+      font-size: 11px; font-weight: 400; overflow: hidden; letter-spacing: 0.06em;
     }
     .txn-thumb.naomi { background: #E0F2F7; color: var(--naomi); }
     .txn-thumb.bills { background: #EFEAE3; color: var(--text-mid); }
@@ -279,25 +284,25 @@
       z-index: 20;
     }
     .nav-btn {
-      display: flex; flex-direction: column; align-items: center; gap: 4px;
-      font-size: 10.5px; font-weight: 600; color: var(--text-faint);
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      font-size: 9.5px; font-weight: 400; color: var(--text-faint);
       padding: 8px 0; border-radius: 12px;
-      letter-spacing: 0.01em;
-      transition: color 0.15s var(--ease);
+      letter-spacing: 0.14em; text-transform: uppercase;
+      transition: color 0.18s var(--ease);
     }
-    .nav-btn.on { color: var(--text); }
+    .nav-btn.on { color: var(--ink); }
     .nav-btn svg { transition: transform 0.2s var(--ease); }
     .nav-btn:active svg { transform: scale(0.88); }
 
     /* Snap: a pill that sits in the bar, not a blob on top of it */
     .snap-btn {
       display: flex; align-items: center; justify-content: center; gap: 7px;
-      height: 44px; padding: 0 20px; border-radius: 12px;
-      background: var(--ink); color: #fff;
-      font-size: 14px; font-weight: 600; letter-spacing: -0.015em;
-      transition: transform 0.14s var(--ease), opacity 0.14s var(--ease);
+      height: 42px; padding: 0 26px; border-radius: 999px;
+      background: var(--ink); color: var(--bg);
+      font-size: 11.5px; font-weight: 400; letter-spacing: 0.16em; text-transform: uppercase;
+      transition: opacity 0.18s var(--ease);
     }
-    .snap-btn:active { transform: scale(0.97); opacity: 0.88; }
+    .snap-btn:active { opacity: 0.7; }
 
     /* ── Sheets (modals) ─────────────────────────────────── */
     .sheet-back {
@@ -346,19 +351,16 @@
     .date-warn button { font-weight: 700; color: var(--wine); text-decoration: underline; font-size: 12px; }
 
     /* Weekly pace strip */
-    .week-strip {
-      background: var(--card); border: var(--hairline);
-      border-radius: var(--radius); padding: 17px 18px 16px; margin-bottom: 10px;
-    }
+    .week-strip { padding: 0 0 4px; margin-bottom: 0; }
     .week-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-    .week-label { font-size: 10.5px; font-weight: 600; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.1em; }
-    .week-amt { font-size: 27px; font-weight: 600; letter-spacing: -0.035em; margin-top: 8px; line-height: 1; color: var(--ink); }
+    .week-label { font-size: 10px; font-weight: 400; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.22em; }
+    .week-amt { font-size: 30px; font-weight: 280; letter-spacing: -0.025em; margin-top: 14px; line-height: 1; color: var(--ink); }
     .week-amt.over { color: var(--red); }
-    .week-right { font-size: 12.5px; font-weight: 550; color: var(--text-mid); letter-spacing: -0.01em; }
-    .week-bar { height: 3px; background: var(--line); border-radius: 99px; margin-top: 16px; overflow: hidden; }
-    .week-note { font-size: 11.5px; font-weight: 500; color: var(--text-mid); margin-top: 12px; letter-spacing: -0.005em; }
-    .week-what { font-size: 11px; font-weight: 500; color: var(--text-faint); margin-top: 4px; letter-spacing: -0.005em; }
-    .week-bar-fill { height: 100%; border-radius: 99px; background: var(--teal); transition: width 0.6s var(--ease); }
+    .week-right { font-size: 11.5px; font-weight: 400; color: var(--text-faint); letter-spacing: 0.02em; }
+    .week-bar { height: 1.5px; background: var(--line); margin-top: 20px; overflow: hidden; }
+    .week-note { font-size: 11.5px; font-weight: 400; color: var(--text-mid); margin-top: 14px; letter-spacing: 0.01em; }
+    .week-what { font-size: 11px; font-weight: 400; color: var(--text-faint); margin-top: 5px; letter-spacing: 0.01em; }
+    .week-bar-fill { height: 100%; background: var(--teal); transition: width 0.8s var(--ease); }
     .week-bar-fill.warn { background: var(--amber); }
     .week-bar-fill.over { background: var(--red); }
 
@@ -835,7 +837,7 @@ function renderHome() {
     ? (pc.ratio > pn.ratio ? 'Clancy' : 'Naomi') : null;
   const playerHTML = d => `
     <button class="player ${d.cls}" data-pfilter="${d.p}">
-      <div class="player-head"><div class="player-name">${d.p}</div>${leader === d.p ? '<div class="lead-tag">In the lead</div>' : ''}</div>
+      <div class="player-head"><div class="player-name">${d.p}</div></div>
       <div class="player-fun">${fmt0(d.left)}<span>left</span></div>
       ${d.budget > 0 ? `<div class="bar" style="margin-top:11px"><div class="bar-fill ${d.barCls}" style="width:${Math.max(d.pct, d.spentFun > 0 ? 2 : 0)}%"></div></div>` : ''}
       <div class="player-sub">${fmt0(d.monthTotal)} spent this month</div>
@@ -861,10 +863,7 @@ function renderHome() {
   const weekHTML = weeklyBudget > 0 ? `
     <div class="week-strip">
       <div class="week-head">
-        <div>
-          <div class="week-label">Left to spend this week</div>
-          <div class="week-amt ${weekLeft < 0 ? 'over' : ''}">${weekLeft < 0 ? fmt0(-weekLeft) + ' over' : fmt0(weekLeft)}</div>
-        </div>
+        <div class="week-amt ${weekLeft < 0 ? 'over' : ''}" style="margin-top:0">${weekLeft < 0 ? fmt0(-weekLeft) + ' over' : fmt0(weekLeft)}</div>
         <div class="week-right">${fmt0(weekSpent)} of ${fmt0(weeklyBudget)}</div>
       </div>
       <div class="week-bar"><div class="week-bar-fill ${weekLeft < 0 ? 'over' : weekPct >= 80 ? 'warn' : ''}" style="width:${Math.max(weekPct, weekSpent > 0 ? 2 : 0)}%"></div></div>
@@ -907,7 +906,9 @@ function renderHome() {
         ${bTotal > 0 ? `<span class="seg"><span class="dot" style="background:var(--text-faint)"></span>Bills <b>${fmt0(bTotal)}</b></span>` : ''}
       </div>
     </div>
+    <div class="section-title">This week</div>
     ${weekHTML}
+    <div class="section-title">Fun money<span style="text-transform:none;letter-spacing:0.02em">${leader ? leader + ' ahead' : ''}</span></div>
     ${playersHTML}
     ${goalsHTML()}
     ${catHTML}
