@@ -75,6 +75,7 @@ export async function onRequestPost({ request, env }) {
       person: ['Naomi', 'Bills'].includes(body.person) ? body.person : 'Clancy',
       notes: String(body.notes || body.note || '').trim(),
       photoId: body.photoId || null,
+      card: body.card === 'business' ? 'business' : 'personal',
       created_at: new Date().toISOString(),
     };
 
@@ -111,6 +112,7 @@ export async function onRequestPatch({ request, env }) {
     if (body.notes !== undefined) e.notes = String(body.notes).trim();
     if (body.date !== undefined && /^\d{4}-\d{2}-\d{2}$/.test(body.date)) e.date = body.date;
     if (body.amount !== undefined) e.amount = -Math.abs(parseFloat(body.amount) || 0);
+    if (body.card !== undefined) e.card = body.card === 'business' ? 'business' : 'personal';
 
     await writeLedger(env, entries);
 
@@ -133,9 +135,16 @@ export async function onRequestDelete({ request, env }) {
     const entries = await readLedger(env);
     const gone = entries.find(e => e.id === id);
     await writeLedger(env, entries.filter(e => e.id !== id));
-    if (gone?.photoId) {
-      try { await env.VELOCITY_KV.delete(`photo:${gone.photoId}`); } catch {}
+
+    // Keep the receipt image. A deleted expense may still need substantiating,
+    // and an orphaned photo costs far less than a missing one at audit time.
+    if (gone) {
+      const trashRaw = await env.VELOCITY_KV.get('household:deleted');
+      const trash = trashRaw ? JSON.parse(trashRaw) : [];
+      trash.push({ ...gone, deleted_at: new Date().toISOString() });
+      await env.VELOCITY_KV.put('household:deleted', JSON.stringify(trash.slice(-500)));
     }
+
     return new Response(JSON.stringify({ ok: true }), { headers: JSON_HEADERS });
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: JSON_HEADERS });

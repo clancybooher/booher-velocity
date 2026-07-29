@@ -88,12 +88,15 @@ Rules:
   * Google/Facebook/online ads → Biz: Advertising
   * Anything that doesn't clearly fit → Everything Else
 - They run Peak View Windows and Doors, a window & door installation business in Bend, OR.
-  Treat a purchase as BUSINESS when it's plainly for that trade: fuel for the work truck,
-  lumber/hardware/tools/jobsite materials, online advertising, trailer or vehicle costs,
-  business insurance/bonding/phone/internet, or coffee bought while working.
-  Treat it as PERSONAL when it's household groceries, a meal out together, clothing,
-  personal care, pet supplies, or hobby/leisure items.
-  If it is genuinely ambiguous, choose personal.${learned}
+  HOUSEHOLD RULE — apply this first, it overrides your own judgment:
+  * Hardware, home improvement, building supply, tool, or lumber stores are ALWAYS business.
+    This explicitly includes Home Depot, Lowe's, Ace Hardware, Harbor Freight, lumber yards,
+    and window/door/glass suppliers — even when the items look like household goods.
+  * If the purchase is NOT food or drink, default to BUSINESS.
+  * Food and drink is personal by default: grocery stores, restaurants, and takeout.
+    The exceptions that stay business are fuel and coffee bought while working.
+  * Personal also covers clothing, personal care, pet supplies, and hobby/leisure items
+    bought somewhere that is clearly not a trade supplier.${learned}
 - note: very short (1 line max), or empty string.`
               },
               { inlineData: { mimeType, data: base64Image } }

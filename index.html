@@ -877,6 +877,12 @@ function openConfirm(draft, photoId, existingId, ai = {}) {
       <div class="switch ${startBiz ? 'on' : ''}" id="bizSwitch"></div>
     </div>
     ${ai.learnedHit ? '<div class="learned-note">Filed the way you did last time</div>' : ''}
+    <div class="field"><label>Paid with</label>
+      <div class="person-toggle" style="margin:0">
+        <button data-card="personal" class="${(draft.card || 'personal') === 'personal' ? 'on clancy' : ''}">Personal card</button>
+        <button data-card="business" class="${draft.card === 'business' ? 'on clancy' : ''}">Business card</button>
+      </div>
+    </div>
     <div class="field"><label>Category</label><div id="catGrid"></div></div>
     <div class="field"><label>Note (optional)</label><input id="fNote" value="${esc(draft.note || draft.notes || '')}" placeholder=""></div>
     <div id="saveHint" class="save-hint"></div>
@@ -909,6 +915,20 @@ function openConfirm(draft, photoId, existingId, ai = {}) {
     $('bizSub').textContent = isBiz ? 'Write-off — kept out of personal spending' : 'Personal spending';
     paintCats();
   };
+
+  // Paying with the business card is a hard signal — flip it to business
+  let selCard = draft.card || 'personal';
+  document.querySelectorAll('[data-card]').forEach(b => b.onclick = () => {
+    selCard = b.dataset.card;
+    document.querySelectorAll('[data-card]').forEach(x =>
+      x.className = x.dataset.card === selCard ? 'on clancy' : '');
+    if (selCard === 'business' && !isBiz) {
+      isBiz = true;
+      $('bizSwitch').classList.add('on');
+      $('bizSub').textContent = 'Write-off — kept out of personal spending';
+      paintCats();
+    }
+  });
   document.querySelectorAll('[data-cperson]').forEach(b => b.onclick = () => {
     selPerson = b.dataset.cperson;
     document.querySelectorAll('[data-cperson]').forEach(x => {
@@ -925,6 +945,7 @@ function openConfirm(draft, photoId, existingId, ai = {}) {
       date: $('fDate').value,
       category: selCat,
       person: selPerson,
+      card: selCard,
       notes: $('fNote').value.trim(),
     };
     if (!payload.amount) {
@@ -976,7 +997,7 @@ function openConfirm(draft, photoId, existingId, ai = {}) {
 function openDetail(id) {
   const t = state.txns.find(x => x.id === id);
   if (!t) return;
-  openConfirm({ vendor: t.vendor, amount: Math.abs(t.amount), date: t.date, category: t.category, notes: t.notes, person: t.person }, t.photoId, t.id);
+  openConfirm({ vendor: t.vendor, amount: Math.abs(t.amount), date: t.date, category: t.category, notes: t.notes, person: t.person, card: t.card }, t.photoId, t.id);
 }
 
 /* ── Awards ─────────────────────────────────────────────── */
@@ -1126,6 +1147,37 @@ function openRecurring() {
   }).catch(e => { spin(false); if (e.message !== 'locked') toast(e.message); });
 }
 
+/* Export — CSV for taxes/bookkeeping */
+function openExport() {
+  const thisYear = new Date().getFullYear();
+  const years = [thisYear, thisYear - 1];
+  const withPhotos = state.txns.filter(t => t.photoId).length;
+  const bizCount = state.txns.filter(t => GROUPS.Business.includes(t.category)).length;
+  openSheet(`
+    <div class="sheet-title">Export for taxes</div>
+    <div style="font-size:13px;color:var(--text-mid);margin-bottom:16px">Downloads a spreadsheet with every expense — date, vendor, amount, category, which card, and a link to the receipt photo. ${state.txns.length} expenses on file, ${withPhotos} with photos, ${bizCount} business.</div>
+    <div class="budget-group" style="margin-top:0">This year (${thisYear})</div>
+    <button class="snap-opt" data-export="business|${thisYear}">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Business expenses only
+    </button>
+    <button class="snap-opt" data-export="all|${thisYear}">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Everything
+    </button>
+    <div class="budget-group">Other</div>
+    <button class="snap-opt" data-export="business|${years[1]}">Business — ${years[1]}</button>
+    <button class="snap-opt" data-export="all|">Everything, all time</button>
+    <button class="btn-ghost" id="btnCloseExport">Close</button>
+  `);
+  document.querySelectorAll('[data-export]').forEach(b => b.onclick = () => {
+    const [scope, year] = b.dataset.export.split('|');
+    window.location.href = `/api/export?scope=${scope}${year ? '&year=' + year : ''}`;
+    toast('Downloading…');
+  });
+  $('btnCloseExport').onclick = closeSheet;
+}
+
 /* What the app has learned about vendors */
 function openRules() {
   spin(true, 'Loading…');
@@ -1181,6 +1233,10 @@ function openSettings() {
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
       Monthly bills (auto-post)
     </button>
+    <button class="snap-opt" id="optExport">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export for taxes
+    </button>
     <button class="snap-opt" id="optRules">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 0-4 12.7V17a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-2.3A7 7 0 0 0 12 2Z"/><line x1="10" y1="22" x2="14" y2="22"/></svg>
       Learned stores
@@ -1197,6 +1253,7 @@ function openSettings() {
   `);
   $('optWho').onclick = () => { closeSheet(); askWhoseParty(); };
   $('optRecurring').onclick = () => { closeSheet(); openRecurring(); };
+  $('optExport').onclick = () => { closeSheet(); openExport(); };
   $('optRules').onclick = () => { closeSheet(); openRules(); };
   $('optBudgets2').onclick = () => { closeSheet(); openBudgets(); };
   $('optLogout').onclick = async () => {
