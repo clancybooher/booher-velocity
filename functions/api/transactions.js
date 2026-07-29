@@ -5,7 +5,7 @@
 // PATCH  /api/transactions — edit fields on an entry by id
 // DELETE /api/transactions — remove an entry by id (also deletes its photo)
 
-import { learnRule } from './rules.js';
+import { learnRule, tidyVendor } from './rules.js';
 
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
 const LEDGER_KEY = 'household:ledger';
@@ -69,7 +69,7 @@ export async function onRequestPost({ request, env }) {
     const entry = {
       id: crypto.randomUUID().replace(/-/g, '').slice(0, 12),
       date: body.date && /^\d{4}-\d{2}-\d{2}$/.test(body.date) ? body.date : today,
-      vendor: String(body.vendor || 'Unknown').trim() || 'Unknown',
+      vendor: tidyVendor(body.vendor),
       amount: -Math.abs(parseFloat(body.amount) || 0),
       category: body.category || 'Everything Else',
       person: ['Naomi', 'Bills'].includes(body.person) ? body.person : 'Clancy',

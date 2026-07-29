@@ -11,8 +11,35 @@ const JSON_HEADERS = { 'Content-Type': 'application/json' };
 const KEY = 'household:rules';
 const MAX_RULES = 200;
 
+// Store names arrive inconsistently — "COSTCO WHOLESALE #1021", "Costco.",
+// "costco" are all one store. Collapse to a stable key for learning/grouping.
+const CHAIN_WORDS = /\b(wholesale|warehouse|supercenter|market|markets|store|stores|inc|llc|co|corp|company|the|of)\b/g;
+
 export function vendorKey(vendor) {
-  return String(vendor || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().slice(0, 40);
+  return String(vendor || '')
+    .toLowerCase()
+    .replace(/#\s*\d+/g, ' ')          // store numbers
+    .replace(/\b\d{3,}\b/g, ' ')       // long digit runs (phone/store ids)
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(CHAIN_WORDS, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 40);
+}
+
+// Prettiest display name we've seen for a store, so history reads cleanly.
+export function tidyVendor(vendor) {
+  const cleaned = String(vendor || '')
+    .replace(/#\s*\d+/g, '')
+    .replace(/\s+/g, ' ')
+    .replace(/[.,\s]+$/, '')
+    .trim();
+  if (!cleaned) return 'Unknown';
+  // ALL CAPS receipts read badly — title-case them, leave mixed case alone
+  if (cleaned === cleaned.toUpperCase()) {
+    return cleaned.toLowerCase().replace(/\b[a-z]/g, c => c.toUpperCase());
+  }
+  return cleaned;
 }
 
 export async function readRules(env) {

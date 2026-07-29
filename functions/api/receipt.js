@@ -4,7 +4,7 @@
 // confirm. Nothing hits the ledger until the client saves it via
 // POST /api/transactions.
 
-import { readRules, vendorKey } from './rules.js';
+import { readRules, vendorKey, tidyVendor } from './rules.js';
 
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
 
@@ -138,7 +138,7 @@ Rules:
     await env.VELOCITY_KV.put(`photo:${photoId}`, JSON.stringify({ mime: mimeType, data: base64Image }));
 
     const today = new Date().toISOString().split('T')[0];
-    const vendor = String(parsed.vendor || 'Unknown').trim() || 'Unknown';
+    const vendor = tidyVendor(parsed.vendor);
     let category = CATEGORIES.includes(parsed.category) ? parsed.category : 'Everything Else';
 
     // An exact learned rule for this vendor always wins over the model's guess
@@ -149,16 +149,31 @@ Rules:
       learnedHit = true;
     }
 
+    // Misread receipt dates silently corrupt every total in the app, so flag
+    // anything implausible instead of trusting it.
+    let date = parsed.date && /^\d{4}-\d{2}-\d{2}$/.test(parsed.date) ? parsed.date : today;
+    let dateWarning = null;
+    const dayMs = 86400000;
+    const drift = Math.round((Date.parse(date) - Date.parse(today)) / dayMs);
+    if (!Number.isFinite(drift)) {
+      date = today;
+    } else if (drift > 1) {
+      dateWarning = 'That date is in the future';
+      date = today;
+    } else if (drift < -45) {
+      dateWarning = `That receipt reads ${date}`;
+    }
+
     const draft = {
       vendor,
       amount: Math.abs(parseFloat(parsed.amount) || 0),
-      date: parsed.date && /^\d{4}-\d{2}-\d{2}$/.test(parsed.date) ? parsed.date : today,
+      date,
       category,
       business: BUSINESS_CATEGORIES.includes(category),
       note: String(parsed.note || '').trim(),
     };
 
-    return new Response(JSON.stringify({ ok: true, draft, photoId, learnedHit }), { headers: JSON_HEADERS });
+    return new Response(JSON.stringify({ ok: true, draft, photoId, learnedHit, dateWarning }), { headers: JSON_HEADERS });
 
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: JSON_HEADERS });

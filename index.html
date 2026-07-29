@@ -248,6 +248,35 @@
     .confirm-photo { width: 100%; max-height: 200px; object-fit: contain; border-radius: 14px; background: var(--card); margin-bottom: 14px; }
     .save-hint { display: none; font-size: 13px; font-weight: 600; color: var(--red); text-align: center; margin-top: 10px; }
     .learned-note { font-size: 11.5px; font-weight: 600; color: var(--green); text-align: center; margin: -6px 0 12px; }
+    .date-warn { font-size: 12px; font-weight: 600; color: var(--amber); margin-top: 6px; }
+    .date-warn button { font-weight: 700; color: var(--wine); text-decoration: underline; font-size: 12px; }
+
+    /* Weekly pace strip */
+    .week-strip { display: flex; align-items: center; justify-content: space-between; background: var(--card); border-radius: var(--radius); padding: 12px 16px; margin-bottom: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+    .week-label { font-size: 12px; font-weight: 700; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.06em; }
+    .week-amt { font-size: 17px; font-weight: 800; letter-spacing: -0.02em; margin-top: 2px; }
+    .week-amt.over { color: var(--red); }
+
+    /* Goals */
+    .goal-card { background: var(--card); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); width: 100%; text-align: left; }
+    .goal-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+    .goal-name { font-size: 15px; font-weight: 700; }
+    .goal-saved { font-size: 14px; font-weight: 700; }
+    .goal-sub { font-size: 12px; color: var(--text-faint); margin-top: 3px; }
+    .goal-pace { font-size: 12px; font-weight: 600; color: var(--wine); margin-top: 6px; }
+    .goal-pace.done { color: var(--green); }
+
+    /* Recap */
+    .recap-hero { text-align: center; margin-bottom: 18px; }
+    .recap-total { font-size: 38px; font-weight: 800; letter-spacing: -0.03em; }
+    .recap-sub { font-size: 13px; color: var(--text-mid); margin-top: 4px; }
+    .recap-good { font-size: 13px; font-weight: 700; color: var(--green); margin-top: 6px; }
+    .recap-bad { font-size: 13px; font-weight: 700; color: var(--amber); margin-top: 6px; }
+    .recap-line { display: flex; justify-content: space-between; align-items: baseline; padding: 11px 4px; border-bottom: 1px solid var(--line); font-size: 14px; }
+    .recap-line span { color: var(--text-mid); }
+    .recap-line b { font-weight: 700; }
+    .recap-line b.ok { color: var(--green); }
+    .recap-line b.bad { color: var(--red); }
 
     /* Business toggle in the confirm sheet */
     .biz-toggle { display: flex; align-items: center; justify-content: space-between; background: var(--card); border-radius: var(--radius); padding: 13px 16px; margin-bottom: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
@@ -374,6 +403,7 @@ const fmt0 = n => '$' + Math.round(Math.abs(n)).toLocaleString('en-US');
 const state = {
   txns: [],
   budgets: {},
+  goals: [],
   person: localStorage.getItem('velocity_person') || null, // null → ask whose phone this is
   lastSync: 0,
   screen: 'home',
@@ -529,9 +559,10 @@ async function syncNow() {
 /* ── Data ───────────────────────────────────────────────── */
 async function loadData() {
   try {
-    const [t, b] = await Promise.all([api('transactions'), api('budgets')]);
+    const [t, b, g] = await Promise.all([api('transactions'), api('budgets'), api('goals')]);
     state.txns = t.transactions || [];
     state.budgets = b.budgets || {};
+    state.goals = g.goals || [];
   } catch (e) {
     if (e.message !== 'locked') toast(e.message);
   }
@@ -677,6 +708,31 @@ function renderHome() {
   const playersHTML = `<div class="players">${playerHTML(pc)}${playerHTML(pn)}</div>`;
 
   const allHTML = groupSection('Personal', GROUPS.Personal) + groupSection('Business', GROUPS.Business);
+  // Weekly pace on the categories you actually live week to week
+  const WEEKLY = ['Groceries', 'Dates', 'Clancy Fun', 'Naomi Fun'];
+  const weekStart = (() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - d.getDay()); // Sunday
+    return d.toISOString().slice(0, 10);
+  })();
+  const weeklyBudget = WEEKLY.reduce((s, c) => s + (state.budgets[c] || 0), 0) / 4.33;
+  const weekSpent = state.txns
+    .filter(t => t.person !== 'Bills' && WEEKLY.includes(t.category) && t.date >= weekStart)
+    .reduce((s, t) => s + Math.abs(t.amount), 0);
+  const weekLeft = weeklyBudget - weekSpent;
+  const weekHTML = weeklyBudget > 0 ? `
+    <div class="week-strip">
+      <div>
+        <div class="week-label">Left this week</div>
+        <div class="week-amt ${weekLeft < 0 ? 'over' : ''}">${weekLeft < 0 ? fmt0(-weekLeft) + ' over' : fmt0(weekLeft)}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="week-label">Spent</div>
+        <div class="week-amt" style="font-size:15px;color:var(--text-mid)">${fmt0(weekSpent)} of ${fmt0(weeklyBudget)}</div>
+      </div>
+    </div>` : '';
+
   const catHTML = visible.size === 0
     ? `<div class="empty">Nothing yet this month.<br>Tap the camera to snap your first receipt.</div>`
     : `<div class="section-title">Top categories</div>
@@ -706,7 +762,9 @@ function renderHome() {
       <div class="hero-amount">${fmt(total)}</div>
       <div class="hero-split"><b class="c">Clancy ${fmt0(cTotal)}</b> &nbsp;·&nbsp; <b class="n">Naomi ${fmt0(nTotal)}</b>${bTotal > 0 ? ` &nbsp;·&nbsp; <b>Bills ${fmt0(bTotal)}</b>` : ''}</div>
     </div>
+    ${weekHTML}
     ${playersHTML}
+    ${goalsHTML()}
     ${catHTML}
     ${recent ? `<div class="section-title">Recent</div>${recent}` : ''}
   `;
@@ -757,6 +815,8 @@ function bindContent() {
   document.querySelectorAll('[data-filter]').forEach(b => b.onclick = () => { state.filter = b.dataset.filter; render(); });
   const s = $('btnSettings'); if (s) s.onclick = openSettings;
   const bb = $('btnBudgets'); if (bb) bb.onclick = openBudgets;
+  const bg = $('btnGoals'); if (bg) bg.onclick = openGoals;
+  document.querySelectorAll('[data-goal]').forEach(b => b.onclick = () => openGoalAdd(b.dataset.goal));
   const ba = $('btnAll'); if (ba) ba.onclick = () => { state.showAll = !state.showAll; render(); };
   const aw = $('btnAwards'); if (aw) aw.onclick = openAwards;
   const sy = $('btnSync'); if (sy) sy.onclick = async () => {
@@ -822,7 +882,7 @@ async function handleImage(file) {
     fd.append('person', state.person || 'Clancy');
     const res = await api('receipt', { method: 'POST', body: fd });
     spin(false);
-    openConfirm(res.draft, res.photoId, null, { aiCategory: res.draft.category, learnedHit: res.learnedHit });
+    openConfirm(res.draft, res.photoId, null, { aiCategory: res.draft.category, learnedHit: res.learnedHit, dateWarning: res.dateWarning });
   } catch (e) {
     spin(false);
     if (e.message !== 'locked') toast(e.message);
@@ -868,7 +928,9 @@ function openConfirm(draft, photoId, existingId, ai = {}) {
       <div class="field"><label>Where</label><input id="fVendor" value="${esc(draft.vendor)}" placeholder="Store"></div>
       <div class="field" style="max-width:130px"><label>Amount</label><input id="fAmount" type="number" inputmode="decimal" step="0.01" value="${draft.amount || ''}" placeholder="0.00"></div>
     </div>
-    <div class="field"><label>Date</label><input id="fDate" type="date" value="${esc(draft.date)}"></div>
+    <div class="field"><label>Date</label><input id="fDate" type="date" value="${esc(draft.date)}">
+      ${ai.dateWarning ? `<div class="date-warn">${esc(ai.dateWarning)} — <button id="btnUseToday">use today</button></div>` : ''}
+    </div>
     <div class="biz-toggle" id="bizToggle">
       <div>
         <div class="biz-label">Business expense</div>
@@ -935,6 +997,12 @@ function openConfirm(draft, photoId, existingId, ai = {}) {
       x.className = x.dataset.cperson === selPerson ? 'on ' + selPerson.toLowerCase() : '';
     });
   });
+
+  const useToday = $('btnUseToday');
+  if (useToday) useToday.onclick = () => {
+    $('fDate').value = new Date().toISOString().slice(0, 10);
+    useToday.closest('.date-warn').remove();
+  };
 
   $('btnCancel').onclick = closeSheet;
 
@@ -1147,6 +1215,177 @@ function openRecurring() {
   }).catch(e => { spin(false); if (e.message !== 'locked') toast(e.message); });
 }
 
+/* ── Month recap ────────────────────────────────────────── */
+function openRecap(ym) {
+  const month = ym || shiftMonth(new Date().toISOString().slice(0, 7), -1);
+  const prev = shiftMonth(month, -1);
+  const spentIn = (m, filter = () => true) => state.txns
+    .filter(t => (t.date || '').startsWith(m) && filter(t))
+    .reduce((s, t) => s + Math.abs(t.amount), 0);
+
+  const total = spentIn(month);
+  if (total === 0) {
+    openSheet(`
+      <div class="sheet-title">${monthLabel(month)}</div>
+      <div class="empty">Nothing logged that month yet.</div>
+      <button class="btn-ghost" id="btnCloseRecap">Close</button>`);
+    $('btnCloseRecap').onclick = closeSheet;
+    return;
+  }
+
+  const prevTotal = spentIn(prev);
+  const personal = spentIn(month, t => !GROUPS.Business.includes(t.category));
+  const business = total - personal;
+  const cTotal = spentIn(month, t => t.person === 'Clancy');
+  const nTotal = spentIn(month, t => t.person === 'Naomi');
+
+  const byCat = {};
+  state.txns.filter(t => (t.date || '').startsWith(month))
+    .forEach(t => { byCat[t.category] = (byCat[t.category] || 0) + Math.abs(t.amount); });
+
+  const budgeted = Object.keys(state.budgets).filter(c => state.budgets[c] > 0);
+  const under = budgeted.filter(c => (byCat[c] || 0) <= state.budgets[c]);
+  const over = budgeted.filter(c => (byCat[c] || 0) > state.budgets[c])
+    .sort((a, b) => ((byCat[b] || 0) - state.budgets[b]) - ((byCat[a] || 0) - state.budgets[a]));
+
+  const top = Object.entries(byCat).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  const receipts = state.txns.filter(t => (t.date || '').startsWith(month) && t.person !== 'Bills').length;
+
+  const delta = prevTotal > 0 ? total - prevTotal : null;
+  const deltaLine = delta === null ? ''
+    : delta < 0 ? `<div class="recap-good">${fmt0(-delta)} less than ${monthLabel(prev).split(' ')[0]}</div>`
+    : `<div class="recap-bad">${fmt0(delta)} more than ${monthLabel(prev).split(' ')[0]}</div>`;
+
+  openSheet(`
+    <div class="sheet-title">${monthLabel(month)}</div>
+    <div class="recap-hero">
+      <div class="recap-total">${fmt(total)}</div>
+      <div class="recap-sub">${fmt0(personal)} personal · ${fmt0(business)} business</div>
+      ${deltaLine}
+    </div>
+    <div class="recap-line"><span>Clancy</span><b>${fmt0(cTotal)}</b></div>
+    <div class="recap-line"><span>Naomi</span><b>${fmt0(nTotal)}</b></div>
+    <div class="recap-line"><span>Expenses logged</span><b>${receipts}</b></div>
+    ${budgeted.length ? `
+      <div class="budget-group">Budgets</div>
+      <div class="recap-line"><span>Came in under</span><b class="ok">${under.length} of ${budgeted.length}</b></div>
+      ${over.length ? over.slice(0, 3).map(c => `<div class="recap-line"><span>${catLabel(c)}</span><b class="bad">${fmt0((byCat[c] || 0) - state.budgets[c])} over</b></div>`).join('') : '<div class="recap-line"><span>Nothing over budget</span><b class="ok">clean month</b></div>'}
+    ` : ''}
+    <div class="budget-group">Biggest categories</div>
+    ${top.map(([c, v]) => `<div class="recap-line"><span>${catLabel(c)}</span><b>${fmt0(v)}</b></div>`).join('')}
+    <button class="btn-ghost" id="btnPrevRecap">← ${monthLabel(prev)}</button>
+    <button class="btn-ghost" id="btnCloseRecap">Close</button>
+  `);
+  $('btnPrevRecap').onclick = () => openRecap(prev);
+  $('btnCloseRecap').onclick = closeSheet;
+}
+
+/* ── Savings goals ──────────────────────────────────────── */
+function monthsUntil(due) {
+  if (!due) return null;
+  const target = new Date(due.length === 7 ? due + '-01' : due);
+  if (isNaN(target)) return null;
+  const now = new Date();
+  const months = (target.getFullYear() - now.getFullYear()) * 12 + (target.getMonth() - now.getMonth());
+  return months;
+}
+
+function goalPace(g) {
+  const left = Math.max(0, g.target - g.saved);
+  if (left <= 0) return { text: 'Funded', done: true };
+  const months = monthsUntil(g.due);
+  if (months === null) return { text: `${fmt0(left)} to go`, done: false };
+  if (months <= 0) return { text: `${fmt0(left)} short — due now`, done: false };
+  return { text: `${fmt0(left / months)}/mo to make it`, done: false };
+}
+
+function goalsHTML() {
+  if (!state.goals.length) return '';
+  const cards = state.goals.map(g => {
+    const pct = g.target > 0 ? Math.min(100, g.saved / g.target * 100) : 0;
+    const pace = goalPace(g);
+    const when = g.due ? new Date((g.due.length === 7 ? g.due + '-01' : g.due) + 'T12:00:00')
+      .toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '';
+    return `
+      <button class="goal-card" data-goal="${esc(g.id)}">
+        <div class="goal-top">
+          <div class="goal-name">${esc(g.name)}</div>
+          <div class="goal-saved">${fmt0(g.saved)} <span style="color:var(--text-faint);font-weight:600">of ${fmt0(g.target)}</span></div>
+        </div>
+        <div class="bar" style="margin-top:9px"><div class="bar-fill ${pct >= 100 ? '' : 'wine'}" style="width:${pct}%"></div></div>
+        <div class="goal-pace ${pace.done ? 'done' : ''}">${esc(pace.text)}${when && !pace.done ? ` · by ${when}` : ''}</div>
+      </button>`;
+  }).join('');
+  return `<div class="section-title">Saving for <button id="btnGoals">Edit</button></div>${cards}`;
+}
+
+function openGoalAdd(id) {
+  const g = state.goals.find(x => x.id === id);
+  if (!g) return;
+  const left = Math.max(0, g.target - g.saved);
+  openSheet(`
+    <div class="sheet-title">${esc(g.name)}</div>
+    <div style="font-size:13px;color:var(--text-mid);margin-bottom:16px">${fmt0(g.saved)} saved of ${fmt0(g.target)}${left > 0 ? ` · ${fmt0(left)} to go` : ' · funded'}</div>
+    <div class="field"><label>Put money aside</label><input id="gAdd" type="number" inputmode="decimal" step="0.01" placeholder="0.00"></div>
+    <button class="btn-primary" id="btnGoalAdd">Add to ${esc(g.name)}</button>
+    <button class="btn-ghost" id="btnGoalTake">Take money back out</button>
+    <button class="btn-ghost" id="btnGoalClose">Close</button>
+  `);
+  const move = async sign => {
+    const amt = parseFloat($('gAdd').value);
+    if (!amt || amt <= 0) { toast('Enter an amount'); return; }
+    try {
+      await api('goals', { method: 'POST', body: JSON.stringify({ id, add: sign * amt }) });
+      closeSheet();
+      toast(sign > 0 ? `${fmt0(amt)} toward ${g.name}` : `${fmt0(amt)} back out`);
+      await loadData();
+      render();
+    } catch (e) { if (e.message !== 'locked') toast(e.message); }
+  };
+  $('btnGoalAdd').onclick = () => move(1);
+  $('btnGoalTake').onclick = () => move(-1);
+  $('btnGoalClose').onclick = closeSheet;
+}
+
+function openGoals() {
+  const row = (g = { id: '', name: '', target: '', due: '' }) => `
+    <div class="rec-row" data-gid="${esc(g.id)}">
+      <input class="rec-name g-name" placeholder="Italy trip" value="${esc(g.name)}">
+      <input class="rec-amt g-target" type="number" inputmode="decimal" placeholder="0" value="${g.target || ''}">
+      <input class="rec-cat g-due" type="month" value="${esc((g.due || '').slice(0, 7))}">
+      <button class="rec-del">×</button>
+    </div>`;
+  openSheet(`
+    <div class="sheet-title">Saving for</div>
+    <div style="font-size:13px;color:var(--text-mid);margin-bottom:14px">Name it, set the amount, and pick a month if there's a deadline. The app works out what you need to set aside each month.</div>
+    <div id="goalRows">${state.goals.map(g => row(g)).join('')}</div>
+    <button class="btn-ghost" id="btnAddGoal" style="text-align:left;color:var(--wine)">+ Add a goal</button>
+    <button class="btn-primary" id="btnSaveGoals">Save goals</button>
+    <button class="btn-ghost" id="btnCancelGoals">Cancel</button>
+  `);
+  const bindDels = () => document.querySelectorAll('#goalRows .rec-del').forEach(d =>
+    d.onclick = () => d.closest('.rec-row').remove());
+  bindDels();
+  $('btnAddGoal').onclick = () => { $('goalRows').insertAdjacentHTML('beforeend', row()); bindDels(); };
+  $('btnCancelGoals').onclick = closeSheet;
+  $('btnSaveGoals').onclick = async () => {
+    const goals = [];
+    document.querySelectorAll('#goalRows .rec-row').forEach(r => {
+      const name = r.querySelector('.g-name').value.trim();
+      const target = parseFloat(r.querySelector('.g-target').value);
+      const due = r.querySelector('.g-due').value;
+      if (name && target > 0) goals.push({ id: r.dataset.gid || undefined, name, target, due });
+    });
+    try {
+      const res = await api('goals', { method: 'PUT', body: JSON.stringify({ goals }) });
+      state.goals = res.goals;
+      closeSheet();
+      toast('Goals saved');
+      render();
+    } catch (e) { if (e.message !== 'locked') toast(e.message); }
+  };
+}
+
 /* Export — CSV for taxes/bookkeeping */
 function openExport() {
   const thisYear = new Date().getFullYear();
@@ -1233,6 +1472,14 @@ function openSettings() {
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
       Monthly bills (auto-post)
     </button>
+    <button class="snap-opt" id="optGoals">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg>
+      Saving for
+    </button>
+    <button class="snap-opt" id="optRecap">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>
+      Last month's recap
+    </button>
     <button class="snap-opt" id="optExport">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       Export for taxes
@@ -1253,6 +1500,8 @@ function openSettings() {
   `);
   $('optWho').onclick = () => { closeSheet(); askWhoseParty(); };
   $('optRecurring').onclick = () => { closeSheet(); openRecurring(); };
+  $('optGoals').onclick = () => { closeSheet(); openGoals(); };
+  $('optRecap').onclick = () => { closeSheet(); openRecap(); };
   $('optExport').onclick = () => { closeSheet(); openExport(); };
   $('optRules').onclick = () => { closeSheet(); openRules(); };
   $('optBudgets2').onclick = () => { closeSheet(); openBudgets(); };
