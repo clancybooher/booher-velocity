@@ -15,25 +15,30 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --wine: #7C2033;
+      --wine: #8A2437;
       --wine-dark: #5E1826;
       --wine-soft: #F7EDEF;
-      --bg: #FBFAF8;
+      --bg: #F7F6F3;
       --card: #FFFFFF;
-      --text: #16130F;
-      --text-mid: #6E6862;
-      --text-faint: #A8A29B;
-      --line: #EDE9E3;
-      --line-soft: #F4F1EC;
-      --green: #15803D;
-      --red: #DC2626;
-      --amber: #B45309;
-      --naomi: #0E7490;
-      --radius: 14px;
-      --radius-lg: 20px;
-      --shadow-sm: 0 1px 2px rgba(22,19,15,0.05);
-      --shadow-md: 0 2px 8px rgba(22,19,15,0.07), 0 1px 2px rgba(22,19,15,0.04);
-      --shadow-lg: 0 12px 32px rgba(22,19,15,0.13), 0 2px 8px rgba(22,19,15,0.06);
+      --ink: #12151A;          /* deep charcoal-navy — trust */
+      --text: #12151A;
+      --text-mid: #5F6570;
+      --text-faint: #9AA0AA;
+      --line: #E6E4DF;
+      --line-soft: #EFEDE8;
+      --teal: #0F766E;         /* positive / on-track */
+      --teal-soft: #E6F2F0;
+      --green: #0F766E;
+      --red: #BE3A3A;
+      --amber: #A9631A;
+      --naomi: #1F6F8B;
+      --radius: 12px;
+      --radius-lg: 18px;
+      /* Depth comes from hairlines and spacing, not drop shadows */
+      --shadow-sm: none;
+      --shadow-md: 0 1px 2px rgba(18,21,26,0.04);
+      --shadow-lg: 0 -1px 40px rgba(18,21,26,0.16);
+      --hairline: 1px solid var(--line);
       --safe-top: env(safe-area-inset-top, 0px);
       --safe-bottom: env(safe-area-inset-bottom, 0px);
       --ease: cubic-bezier(0.32, 0.72, 0, 1);
@@ -87,7 +92,7 @@
     .content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: calc(var(--safe-top) + 16px) 18px 110px; }
 
     .top-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
-    .brand { font-size: 17px; font-weight: 700; letter-spacing: -0.03em; color: var(--text); }
+    .brand { font-size: 16px; font-weight: 620; letter-spacing: -0.03em; color: var(--ink); }
     .icon-btn {
       width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;
       border-radius: 10px; color: var(--text-mid);
@@ -121,12 +126,17 @@
     .person-toggle button.on.naomi { color: var(--naomi); }
 
     /* Month hero */
-    .hero { text-align: center; margin: 22px 0 26px; }
-    .hero-label { font-size: 11.5px; font-weight: 600; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.09em; }
-    .hero-amount { font-size: 52px; font-weight: 750; letter-spacing: -0.045em; margin-top: 6px; line-height: 1; }
-    .hero-split { font-size: 12.5px; font-weight: 500; color: var(--text-mid); margin-top: 12px; }
-    .hero-split b { font-weight: 650; }
-    .hero-split b.c { color: var(--wine); } .hero-split b.n { color: var(--naomi); }
+    .hero { text-align: center; margin: 26px 0 28px; }
+    .hero-label { font-size: 11px; font-weight: 600; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.1em; }
+    .hero-amount { font-size: 46px; font-weight: 620; letter-spacing: -0.042em; margin-top: 10px; line-height: 1; color: var(--ink); }
+    .hero-amount .cents { font-size: 0.56em; font-weight: 550; color: var(--text-mid); letter-spacing: -0.02em; }
+    .hero-split {
+      display: inline-flex; align-items: center; gap: 10px;
+      font-size: 12.5px; font-weight: 500; color: var(--text-mid); margin-top: 14px;
+    }
+    .hero-split .dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+    .hero-split .seg { display: inline-flex; align-items: center; gap: 6px; }
+    .hero-split b { font-weight: 600; color: var(--ink); }
 
     .section-title {
       font-size: 11.5px; font-weight: 650; text-transform: uppercase; letter-spacing: 0.09em;
@@ -137,25 +147,33 @@
     .section-title button:active { color: var(--wine); }
 
     /* Player cards */
-    .players { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px; }
+    .players {
+      display: grid; grid-template-columns: 1fr 1fr;
+      background: var(--card); border: var(--hairline); border-radius: var(--radius);
+      overflow: hidden; margin-bottom: 10px;
+    }
     .player {
-      background: var(--card); border-radius: var(--radius); padding: 13px 14px;
-      text-align: left; box-shadow: var(--shadow-sm); min-width: 0;
-      transition: transform 0.14s var(--ease);
+      padding: 14px 16px 15px; text-align: left; min-width: 0;
+      transition: background 0.15s var(--ease);
     }
-    .player:active { transform: scale(0.985); }
-    .player-head { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
-    .player-name { font-size: 11.5px; font-weight: 650; letter-spacing: 0.01em; }
-    .player.clancy .player-name { color: var(--wine); }
-    .player.naomi .player-name { color: var(--naomi); }
+    .player:first-child { border-right: var(--hairline); }
+    .player:active { background: var(--line-soft); }
+    .player-head { display: flex; justify-content: space-between; align-items: center; gap: 6px; min-height: 18px; }
+    .player-name {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 12px; font-weight: 600; letter-spacing: -0.01em; color: var(--text-mid);
+    }
+    .player-name::before { content: ''; width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+    .player.clancy .player-name::before { background: var(--wine); }
+    .player.naomi .player-name::before { background: var(--naomi); }
     .lead-tag {
-      font-size: 8.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em;
-      color: var(--green); background: rgba(21,128,61,0.09);
-      padding: 3px 6px; border-radius: 5px; white-space: nowrap;
+      font-size: 9px; font-weight: 650; text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--teal); background: var(--teal-soft);
+      padding: 3px 7px; border-radius: 4px; white-space: nowrap;
     }
-    .player-fun { font-size: 21px; font-weight: 700; letter-spacing: -0.035em; margin: 3px 0 8px; }
-    .player-fun span { font-size: 10.5px; font-weight: 550; color: var(--text-faint); letter-spacing: -0.01em; }
-    .player-sub { font-size: 10.5px; color: var(--text-faint); margin-top: 7px; }
+    .player-fun { font-size: 23px; font-weight: 620; letter-spacing: -0.038em; margin: 6px 0 0; line-height: 1; }
+    .player-fun span { font-size: 11px; font-weight: 500; color: var(--text-faint); letter-spacing: -0.01em; margin-left: 3px; }
+    .player-sub { font-size: 11.5px; color: var(--text-faint); margin-top: 8px; letter-spacing: -0.005em; }
 
     /* Awards */
     .award-row { display: flex; align-items: center; gap: 14px; background: var(--card); border-radius: var(--radius); padding: 13px 16px; margin-bottom: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
@@ -167,26 +185,39 @@
     .award-prog { font-size: 11.5px; font-weight: 600; color: var(--text-mid); margin-left: auto; flex-shrink: 0; }
 
     /* Top-4 grid */
-    .top-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-    .top-card { background: var(--card); border-radius: var(--radius); padding: 13px 14px; box-shadow: var(--shadow-sm); min-width: 0; }
-    .top-name { font-size: 11.5px; font-weight: 550; color: var(--text-mid); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .top-amt { font-size: 21px; font-weight: 700; letter-spacing: -0.035em; margin: 3px 0 8px; }
-    .top-sub { font-size: 10.5px; color: var(--text-faint); margin-top: 7px; }
+    /* Grouped list — one surface, hairline separated (Apple Finance pattern) */
+    .group {
+      background: var(--card); border-radius: var(--radius);
+      border: var(--hairline); overflow: hidden;
+    }
+    .row {
+      display: block; width: 100%; text-align: left;
+      padding: 14px 16px; border-bottom: var(--hairline);
+      transition: background 0.15s var(--ease);
+    }
+    .row:last-child { border-bottom: none; }
+    .row:active { background: var(--line-soft); }
+    .row-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+    .row-name { font-size: 14.5px; font-weight: 500; letter-spacing: -0.015em; }
+    .row-amt { font-size: 15px; font-weight: 620; letter-spacing: -0.02em; flex-shrink: 0; }
+    .row-sub { font-size: 12px; color: var(--text-faint); margin-top: 8px; letter-spacing: -0.005em; }
+    .row-sub.over { color: var(--red); font-weight: 550; }
     .btn-all {
-      display: block; width: 100%; text-align: center; padding: 13px; margin-top: 6px;
-      font-size: 12.5px; font-weight: 600; color: var(--text-mid);
-      border-radius: 12px; transition: background 0.15s var(--ease);
+      display: block; width: 100%; text-align: center; padding: 14px; margin-top: 8px;
+      font-size: 13px; font-weight: 550; color: var(--text-mid); letter-spacing: -0.015em;
+      border-radius: 10px; transition: background 0.15s var(--ease);
     }
     .btn-all:active { background: var(--line-soft); }
 
     /* Category cards */
-    .cat-card { background: var(--card); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 6px; box-shadow: var(--shadow-sm); }
+    .cat-card { background: var(--card); border: var(--hairline); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 6px; }
     .cat-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
     .cat-name { font-size: 14px; font-weight: 550; }
     .cat-amt { font-size: 14px; font-weight: 650; }
     .cat-sub { font-size: 11.5px; color: var(--text-faint); margin-top: 3px; }
-    .bar { height: 4px; background: var(--line-soft); border-radius: 99px; margin-top: 10px; overflow: hidden; }
-    .bar-fill { height: 100%; border-radius: 99px; background: var(--text); transition: width 0.5s var(--ease); }
+    /* Progress: color carries meaning — teal on track, amber close, red over */
+    .bar { height: 3px; background: var(--line); border-radius: 99px; margin-top: 10px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 99px; background: var(--teal); transition: width 0.6s var(--ease); }
     .bar-fill.warn { background: var(--amber); }
     .bar-fill.over { background: var(--red); }
     .bar-fill.wine { background: var(--wine); }
@@ -196,12 +227,12 @@
     .txn {
       display: flex; align-items: center; gap: 12px;
       background: var(--card); border-radius: var(--radius);
-      padding: 11px 14px; margin-bottom: 6px;
-      box-shadow: var(--shadow-sm);
+      padding: 12px 14px; margin-bottom: 6px;
+      border: var(--hairline);
       width: 100%; text-align: left;
-      transition: transform 0.14s var(--ease);
+      transition: background 0.15s var(--ease);
     }
-    .txn:active { transform: scale(0.985); }
+    .txn:active { background: var(--line-soft); }
     .txn-thumb {
       width: 40px; height: 40px; border-radius: 11px; flex-shrink: 0;
       background: var(--wine-soft); color: var(--wine);
@@ -236,10 +267,10 @@
     /* ── Bottom nav ──────────────────────────────────────── */
     .bottom-nav {
       position: fixed; left: 0; right: 0; bottom: 0;
-      background: rgba(251,250,248,0.82);
+      background: rgba(247,246,243,0.88);
       backdrop-filter: saturate(180%) blur(20px);
       -webkit-backdrop-filter: saturate(180%) blur(20px);
-      border-top: 1px solid var(--line-soft);
+      border-top: var(--hairline);
       display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
       gap: 8px;
       padding: 8px 16px calc(var(--safe-bottom) + 8px);
@@ -258,14 +289,13 @@
 
     /* Snap: a pill that sits in the bar, not a blob on top of it */
     .snap-btn {
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-      height: 46px; padding: 0 22px; border-radius: 999px;
-      background: var(--text); color: var(--bg);
-      font-size: 14.5px; font-weight: 650; letter-spacing: -0.01em;
-      box-shadow: var(--shadow-md);
-      transition: transform 0.14s var(--ease), background 0.14s var(--ease);
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      height: 44px; padding: 0 20px; border-radius: 12px;
+      background: var(--ink); color: #fff;
+      font-size: 14px; font-weight: 600; letter-spacing: -0.015em;
+      transition: transform 0.14s var(--ease), opacity 0.14s var(--ease);
     }
-    .snap-btn:active { transform: scale(0.96); background: var(--wine); }
+    .snap-btn:active { transform: scale(0.97); opacity: 0.88; }
 
     /* ── Sheets (modals) ─────────────────────────────────── */
     .sheet-back {
@@ -315,22 +345,27 @@
 
     /* Weekly pace strip */
     .week-strip {
-      display: flex; align-items: center; justify-content: space-between;
-      background: var(--text); color: var(--bg);
-      border-radius: var(--radius); padding: 14px 16px; margin-bottom: 6px;
-      box-shadow: var(--shadow-md);
+      background: var(--ink); color: #fff;
+      border-radius: var(--radius); padding: 16px 18px 14px; margin-bottom: 10px;
     }
-    .week-label { font-size: 10px; font-weight: 650; color: rgba(251,250,248,0.55); text-transform: uppercase; letter-spacing: 0.09em; }
-    .week-amt { font-size: 19px; font-weight: 700; letter-spacing: -0.035em; margin-top: 3px; }
-    .week-amt.over { color: #FCA5A5; }
+    .week-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+    .week-label { font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.11em; }
+    .week-amt { font-size: 26px; font-weight: 620; letter-spacing: -0.035em; margin-top: 6px; line-height: 1; }
+    .week-amt.over { color: #F6A9A9; }
+    .week-right { font-size: 12.5px; font-weight: 550; color: rgba(255,255,255,0.62); letter-spacing: -0.01em; }
+    .week-bar { height: 3px; background: rgba(255,255,255,0.16); border-radius: 99px; margin-top: 15px; overflow: hidden; }
+    .week-note { font-size: 11.5px; font-weight: 500; color: rgba(255,255,255,0.5); margin-top: 10px; letter-spacing: -0.005em; }
+    .week-bar-fill { height: 100%; border-radius: 99px; background: #fff; transition: width 0.6s var(--ease); }
+    .week-bar-fill.over { background: #F6A9A9; }
 
     /* Goals */
     .goal-card {
-      background: var(--card); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 6px;
-      box-shadow: var(--shadow-sm); width: 100%; text-align: left;
-      transition: transform 0.14s var(--ease);
+      background: var(--card); border: var(--hairline); border-radius: var(--radius);
+      padding: 15px 16px; margin-bottom: 6px;
+      width: 100%; text-align: left;
+      transition: background 0.15s var(--ease);
     }
-    .goal-card:active { transform: scale(0.985); }
+    .goal-card:active { background: var(--line-soft); }
     .goal-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
     .goal-name { font-size: 14.5px; font-weight: 650; letter-spacing: -0.015em; }
     .goal-saved { font-size: 13.5px; font-weight: 650; }
@@ -483,6 +518,11 @@ const CATEGORIES = [...GROUPS.Personal, ...GROUPS.Business];
 const $ = id => document.getElementById(id);
 const fmt = n => '$' + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmt0 = n => '$' + Math.round(Math.abs(n)).toLocaleString('en-US');
+// Dollars carry the weight; cents step back so the number reads calm
+const heroAmount = n => {
+  const [d, c] = Math.abs(n).toFixed(2).split('.');
+  return `$${Number(d).toLocaleString('en-US')}<span class="cents">.${c}</span>`;
+};
 
 const state = {
   txns: [],
@@ -759,13 +799,20 @@ function renderHome() {
     let bar = '', sub = '';
     if (budget > 0) {
       const pct = Math.min(100, spent / budget * 100);
-      const cls = spent > budget ? 'over' : pct >= 80 ? 'warn' : '';
-      bar = `<div class="bar" style="margin-top:0"><div class="bar-fill ${cls}" style="width:${pct}%"></div></div>`;
-      sub = spent > budget ? `${fmt0(spent - budget)} over` : `${fmt0(budget - spent)} left of ${fmt0(budget)}`;
+      const over = spent > budget;
+      const cls = over ? 'over' : pct >= 80 ? 'warn' : '';
+      bar = `<div class="bar"><div class="bar-fill ${cls}" style="width:${Math.max(pct, spent > 0 ? 2 : 0)}%"></div></div>`;
+      sub = over
+        ? `<div class="row-sub over">${fmt0(spent - budget)} over budget</div>`
+        : `<div class="row-sub">${fmt0(budget - spent)} left of ${fmt0(budget)}</div>`;
     } else {
-      sub = 'no budget set';
+      sub = `<div class="row-sub">No budget set</div>`;
     }
-    return `<div class="top-card"><div class="top-name">${catLabel(c)}</div><div class="top-amt">${fmt0(spent)}</div>${bar}<div class="top-sub">${sub}</div></div>`;
+    return `
+      <div class="row">
+        <div class="row-top"><div class="row-name">${catLabel(c)}</div><div class="row-amt">${fmt(spent)}</div></div>
+        ${bar}${sub}
+      </div>`;
   };
 
   // Clancy & Naomi player cards — each one's fun-money budget this month
@@ -785,8 +832,8 @@ function renderHome() {
   const playerHTML = d => `
     <button class="player ${d.cls}" data-pfilter="${d.p}">
       <div class="player-head"><div class="player-name">${d.p}</div>${leader === d.p ? '<div class="lead-tag">In the lead</div>' : ''}</div>
-      <div class="player-fun">${fmt0(d.left)} <span>fun left</span></div>
-      ${d.budget > 0 ? `<div class="bar" style="margin-top:0"><div class="bar-fill ${d.barCls}" style="width:${Math.max(d.pct, d.spentFun > 0 ? 3 : 0)}%"></div></div>` : ''}
+      <div class="player-fun">${fmt0(d.left)}<span>left</span></div>
+      ${d.budget > 0 ? `<div class="bar" style="margin-top:11px"><div class="bar-fill ${d.barCls}" style="width:${Math.max(d.pct, d.spentFun > 0 ? 2 : 0)}%"></div></div>` : ''}
       <div class="player-sub">${fmt0(d.monthTotal)} spent this month</div>
     </button>`;
   const playersHTML = `<div class="players">${playerHTML(pc)}${playerHTML(pn)}</div>`;
@@ -805,23 +852,28 @@ function renderHome() {
     .filter(t => t.person !== 'Bills' && WEEKLY.includes(t.category) && t.date >= weekStart)
     .reduce((s, t) => s + Math.abs(t.amount), 0);
   const weekLeft = weeklyBudget - weekSpent;
+  const weekPct = weeklyBudget > 0 ? Math.min(100, weekSpent / weeklyBudget * 100) : 0;
+  const weekDaysLeft = 6 - new Date().getDay(); // days remaining after today
   const weekHTML = weeklyBudget > 0 ? `
     <div class="week-strip">
-      <div>
-        <div class="week-label">Left this week</div>
-        <div class="week-amt ${weekLeft < 0 ? 'over' : ''}">${weekLeft < 0 ? fmt0(-weekLeft) + ' over' : fmt0(weekLeft)}</div>
+      <div class="week-head">
+        <div>
+          <div class="week-label">Left this week</div>
+          <div class="week-amt ${weekLeft < 0 ? 'over' : ''}">${weekLeft < 0 ? fmt0(-weekLeft) + ' over' : fmt0(weekLeft)}</div>
+        </div>
+        <div class="week-right">${fmt0(weekSpent)} of ${fmt0(weeklyBudget)}</div>
       </div>
-      <div style="text-align:right">
-        <div class="week-label">Spent</div>
-        <div class="week-amt" style="font-size:14px;color:rgba(251,250,248,0.75)">${fmt0(weekSpent)} of ${fmt0(weeklyBudget)}</div>
-      </div>
+      <div class="week-bar"><div class="week-bar-fill ${weekLeft < 0 ? 'over' : ''}" style="width:${Math.max(weekPct, weekSpent > 0 ? 2 : 0)}%"></div></div>
+      <div class="week-note">${weekDaysLeft === 0 ? 'Last day of the week'
+        : weekLeft < 0 ? `${weekDaysLeft} ${weekDaysLeft === 1 ? 'day' : 'days'} left in the week`
+        : `${fmt0(weekLeft / Math.max(weekDaysLeft, 1))} a day for the next ${weekDaysLeft} ${weekDaysLeft === 1 ? 'day' : 'days'}`}</div>
     </div>` : '';
 
   const catHTML = visible.size === 0
     ? `<div class="empty">Nothing yet this month.<br>Tap the camera to snap your first receipt.</div>`
     : `<div class="section-title">Top categories</div>
-       <div class="top-grid">${top4.map(topTile).join('')}</div>
-       <button class="btn-all" id="btnAll">${state.showAll ? 'Hide categories ▴' : 'All categories ▾'}</button>
+       <div class="group">${top4.map(topTile).join('')}</div>
+       <button class="btn-all" id="btnAll">${state.showAll ? 'Show less' : 'All categories'}</button>
        ${state.showAll ? allHTML : ''}`;
 
   const recent = state.txns.slice(0, 5).map(txnRowHTML).join('');
@@ -843,8 +895,12 @@ function renderHome() {
     </div>
     <div class="hero" style="margin-top:16px">
       <div class="hero-label">Spent in ${monthLabel(nowMonth).split(' ')[0]}</div>
-      <div class="hero-amount">${fmt(total)}</div>
-      <div class="hero-split"><b class="c">Clancy ${fmt0(cTotal)}</b> &nbsp;·&nbsp; <b class="n">Naomi ${fmt0(nTotal)}</b>${bTotal > 0 ? ` &nbsp;·&nbsp; <b style="color:var(--text-mid)">Bills ${fmt0(bTotal)}</b>` : ''}</div>
+      <div class="hero-amount">${heroAmount(total)}</div>
+      <div class="hero-split">
+        <span class="seg"><span class="dot" style="background:var(--wine)"></span>Clancy <b>${fmt0(cTotal)}</b></span>
+        <span class="seg"><span class="dot" style="background:var(--naomi)"></span>Naomi <b>${fmt0(nTotal)}</b></span>
+        ${bTotal > 0 ? `<span class="seg"><span class="dot" style="background:var(--text-faint)"></span>Bills <b>${fmt0(bTotal)}</b></span>` : ''}
+      </div>
     </div>
     ${weekHTML}
     ${playersHTML}
