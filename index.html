@@ -246,6 +246,16 @@
     .cat-chip.on { background: var(--wine); color: #fff; border-color: var(--wine); }
 
     .confirm-photo { width: 100%; max-height: 200px; object-fit: contain; border-radius: 14px; background: var(--card); margin-bottom: 14px; }
+    .save-hint { display: none; font-size: 13px; font-weight: 600; color: var(--red); text-align: center; margin-top: 10px; }
+
+    /* Business toggle in the confirm sheet */
+    .biz-toggle { display: flex; align-items: center; justify-content: space-between; background: var(--card); border-radius: var(--radius); padding: 13px 16px; margin-bottom: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+    .biz-label { font-size: 14.5px; font-weight: 600; }
+    .biz-sub { font-size: 11.5px; color: var(--text-faint); margin-top: 2px; }
+    .switch { width: 50px; height: 30px; border-radius: 999px; background: var(--line); position: relative; flex-shrink: 0; transition: background 0.18s; }
+    .switch.on { background: var(--wine); }
+    .switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2); transition: transform 0.18s; }
+    .switch.on::after { transform: translateX(20px); }
 
     .btn-primary {
       width: 100%; padding: 15px; border-radius: 14px;
@@ -429,7 +439,7 @@ function showLock(mode) {
   $('app').classList.remove('active');
   const msg = $('lockMsg');
   msg.classList.remove('err');
-  msg.textContent = mode === 'create' ? 'Welcome! Create your family PIN'
+  msg.textContent = mode === 'create' ? 'Welcome! Create your PIN'
                   : mode === 'confirm' ? 'Type it once more to confirm'
                   : 'Enter PIN';
   renderDots();
@@ -549,15 +559,8 @@ function render() {
   bindContent();
 }
 
-function whoBarHTML() {
-  const p = state.person || 'nobody yet';
-  const cls = state.person === 'Naomi' ? 'naomi' : 'clancy';
-  return `
-    <button class="who-bar ${cls}" id="btnWho">
-      <span>Logging as <b>${esc(p)}</b></span>
-      <span class="who-change">Change</span>
-    </button>`;
-}
+const HEART = '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-1px;margin-left:4px;opacity:0.85"><path d="M12 21s-8-5.2-8-10.4A4.6 4.6 0 0 1 12 7a4.6 4.6 0 0 1 8 3.6C20 15.8 12 21 12 21z"/></svg>';
+const catLabel = c => esc(c.replace('Biz: ', '')) + (c === 'Dates' ? HEART : '');
 
 function txnRowHTML(t) {
   const initial = (t.person || 'C')[0];
@@ -570,7 +573,7 @@ function txnRowHTML(t) {
       ${thumb}
       <div class="txn-mid">
         <div class="txn-vendor">${esc(t.vendor)}</div>
-        <div class="txn-meta">${esc(t.category)}${t.notes ? ' · ' + esc(t.notes) : ''}</div>
+        <div class="txn-meta">${catLabel(t.category)}${t.notes ? ' · ' + esc(t.notes) : ''}</div>
       </div>
       <div class="txn-amt">${fmt(t.amount)}</div>
     </button>`;
@@ -602,7 +605,7 @@ function renderHome() {
         ? `<div class="cat-sub">${fmt0(spent - budget)} over the ${fmt0(budget)} budget</div>`
         : `<div class="cat-sub">${fmt0(budget - spent)} left of ${fmt0(budget)}</div>`;
     }
-    return `<div class="cat-card"><div class="cat-top"><div class="cat-name">${esc(c)}</div><div class="cat-amt">${fmt(spent)}</div></div>${sub}${barHTML}</div>`;
+    return `<div class="cat-card"><div class="cat-top"><div class="cat-name">${catLabel(c)}</div><div class="cat-amt">${fmt(spent)}</div></div>${sub}${barHTML}</div>`;
   };
 
   const groupSection = (name, catList) => {
@@ -646,7 +649,7 @@ function renderHome() {
     } else {
       sub = 'no budget set';
     }
-    return `<div class="top-card"><div class="top-name">${esc(c.replace('Biz: ', ''))}</div><div class="top-amt">${fmt0(spent)}</div>${bar}<div class="top-sub">${sub}</div></div>`;
+    return `<div class="top-card"><div class="top-name">${catLabel(c)}</div><div class="top-amt">${fmt0(spent)}</div>${bar}<div class="top-sub">${sub}</div></div>`;
   };
 
   // Clancy & Naomi player cards — each one's fun-money budget this month
@@ -697,8 +700,7 @@ function renderHome() {
       </button>
       </div>
     </div>
-    ${whoBarHTML()}
-    <div class="hero">
+    <div class="hero" style="margin-top:16px">
       <div class="hero-label">Spent in ${monthLabel(nowMonth).split(' ')[0]}</div>
       <div class="hero-amount">${fmt(total)}</div>
       <div class="hero-split"><b class="c">Clancy ${fmt0(cTotal)}</b> &nbsp;·&nbsp; <b class="n">Naomi ${fmt0(nTotal)}</b>${bTotal > 0 ? ` &nbsp;·&nbsp; <b>Bills ${fmt0(bTotal)}</b>` : ''}</div>
@@ -721,7 +723,7 @@ function renderHistory() {
   const usedCats = [...new Set(monthAll.map(t => t.category))];
   const hasBills = monthAll.some(t => t.person === 'Bills');
   const chips = ['All', 'Clancy', 'Naomi', ...(hasBills ? ['Bills'] : []), ...usedCats].map(f =>
-    `<button class="chip ${state.filter === f ? 'on' : ''}" data-filter="${esc(f)}">${esc(f)}</button>`).join('');
+    `<button class="chip ${state.filter === f ? 'on' : ''}" data-filter="${esc(f)}">${CATEGORIES.includes(f) ? catLabel(f) : esc(f)}</button>`).join('');
 
   let listHTML = '';
   let lastDate = '';
@@ -750,7 +752,6 @@ function renderHistory() {
 }
 
 function bindContent() {
-  const who = $('btnWho'); if (who) who.onclick = askWhoseParty;
   document.querySelectorAll('[data-txn]').forEach(b => b.onclick = () => openDetail(b.dataset.txn));
   document.querySelectorAll('[data-filter]').forEach(b => b.onclick = () => { state.filter = b.dataset.filter; render(); });
   const s = $('btnSettings'); if (s) s.onclick = openSettings;
@@ -851,14 +852,9 @@ function compressImage(file) {
 
 /* Confirm / edit card — used for new snaps, manual adds, and editing */
 function openConfirm(draft, photoId, existingId) {
-  const chip = c => `<button class="cat-chip ${c === draft.category ? 'on' : ''}" data-cat="${esc(c)}">${esc(c.replace('Biz: ', ''))}</button>`;
-  const cats = `
-    <div class="budget-group" style="margin-top:4px">Personal</div>
-    <div class="cat-grid">${GROUPS.Personal.map(chip).join('')}</div>
-    <div class="budget-group">Business</div>
-    <div class="cat-grid">${GROUPS.Business.map(chip).join('')}</div>`;
   const photo = photoId ? `<img class="confirm-photo" src="/api/photo/${photoId}" alt="">` : '';
   const person = draft.person || state.person || 'Clancy';
+  const startBiz = GROUPS.Business.includes(draft.category);
 
   openSheet(`
     <div class="sheet-title">${existingId ? 'Edit expense' : 'Save expense'}</div>
@@ -872,8 +868,16 @@ function openConfirm(draft, photoId, existingId) {
       <div class="field" style="max-width:130px"><label>Amount</label><input id="fAmount" type="number" inputmode="decimal" step="0.01" value="${draft.amount || ''}" placeholder="0.00"></div>
     </div>
     <div class="field"><label>Date</label><input id="fDate" type="date" value="${esc(draft.date)}"></div>
-    <div class="field"><label>Category</label><div id="catGrid">${cats}</div></div>
+    <div class="biz-toggle" id="bizToggle">
+      <div>
+        <div class="biz-label">Business expense</div>
+        <div class="biz-sub">Write-off — keeps it out of personal spending</div>
+      </div>
+      <div class="switch ${startBiz ? 'on' : ''}" id="bizSwitch"></div>
+    </div>
+    <div class="field"><label>Category</label><div id="catGrid"></div></div>
     <div class="field"><label>Note (optional)</label><input id="fNote" value="${esc(draft.note || draft.notes || '')}" placeholder=""></div>
+    <div id="saveHint" class="save-hint"></div>
     <button class="btn-primary" id="btnSave">${existingId ? 'Save changes' : 'Save expense'}</button>
     ${existingId ? '<button class="btn-danger" id="btnDelete">Delete</button>' : ''}
     <button class="btn-ghost" id="btnCancel">Cancel</button>
@@ -881,10 +885,27 @@ function openConfirm(draft, photoId, existingId) {
 
   let selCat = draft.category || 'Everything Else';
   let selPerson = person;
-  document.querySelectorAll('#catGrid .cat-chip').forEach(b => b.onclick = () => {
-    selCat = b.dataset.cat;
-    document.querySelectorAll('#catGrid .cat-chip').forEach(x => x.classList.toggle('on', x === b));
-  });
+  let isBiz = startBiz;
+
+  // Category chips follow the Business switch — personal list or business list
+  function paintCats() {
+    const list = isBiz ? GROUPS.Business : GROUPS.Personal;
+    if (!list.includes(selCat)) selCat = isBiz ? 'Biz: Bills & Subs' : 'Everything Else';
+    $('catGrid').innerHTML = `<div class="cat-grid">${list.map(c =>
+      `<button class="cat-chip ${c === selCat ? 'on' : ''}" data-cat="${esc(c)}">${catLabel(c)}</button>`
+    ).join('')}</div>`;
+    document.querySelectorAll('#catGrid .cat-chip').forEach(b => b.onclick = () => {
+      selCat = b.dataset.cat;
+      document.querySelectorAll('#catGrid .cat-chip').forEach(x => x.classList.toggle('on', x === b));
+    });
+  }
+  paintCats();
+
+  $('bizToggle').onclick = () => {
+    isBiz = !isBiz;
+    $('bizSwitch').classList.toggle('on', isBiz);
+    paintCats();
+  };
   document.querySelectorAll('[data-cperson]').forEach(b => b.onclick = () => {
     selPerson = b.dataset.cperson;
     document.querySelectorAll('[data-cperson]').forEach(x => {
@@ -903,7 +924,14 @@ function openConfirm(draft, photoId, existingId) {
       person: selPerson,
       notes: $('fNote').value.trim(),
     };
-    if (!payload.amount) { toast('Enter the amount'); return; }
+    if (!payload.amount) {
+      const amt = $('fAmount');
+      amt.style.borderColor = 'var(--red)';
+      $('saveHint').textContent = "Add the amount — I couldn't read a price on that photo.";
+      $('saveHint').style.display = 'block';
+      amt.focus();
+      return;
+    }
     $('btnSave').disabled = true;
     try {
       if (existingId) {
@@ -1014,7 +1042,7 @@ function openAwards() {
 function openBudgets() {
   const row = c => `
     <div class="budget-row">
-      <div class="name">${esc(c.replace('Biz: ', ''))}</div>
+      <div class="name">${catLabel(c)}</div>
       <input type="number" inputmode="decimal" placeholder="—" data-budget="${esc(c)}" value="${state.budgets[c] || ''}">
     </div>`;
   const rows = `
@@ -1094,8 +1122,14 @@ function openRecurring() {
 
 /* Settings */
 function openSettings() {
+  const who = state.person || 'not set';
+  const whoCls = state.person === 'Naomi' ? 'naomi' : 'clancy';
   openSheet(`
     <div class="sheet-title">Settings</div>
+    <button class="who-bar ${whoCls}" id="optWho" style="margin:0 0 10px">
+      <span>Logging as <b>${esc(who)}</b></span>
+      <span class="who-change">Change</span>
+    </button>
     <button class="snap-opt" id="optRecurring">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
       Monthly bills (auto-post)
@@ -1108,8 +1142,9 @@ function openSettings() {
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
       Lock app
     </button>
-    <div style="text-align:center;font-size:12px;color:var(--text-faint);margin-top:12px">Money is Fun · Booher family budget</div>
+    <div style="text-align:center;font-size:12px;color:var(--text-faint);margin-top:12px">Money is Fun</div>
   `);
+  $('optWho').onclick = () => { closeSheet(); askWhoseParty(); };
   $('optRecurring').onclick = () => { closeSheet(); openRecurring(); };
   $('optBudgets2').onclick = () => { closeSheet(); openBudgets(); };
   $('optLogout').onclick = async () => {

@@ -1,4 +1,4 @@
-# Money is Fun — Booher family budget
+# Money is Fun
 
 Dead-simple expense tracker for Clancy & Naomi (formerly "Velocity"; repo name
 kept). Snap a receipt (or a photo of the thing you bought), the AI reads it,
@@ -13,7 +13,7 @@ player cards, awards, and logging streaks to keep it fun.
 iPhone camera → Pages Function → Gemini vision → confirm card → shared ledger (Cloudflare KV)
 ```
 
-- **No accounts** — one shared 4-digit family PIN (created on first launch, sessions last a year)
+- **No accounts** — one shared 4-digit PIN (created on first launch, sessions last a year)
 - **Storage** — everything lives in Cloudflare KV (`VELOCITY_KV`): ledger, budgets, photos, PIN, sessions
 - **AI** — Gemini reads receipts/item photos server-side; only env var needed is `GEMINI_API_KEY`
   (optional `GEMINI_MODEL`, defaults to `gemini-2.5-flash`)
