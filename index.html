@@ -882,7 +882,7 @@ async function handleImage(file) {
     fd.append('person', state.person || 'Clancy');
     const res = await api('receipt', { method: 'POST', body: fd });
     spin(false);
-    openConfirm(res.draft, res.photoId, null, { aiCategory: res.draft.category, learnedHit: res.learnedHit, dateWarning: res.dateWarning });
+    openConfirm(res.draft, res.photoId, null, { aiCategory: res.draft.category, learnedHit: res.learnedHit, dateWarning: res.dateWarning, amountWarning: res.amountWarning });
   } catch (e) {
     spin(false);
     if (e.message !== 'locked') toast(e.message);
@@ -895,7 +895,9 @@ function compressImage(file) {
     const url = URL.createObjectURL(file);
     img.onload = () => {
       URL.revokeObjectURL(url);
-      const MAX = 1280;
+      // Receipt totals and the date-on-the-barcode line are small print —
+      // keep enough resolution for the model to actually read them.
+      const MAX = 2000;
       let { width: w, height: h } = img;
       if (Math.max(w, h) > MAX) {
         const k = MAX / Math.max(w, h);
@@ -903,8 +905,10 @@ function compressImage(file) {
       }
       const canvas = document.createElement('canvas');
       canvas.width = w; canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      canvas.toBlob(b => b ? resolve(b) : reject(new Error('Could not process image')), 'image/jpeg', 0.82);
+      const ctx = canvas.getContext('2d');
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, 0, 0, w, h);
+      canvas.toBlob(b => b ? resolve(b) : reject(new Error('Could not process image')), 'image/jpeg', 0.92);
     };
     img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not read image')); };
     img.src = url;
@@ -928,6 +932,7 @@ function openConfirm(draft, photoId, existingId, ai = {}) {
       <div class="field"><label>Where</label><input id="fVendor" value="${esc(draft.vendor)}" placeholder="Store"></div>
       <div class="field" style="max-width:130px"><label>Amount</label><input id="fAmount" type="number" inputmode="decimal" step="0.01" value="${draft.amount || ''}" placeholder="0.00"></div>
     </div>
+    ${ai.amountWarning ? `<div class="date-warn" style="margin:-6px 0 12px">${esc(ai.amountWarning)}</div>` : ''}
     <div class="field"><label>Date</label><input id="fDate" type="date" value="${esc(draft.date)}">
       ${ai.dateWarning ? `<div class="date-warn">${esc(ai.dateWarning)} — <button id="btnUseToday">use today</button></div>` : ''}
     </div>

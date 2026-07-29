@@ -66,15 +66,26 @@ export async function onRequestPost(context) {
           contents: [{
             parts: [
               {
-                text: `You are the expense parser for a family budget app. The image is either a store receipt OR a photo of an item that was purchased.
+                text: `You are the expense parser for a family budget app. The image is either a store receipt OR a photo of an item that was purchased. Today is ${new Date().toISOString().slice(0, 10)}.
+
+Work through the receipt carefully before answering. Read the printed characters that are actually there — never infer, complete, or guess a number from context.
 
 Return ONLY a JSON object — no markdown, no code blocks. Format:
-{"vendor": "Store Name", "amount": 12.34, "date": "YYYY-MM-DD", "category": "Category Name", "note": "what was bought"}
+{"vendor": "Store Name", "amount": 12.34, "date": "YYYY-MM-DD", "category": "Category Name", "note": "what was bought", "amountConfidence": "high|low", "dateConfidence": "high|low"}
 
-Rules:
-- If it's a RECEIPT: vendor = merchant name properly capitalized, amount = final total paid, date = purchase date (YYYY-MM-DD).
-- If it's a PHOTO OF AN ITEM (no receipt visible): describe the item briefly in note, set vendor to the brand/store if identifiable else "Unknown", and set amount to the price if visible on a tag, else 0.
-- If the date is not visible, use today's date.
+READING THE AMOUNT — this is the field people notice when it's wrong:
+- Report the FINAL AMOUNT CHARGED: the grand total after discounts and tax.
+- Receipt columns are often misaligned, so a label and the number printed beside it may belong to DIFFERENT rows. Verify by cross-checking: the total should also appear near the payment line (e.g. "AMOUNT: $271.43", "EFT/Debit 271.43", "Visa 15.99"). When the payment line and the row you read from disagree, TRUST THE PAYMENT LINE.
+- Warehouse stores (Costco/Sam's) print "SUBTOTAL / TAX / **** TOTAL" with values offset; the largest value in that block is normally the total, and it repeats at the tender line. A "SUBTOTAL" of 0.00 means you are misreading the alignment.
+- Ignore "INSTANT SAVINGS", "you saved", coupon, member-savings, and change-due lines — those are not the amount paid.
+- If the total is obscured, cut off, or you cannot confirm it against a payment line, set amountConfidence to "low".
+
+READING THE DATE — do NOT skip this:
+- The purchase date is frequently NOT at the top. On Costco and many stores it appears at the BOTTOM, on or just above the barcode line, as MM/DD/YYYY followed by a time (e.g. "07/28/2026 15:07"). Look there before concluding there is no date.
+- Also check near the payment/authorization block.
+- US format is MM/DD/YYYY. Two-digit years are 20YY.
+- Only use a date you can actually read on the receipt. If you cannot find one, use today's date (${new Date().toISOString().slice(0, 10)}) and set dateConfidence to "low" — do NOT guess a year, and never output a year before ${new Date().getFullYear() - 1} unless it is plainly printed.
+- If it's a PHOTO OF AN ITEM (no receipt visible): describe the item briefly in note, set vendor to the brand/store if identifiable else "Unknown", and set amount to the price if visible on a tag, else 0, with amountConfidence "low".
 - amount must be a decimal number, not a string.
 - category: pick exactly one from:
   ${CATEGORIES.join(' | ')}
@@ -103,7 +114,7 @@ Rules:
             ]
           }],
           generationConfig: {
-            temperature: 0.1,
+            temperature: 0,
             responseMimeType: 'application/json',
           }
         })
@@ -162,7 +173,14 @@ Rules:
       date = today;
     } else if (drift < -45) {
       dateWarning = `That receipt reads ${date}`;
+    } else if (parsed.dateConfidence === 'low') {
+      dateWarning = "I couldn't find a date — using today";
+      date = today;
     }
+
+    const amountWarning = parsed.amountConfidence === 'low'
+      ? "Double-check the amount — I wasn't sure I read the total right"
+      : null;
 
     const draft = {
       vendor,
@@ -173,7 +191,7 @@ Rules:
       note: String(parsed.note || '').trim(),
     };
 
-    return new Response(JSON.stringify({ ok: true, draft, photoId, learnedHit, dateWarning }), { headers: JSON_HEADERS });
+    return new Response(JSON.stringify({ ok: true, draft, photoId, learnedHit, dateWarning, amountWarning }), { headers: JSON_HEADERS });
 
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: JSON_HEADERS });
