@@ -5,8 +5,14 @@
 // PATCH  /api/transactions — edit fields on an entry by id
 // DELETE /api/transactions — remove an entry by id (also deletes its photo)
 
+import { learnRule } from './rules.js';
+
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
 const LEDGER_KEY = 'household:ledger';
+const BUSINESS_CATEGORIES = [
+  'Biz: Diesel', 'Biz: Advertising', 'Biz: Coffee Shop', 'Biz: Tesla',
+  'Biz: Trailer', 'Biz: Bills & Subs',
+];
 
 async function readLedger(env) {
   const raw = await env.VELOCITY_KV.get(LEDGER_KEY);
@@ -76,6 +82,12 @@ export async function onRequestPost({ request, env }) {
     const entries = await readLedger(env);
     entries.push(entry);
     await writeLedger(env, entries);
+
+    // If they filed it somewhere other than the AI's guess, remember that
+    if (body.aiCategory && body.aiCategory !== entry.category) {
+      await learnRule(env, entry.vendor, entry.category, BUSINESS_CATEGORIES.includes(entry.category));
+    }
+
     return new Response(JSON.stringify({ ok: true, entry }), { headers: JSON_HEADERS });
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: JSON_HEADERS });
@@ -101,6 +113,12 @@ export async function onRequestPatch({ request, env }) {
     if (body.amount !== undefined) e.amount = -Math.abs(parseFloat(body.amount) || 0);
 
     await writeLedger(env, entries);
+
+    // Recategorizing an existing expense teaches the same lesson
+    if (body.category !== undefined) {
+      await learnRule(env, e.vendor, e.category, BUSINESS_CATEGORIES.includes(e.category));
+    }
+
     return new Response(JSON.stringify({ ok: true, entry: e }), { headers: JSON_HEADERS });
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: JSON_HEADERS });

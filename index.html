@@ -247,6 +247,7 @@
 
     .confirm-photo { width: 100%; max-height: 200px; object-fit: contain; border-radius: 14px; background: var(--card); margin-bottom: 14px; }
     .save-hint { display: none; font-size: 13px; font-weight: 600; color: var(--red); text-align: center; margin-top: 10px; }
+    .learned-note { font-size: 11.5px; font-weight: 600; color: var(--green); text-align: center; margin: -6px 0 12px; }
 
     /* Business toggle in the confirm sheet */
     .biz-toggle { display: flex; align-items: center; justify-content: space-between; background: var(--card); border-radius: var(--radius); padding: 13px 16px; margin-bottom: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
@@ -821,7 +822,7 @@ async function handleImage(file) {
     fd.append('person', state.person || 'Clancy');
     const res = await api('receipt', { method: 'POST', body: fd });
     spin(false);
-    openConfirm(res.draft, res.photoId);
+    openConfirm(res.draft, res.photoId, null, { aiCategory: res.draft.category, learnedHit: res.learnedHit });
   } catch (e) {
     spin(false);
     if (e.message !== 'locked') toast(e.message);
@@ -851,7 +852,7 @@ function compressImage(file) {
 }
 
 /* Confirm / edit card — used for new snaps, manual adds, and editing */
-function openConfirm(draft, photoId, existingId) {
+function openConfirm(draft, photoId, existingId, ai = {}) {
   const photo = photoId ? `<img class="confirm-photo" src="/api/photo/${photoId}" alt="">` : '';
   const person = draft.person || state.person || 'Clancy';
   const startBiz = GROUPS.Business.includes(draft.category);
@@ -871,10 +872,11 @@ function openConfirm(draft, photoId, existingId) {
     <div class="biz-toggle" id="bizToggle">
       <div>
         <div class="biz-label">Business expense</div>
-        <div class="biz-sub">Write-off — keeps it out of personal spending</div>
+        <div class="biz-sub" id="bizSub">${startBiz ? 'Write-off — kept out of personal spending' : 'Personal spending'}</div>
       </div>
       <div class="switch ${startBiz ? 'on' : ''}" id="bizSwitch"></div>
     </div>
+    ${ai.learnedHit ? '<div class="learned-note">Filed the way you did last time</div>' : ''}
     <div class="field"><label>Category</label><div id="catGrid"></div></div>
     <div class="field"><label>Note (optional)</label><input id="fNote" value="${esc(draft.note || draft.notes || '')}" placeholder=""></div>
     <div id="saveHint" class="save-hint"></div>
@@ -904,6 +906,7 @@ function openConfirm(draft, photoId, existingId) {
   $('bizToggle').onclick = () => {
     isBiz = !isBiz;
     $('bizSwitch').classList.toggle('on', isBiz);
+    $('bizSub').textContent = isBiz ? 'Write-off — kept out of personal spending' : 'Personal spending';
     paintCats();
   };
   document.querySelectorAll('[data-cperson]').forEach(b => b.onclick = () => {
@@ -938,13 +941,16 @@ function openConfirm(draft, photoId, existingId) {
         await api('transactions', { method: 'PATCH', body: JSON.stringify({ id: existingId, ...payload }) });
         toast('Updated');
       } else {
-        await api('transactions', { method: 'POST', body: JSON.stringify({ ...payload, photoId: photoId || null }) });
+        await api('transactions', { method: 'POST', body: JSON.stringify({ ...payload, photoId: photoId || null, aiCategory: ai.aiCategory || null }) });
       }
       closeSheet();
       await loadData();
       if (!existingId) {
+        const corrected = ai.aiCategory && ai.aiCategory !== payload.category;
         const streak = calcStreak();
-        toast(streak >= 2 ? `Saved — ${streak}-day streak` : 'Saved — ' + payload.category.replace('Biz: ', ''));
+        toast(corrected ? `Saved — I'll remember ${payload.vendor}`
+            : streak >= 2 ? `Saved — ${streak}-day streak`
+            : 'Saved — ' + payload.category.replace('Biz: ', ''));
       }
       render();
     } catch (e) {
@@ -1120,6 +1126,47 @@ function openRecurring() {
   }).catch(e => { spin(false); if (e.message !== 'locked') toast(e.message); });
 }
 
+/* What the app has learned about vendors */
+function openRules() {
+  spin(true, 'Loading…');
+  api('rules').then(res => {
+    spin(false);
+    const rules = Object.entries(res.rules || {});
+    const body = rules.length === 0
+      ? `<div class="empty" style="padding:24px 8px">Nothing learned yet.<br><br>When you change a category the app suggested, it remembers that store next time.</div>`
+      : rules.sort((a, b) => (b[1].updated_at || '').localeCompare(a[1].updated_at || '')).map(([k, r]) => `
+        <div class="rec-row">
+          <div class="rec-name" style="font-size:14px;font-weight:600">${esc(r.vendor)}
+            <div style="font-size:11.5px;color:var(--text-faint);font-weight:500">always ${catLabel(r.category)}${r.business ? ' · business' : ''}</div>
+          </div>
+          <button class="rec-del" data-forget="${esc(r.vendor)}">×</button>
+        </div>`).join('');
+    openSheet(`
+      <div class="sheet-title">Learned stores</div>
+      <div style="font-size:13px;color:var(--text-mid);margin-bottom:14px">The app files these automatically. Tap × to make it forget one.</div>
+      ${body}
+      ${rules.length ? '<button class="btn-danger" id="btnForgetAll">Forget all</button>' : ''}
+      <button class="btn-ghost" id="btnCloseRules">Close</button>
+    `);
+    document.querySelectorAll('[data-forget]').forEach(b => b.onclick = async () => {
+      try {
+        await api('rules', { method: 'DELETE', body: JSON.stringify({ vendor: b.dataset.forget }) });
+        openRules();
+      } catch (e) { if (e.message !== 'locked') toast(e.message); }
+    });
+    const fa = $('btnForgetAll');
+    if (fa) fa.onclick = async () => {
+      if (!confirm('Forget everything the app has learned?')) return;
+      try {
+        await api('rules', { method: 'DELETE', body: JSON.stringify({ all: true }) });
+        toast('Cleared');
+        openRules();
+      } catch (e) { if (e.message !== 'locked') toast(e.message); }
+    };
+    $('btnCloseRules').onclick = closeSheet;
+  }).catch(e => { spin(false); if (e.message !== 'locked') toast(e.message); });
+}
+
 /* Settings */
 function openSettings() {
   const who = state.person || 'not set';
@@ -1134,6 +1181,10 @@ function openSettings() {
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
       Monthly bills (auto-post)
     </button>
+    <button class="snap-opt" id="optRules">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 0-4 12.7V17a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-2.3A7 7 0 0 0 12 2Z"/><line x1="10" y1="22" x2="14" y2="22"/></svg>
+      Learned stores
+    </button>
     <button class="snap-opt" id="optBudgets2">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
       Monthly budgets
@@ -1146,6 +1197,7 @@ function openSettings() {
   `);
   $('optWho').onclick = () => { closeSheet(); askWhoseParty(); };
   $('optRecurring').onclick = () => { closeSheet(); openRecurring(); };
+  $('optRules').onclick = () => { closeSheet(); openRules(); };
   $('optBudgets2').onclick = () => { closeSheet(); openBudgets(); };
   $('optLogout').onclick = async () => {
     try { await fetch('/api/auth/pin', { method: 'DELETE' }); } catch {}

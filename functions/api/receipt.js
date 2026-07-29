@@ -4,7 +4,14 @@
 // confirm. Nothing hits the ledger until the client saves it via
 // POST /api/transactions.
 
+import { readRules, vendorKey } from './rules.js';
+
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
+
+export const BUSINESS_CATEGORIES = [
+  'Biz: Diesel', 'Biz: Advertising', 'Biz: Coffee Shop', 'Biz: Tesla',
+  'Biz: Trailer', 'Biz: Bills & Subs',
+];
 
 export const CATEGORIES = [
   'Groceries', 'Dates', 'Clancy Fun', 'Naomi Fun', 'Dog Food',
@@ -40,6 +47,16 @@ export async function onRequestPost(context) {
 
     const model = env.GEMINI_MODEL || 'gemini-2.5-flash';
 
+    // Feed back what we've learned from past corrections
+    const rules = await readRules(env);
+    const ruleLines = Object.values(rules)
+      .slice(-40)
+      .map(r => `  * "${r.vendor}" → ${r.category}${r.business ? ' (business)' : ''}`)
+      .join('\n');
+    const learned = ruleLines
+      ? `\n- LEARNED PREFERENCES — these override the hints above; this household has corrected you before:\n${ruleLines}\n`
+      : '';
+
     const geminiRes = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`,
       {
@@ -70,6 +87,13 @@ Rules:
   * Diesel or gas station fuel → Biz: Diesel (they run a window & door business with a work truck)
   * Google/Facebook/online ads → Biz: Advertising
   * Anything that doesn't clearly fit → Everything Else
+- They run Peak View Windows and Doors, a window & door installation business in Bend, OR.
+  Treat a purchase as BUSINESS when it's plainly for that trade: fuel for the work truck,
+  lumber/hardware/tools/jobsite materials, online advertising, trailer or vehicle costs,
+  business insurance/bonding/phone/internet, or coffee bought while working.
+  Treat it as PERSONAL when it's household groceries, a meal out together, clothing,
+  personal care, pet supplies, or hobby/leisure items.
+  If it is genuinely ambiguous, choose personal.${learned}
 - note: very short (1 line max), or empty string.`
               },
               { inlineData: { mimeType, data: base64Image } }
@@ -111,15 +135,27 @@ Rules:
     await env.VELOCITY_KV.put(`photo:${photoId}`, JSON.stringify({ mime: mimeType, data: base64Image }));
 
     const today = new Date().toISOString().split('T')[0];
+    const vendor = String(parsed.vendor || 'Unknown').trim() || 'Unknown';
+    let category = CATEGORIES.includes(parsed.category) ? parsed.category : 'Everything Else';
+
+    // An exact learned rule for this vendor always wins over the model's guess
+    const rule = rules[vendorKey(vendor)];
+    let learnedHit = false;
+    if (rule && CATEGORIES.includes(rule.category)) {
+      category = rule.category;
+      learnedHit = true;
+    }
+
     const draft = {
-      vendor: String(parsed.vendor || 'Unknown').trim() || 'Unknown',
+      vendor,
       amount: Math.abs(parseFloat(parsed.amount) || 0),
       date: parsed.date && /^\d{4}-\d{2}-\d{2}$/.test(parsed.date) ? parsed.date : today,
-      category: CATEGORIES.includes(parsed.category) ? parsed.category : 'Everything Else',
+      category,
+      business: BUSINESS_CATEGORIES.includes(category),
       note: String(parsed.note || '').trim(),
     };
 
-    return new Response(JSON.stringify({ ok: true, draft, photoId }), { headers: JSON_HEADERS });
+    return new Response(JSON.stringify({ ok: true, draft, photoId, learnedHit }), { headers: JSON_HEADERS });
 
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: JSON_HEADERS });
