@@ -5,20 +5,56 @@
 // POST /api/transactions.
 
 import { readRules, vendorKey, tidyVendor } from './rules.js';
+import {
+  TAX_CATEGORIES,
+  LEGACY_BIZ_CATEGORIES,
+  LEGACY_TO_TAX,
+  BUSINESS_CATEGORIES,
+  isBusinessCategory,
+  normalizeTaxCategory,
+} from './transactions.js';
 
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
 
-export const BUSINESS_CATEGORIES = [
-  'Biz: Diesel', 'Biz: Advertising', 'Biz: Coffee Shop', 'Biz: Tesla',
-  'Biz: Trailer', 'Biz: Bills & Subs',
-];
+// Re-export for any consumer that imported from receipt.js
+export { BUSINESS_CATEGORIES, TAX_CATEGORIES };
 
-export const CATEGORIES = [
+// Personal household categories (unchanged)
+export const PERSONAL_CATEGORIES = [
   'Groceries', 'Dates', 'Clancy Fun', 'Naomi Fun', 'Dog Food',
   'House & Projects', 'Rent', 'Subscriptions', 'Everything Else',
-  'Biz: Diesel', 'Biz: Advertising', 'Biz: Coffee Shop', 'Biz: Tesla',
-  'Biz: Trailer', 'Biz: Bills & Subs',
 ];
+
+// Full set Gemini may return — personal + tax codes + legacy Biz:* (compat)
+export const CATEGORIES = [
+  ...PERSONAL_CATEGORIES,
+  ...TAX_CATEGORIES,
+  ...LEGACY_BIZ_CATEGORIES,
+];
+
+const TAX_HINTS = `
+Business tax categories (window & door contractor — use these snake_case codes for ANY business expense):
+  * materials — windows, doors, lumber, hardware, glass, foam, caulk, flashing, consumables (COGS/supplies)
+  * subcontractors — other trades paid on a job (contract labor)
+  * vehicle_fuel — diesel / gas for work truck
+  * vehicle_maint — tires, service, Tesla charging, trailer repairs
+  * tools_equipment — tools and equipment (flag big capital items in note)
+  * ads_marketing — Google/Facebook ads, website, signs, print
+  * office_software — SaaS, phone, software, business subscriptions
+  * insurance — liability, auto, workers comp
+  * permits_fees — building permits, dump fees, licenses
+  * disposal — dump runs, dumpster, haul-away
+  * meals — client/crew meals while working (partial deductibility — flag in note if client meal)
+  * travel — hotel, out-of-area job travel
+  * rent_storage — storage unit, shop rent
+  * professional — CPA, lawyer, bookkeeping
+  * training — classes, certifications
+  * misc_business — catch-all business; prefer a tighter code when possible
+
+Legacy labels still accepted (map in your head): Biz: Diesel→vehicle_fuel, Biz: Advertising→ads_marketing,
+Biz: Coffee Shop→meals, Biz: Tesla/Trailer→vehicle_maint, Biz: Bills & Subs→office_software.
+Prefer the snake_case tax codes above over Biz:* labels.
+`;
 
 export async function onRequestPost(context) {
   const { request, env } = context;
@@ -51,7 +87,10 @@ export async function onRequestPost(context) {
     const rules = await readRules(env);
     const ruleLines = Object.values(rules)
       .slice(-40)
-      .map(r => `  * "${r.vendor}" → ${r.category}${r.business ? ' (business)' : ''}`)
+      .map(r => {
+        const tax = r.taxCategory ? ` tax=${r.taxCategory}` : '';
+        return `  * "${r.vendor}" → ${r.category}${r.business ? ' (business)' : ''}${tax}`;
+      })
       .join('\n');
     const learned = ruleLines
       ? `\n- LEARNED PREFERENCES — these override the hints above; this household has corrected you before:\n${ruleLines}\n`
@@ -66,12 +105,12 @@ export async function onRequestPost(context) {
           contents: [{
             parts: [
               {
-                text: `You are the expense parser for a family budget app. The image is either a store receipt OR a photo of an item that was purchased. Today is ${new Date().toISOString().slice(0, 10)}.
+                text: `You are the expense parser for a family budget app that also tracks a small contractor business (Peak View Windows and Doors, Bend OR). The image is either a store receipt OR a photo of an item that was purchased. Today is ${new Date().toISOString().slice(0, 10)}.
 
 Work through the receipt carefully before answering. Read the printed characters that are actually there — never infer, complete, or guess a number from context.
 
 Return ONLY a JSON object — no markdown, no code blocks. Format:
-{"vendor": "Store Name", "amount": 12.34, "date": "YYYY-MM-DD", "category": "Category Name", "note": "what was bought", "amountConfidence": "high|low", "dateConfidence": "high|low"}
+{"vendor": "Store Name", "amount": 12.34, "date": "YYYY-MM-DD", "category": "Category Name", "taxCategory": "materials|null", "note": "what was bought", "amountConfidence": "high|low", "dateConfidence": "high|low"}
 
 READING THE AMOUNT — this is the field people notice when it's wrong:
 - Report the FINAL AMOUNT CHARGED: the grand total after discounts and tax.
@@ -89,25 +128,32 @@ READING THE DATE — do NOT skip this:
 - amount must be a decimal number, not a string.
 - category: pick exactly one from:
   ${CATEGORIES.join(' | ')}
+- taxCategory: when the expense is BUSINESS, set taxCategory to one of: ${TAX_CATEGORIES.join(' | ')}.
+  When PERSONAL, set taxCategory to null.
+${TAX_HINTS}
 - Category hints for this family (${person} is the one submitting this expense):
-  * Grocery stores (food) → Groceries
-  * Restaurant/coffee/dessert for two people → Dates
+  * Grocery stores (food) → Groceries (personal)
+  * Restaurant/coffee/dessert for two people → Dates (personal)
   * A solo treat, hobby, or personal purchase → "${person} Fun"
   * Pet or dog supplies → Dog Food
-  * Hardware store, home improvement, furniture → House & Projects
-  * Diesel or gas station fuel → Biz: Diesel (they run a window & door business with a work truck)
-  * Google/Facebook/online ads → Biz: Advertising
-  * Anything that doesn't clearly fit → Everything Else
+  * Diesel or gas station fuel for work → category vehicle_fuel (or Biz: Diesel), taxCategory vehicle_fuel
+  * Google/Facebook/online ads → ads_marketing
+  * Hardware store job materials (lumber, fasteners, foam) → materials
+  * Tools from Harbor Freight / tool suppliers → tools_equipment
+  * Dump / transfer fees → disposal or permits_fees
+  * Anything that doesn't clearly fit personal → Everything Else; business catch-all → misc_business
 - They run Peak View Windows and Doors, a window & door installation business in Bend, OR.
   HOUSEHOLD RULE — apply this first, it overrides your own judgment:
   * Hardware, home improvement, building supply, tool, or lumber stores are ALWAYS business.
     This explicitly includes Home Depot, Lowe's, Ace Hardware, Harbor Freight, lumber yards,
     and window/door/glass suppliers — even when the items look like household goods.
-  * If the purchase is NOT food or drink, default to BUSINESS.
+  * If the purchase is NOT food or drink, default to BUSINESS with the best tax code.
   * Food and drink is personal by default: grocery stores, restaurants, and takeout.
-    The exceptions that stay business are fuel and coffee bought while working.
+    The exceptions that stay business are fuel and coffee bought while working (meals / vehicle_fuel).
   * Personal also covers clothing, personal care, pet supplies, and hobby/leisure items
-    bought somewhere that is clearly not a trade supplier.${learned}
+    bought somewhere that is clearly not a trade supplier.
+  * For business expenses prefer snake_case tax codes as the category value (e.g. "materials"
+    not "Biz: …"). Legacy Biz:* labels still work if you must.${learned}
 - note: very short (1 line max), or empty string.`
               },
               { inlineData: { mimeType, data: base64Image } }
@@ -152,12 +198,29 @@ READING THE DATE — do NOT skip this:
     const vendor = tidyVendor(parsed.vendor);
     let category = CATEGORIES.includes(parsed.category) ? parsed.category : 'Everything Else';
 
+    // Normalize: if model returned a tax code as category, keep it
+    if (TAX_CATEGORIES.includes(parsed.category)) {
+      category = parsed.category;
+    } else if (LEGACY_TO_TAX[parsed.category]) {
+      category = parsed.category; // keep legacy label for phone UI if needed
+    }
+
     // An exact learned rule for this vendor always wins over the model's guess
     const rule = rules[vendorKey(vendor)];
     let learnedHit = false;
-    if (rule && CATEGORIES.includes(rule.category)) {
+    if (rule && (CATEGORIES.includes(rule.category) || TAX_CATEGORIES.includes(rule.category))) {
       category = rule.category;
       learnedHit = true;
+    }
+
+    // taxCategory: rule > explicit parse > derive from category
+    let taxCategory = null;
+    if (learnedHit && rule.taxCategory && TAX_CATEGORIES.includes(rule.taxCategory)) {
+      taxCategory = rule.taxCategory;
+    } else if (parsed.taxCategory && TAX_CATEGORIES.includes(parsed.taxCategory)) {
+      taxCategory = parsed.taxCategory;
+    } else {
+      taxCategory = normalizeTaxCategory(category);
     }
 
     // Misread receipt dates silently corrupt every total in the app, so flag
@@ -182,12 +245,16 @@ READING THE DATE — do NOT skip this:
       ? "Double-check the amount — I wasn't sure I read the total right"
       : null;
 
+    const business = isBusinessCategory(category) || !!taxCategory;
+
     const draft = {
       vendor,
       amount: Math.abs(parseFloat(parsed.amount) || 0),
       date,
       category,
-      business: BUSINESS_CATEGORIES.includes(category),
+      taxCategory,
+      business,
+      deductible: business,
       note: String(parsed.note || '').trim(),
     };
 
