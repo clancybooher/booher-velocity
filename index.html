@@ -24,8 +24,8 @@
       --ink: #33302B;          /* sumi — soft black with warmth */
       --ink-deep: #211F1C;
       --text: #33302B;
-      --text-mid: #7A736A;
-      --text-faint: #A9A297;
+      --text-mid: #57524A;
+      --text-faint: #7B7469;
       --line: #DDD8CE;         /* the thin rule, used sparingly */
       --line-soft: #E8E4DB;
       --teal: #6B8E7F;         /* matcha */
@@ -33,7 +33,15 @@
       --green: #6B8E7F;
       --red: #A85B52;          /* akane — madder */
       --amber: #B8925C;        /* kihada */
-      --naomi: #6C8494;        /* kachi — indigo grey */
+      /* The two of them, in pigment: Clancy a creamy sky, Naomi a creamy rose.
+         Each has a deeper "-ink" for text, since the pastel alone can't carry
+         contrast on paper this warm. */
+      --clancy: #8FB0C7;       /* sorairo — soft sky */
+      --clancy-ink: #4E748E;
+      --clancy-soft: #E6EEF4;
+      --naomi: #CE96A4;        /* sakura — dusty rose */
+      --naomi-ink: #96606F;
+      --naomi-soft: #F4E8EB;
       --radius: 12px;
       --radius-lg: 18px;
       /* Depth comes from hairlines and spacing, not drop shadows */
@@ -60,8 +68,8 @@
       letter-spacing: -0.011em;
     }
     /* Tabular figures everywhere money is shown — columns line up, no jitter */
-    .hero-amount, .top-amt, .txn-amt, .cat-amt, .player-fun, .week-amt,
-    .goal-saved, .recap-total, .recap-line b { font-variant-numeric: tabular-nums; }
+    .hero-amount, .top-amt, .txn-amt, .cat-amt, .cat-of, .week-amt,
+    .goal-saved, .recap-total, .recap-line b, .bill-amt { font-variant-numeric: tabular-nums; }
     button { font-family: inherit; border: none; background: none; cursor: pointer; color: inherit; }
     input, select, textarea { font-family: inherit; font-size: 16px; }
 
@@ -109,12 +117,12 @@
       font-size: 13.5px; font-weight: 600; color: var(--text-mid);
       box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
-    .who-bar.clancy b { color: var(--wine); }
-    .who-bar.naomi b { color: var(--naomi); }
-    .who-change { font-size: 12px; font-weight: 700; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.05em; }
+    .who-bar.clancy b { color: var(--clancy-ink); }
+    .who-bar.naomi b { color: var(--naomi-ink); }
+    .who-change { font-size: 13px; font-weight: 700; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.05em; }
 
     /* Sync banner */
-    .sync-note { text-align: center; font-size: 11.5px; color: var(--text-faint); margin: -8px 0 12px; }
+    .sync-note { text-align: center; font-size: 13px; font-weight: 500; color: var(--text-faint); margin: -8px 0 12px; }
 
     /* Person toggle */
     .person-toggle { display: flex; background: var(--line-soft); border-radius: 999px; padding: 3px; margin: 14px 0 18px; }
@@ -124,65 +132,38 @@
       transition: all 0.18s var(--ease);
     }
     .person-toggle button.on { background: var(--card); color: var(--text); box-shadow: var(--shadow-sm); }
-    .person-toggle button.on.clancy { color: var(--wine); }
-    .person-toggle button.on.naomi { color: var(--naomi); }
+    .person-toggle button.on.clancy { color: var(--clancy-ink); }
+    .person-toggle button.on.naomi { color: var(--naomi-ink); }
 
     /* Month hero */
     /* ma — the number is given room, and sits left like a brushstroke */
     .hero { text-align: left; margin: 44px 0 52px; }
     .hero-label {
-      font-size: 10.5px; font-weight: 400; color: var(--text-faint);
-      text-transform: uppercase; letter-spacing: 0.22em;
+      font-size: 13px; font-weight: 600; color: var(--text-faint);
+      text-transform: uppercase; letter-spacing: 0.08em;
     }
     .hero-amount {
-      font-size: 54px; font-weight: 250; letter-spacing: -0.03em;
+      font-size: 54px; font-weight: 700; letter-spacing: -0.03em;
       margin-top: 18px; line-height: 1; color: var(--ink);
     }
-    .hero-amount .cents { font-size: 0.42em; font-weight: 300; color: var(--text-faint); letter-spacing: 0; margin-left: 1px; }
+    .hero-amount .cents { font-size: 0.42em; font-weight: 600; color: var(--text-faint); letter-spacing: 0; margin-left: 1px; }
     .hero-split {
       display: flex; align-items: center; gap: 20px;
-      font-size: 11.5px; font-weight: 400; color: var(--text-mid); margin-top: 26px;
+      font-size: 13px; font-weight: 500; color: var(--text-mid); margin-top: 26px;
       letter-spacing: 0.02em;
     }
     .hero-split .dot { width: 4px; height: 4px; border-radius: 50%; flex-shrink: 0; }
     .hero-split .seg { display: inline-flex; align-items: center; gap: 7px; }
-    .hero-split b { font-weight: 500; color: var(--ink); }
+    .hero-split b { font-weight: 700; color: var(--ink); }
 
     .section-title {
-      font-size: 10px; font-weight: 400; text-transform: uppercase; letter-spacing: 0.24em;
+      font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em;
       color: var(--text-faint); margin: 52px 0 4px;
       display: flex; justify-content: space-between; align-items: center;
       padding-bottom: 14px; border-bottom: 1px solid var(--line);
     }
-    .section-title button { font-size: 11px; font-weight: 400; color: var(--text-mid); text-transform: none; letter-spacing: 0.02em; }
+    .section-title button { font-size: 13px; font-weight: 500; color: var(--text-mid); text-transform: none; letter-spacing: 0.02em; }
     .section-title button:active { opacity: 0.5; }
-
-    /* Player cards */
-    .players {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 28px;
-      margin-bottom: 0; padding-top: 4px;
-    }
-    .player {
-      padding: 0; text-align: left; min-width: 0;
-      transition: opacity 0.2s var(--ease);
-    }
-    .player:active { opacity: 0.55; }
-    .player-head { display: flex; justify-content: space-between; align-items: center; gap: 6px; min-height: 16px; }
-    .player-name {
-      display: inline-flex; align-items: center; gap: 7px;
-      font-size: 11px; font-weight: 400; letter-spacing: 0.14em; text-transform: uppercase;
-      color: var(--text-faint);
-    }
-    .player-name::before { content: ''; width: 4px; height: 4px; border-radius: 50%; flex-shrink: 0; }
-    .player.clancy .player-name::before { background: var(--wine); }
-    .player.naomi .player-name::before { background: var(--naomi); }
-    .lead-tag {
-      font-size: 9px; font-weight: 400; text-transform: uppercase; letter-spacing: 0.12em;
-      color: var(--teal); white-space: nowrap;
-    }
-    .player-fun { font-size: 26px; font-weight: 280; letter-spacing: -0.025em; margin: 13px 0 0; line-height: 1; color: var(--ink); }
-    .player-fun span { font-size: 10.5px; font-weight: 400; color: var(--text-faint); letter-spacing: 0.02em; margin-left: 5px; }
-    .player-sub { font-size: 11px; color: var(--text-faint); margin-top: 11px; letter-spacing: 0.01em; }
 
     /* Awards */
     .award-row { display: flex; align-items: center; gap: 14px; background: var(--card); border-radius: var(--radius); padding: 13px 16px; margin-bottom: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
@@ -190,8 +171,8 @@
     .award-medal { width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: var(--wine-soft); color: var(--wine); }
     .award-row.locked .award-medal { background: var(--line); color: var(--text-faint); }
     .award-name { font-size: 14.5px; font-weight: 700; }
-    .award-desc { font-size: 12px; color: var(--text-faint); margin-top: 1px; }
-    .award-prog { font-size: 11.5px; font-weight: 600; color: var(--text-mid); margin-left: auto; flex-shrink: 0; }
+    .award-desc { font-size: 13px; font-weight: 500; color: var(--text-faint); margin-top: 2px; }
+    .award-prog { font-size: 13px; font-weight: 600; color: var(--text-mid); margin-left: auto; flex-shrink: 0; }
 
     /* Top-4 grid */
     /* No containers. Content rests on the paper, divided by a single rule. */
@@ -204,30 +185,40 @@
     .row:last-child { border-bottom: none; }
     .row:active { opacity: 0.55; }
     .row-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
-    .row-name { font-size: 15px; font-weight: 400; letter-spacing: 0.005em; color: var(--ink); }
-    .row-amt { font-size: 15px; font-weight: 500; letter-spacing: -0.01em; flex-shrink: 0; color: var(--ink); }
-    .row-sub { font-size: 11.5px; color: var(--text-faint); margin-top: 9px; letter-spacing: 0.01em; font-weight: 400; }
-    .row-sub.over { color: var(--red); }
+    .row-name { font-size: 15px; font-weight: 500; letter-spacing: 0.005em; color: var(--ink); }
+    .row-amt { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; flex-shrink: 0; color: var(--ink); }
+    .row-sub { font-size: 13px; font-weight: 500; color: var(--text-faint); margin-top: 9px; letter-spacing: 0.01em; }
+    .row-sub.over { color: var(--red); font-weight: 600; }
     .btn-all {
       display: block; width: 100%; text-align: center; padding: 14px; margin-top: 8px;
-      font-size: 13px; font-weight: 550; color: var(--text-mid); letter-spacing: -0.015em;
+      font-size: 13px; font-weight: 600; color: var(--text-mid); letter-spacing: -0.015em;
       border-radius: 10px; transition: background 0.15s var(--ease);
     }
     .btn-all:active { background: var(--line-soft); }
 
-    /* Category cards */
-    .cat-card { background: var(--card); border: var(--hairline); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 6px; }
+    /* Category cards — one component, used for top categories, personal, and business */
+    .cat-card {
+      background: var(--card); border: var(--hairline); border-radius: var(--radius);
+      padding: 14px 16px; margin-bottom: 8px;
+      width: 100%; text-align: left; display: block;
+      transition: opacity 0.2s var(--ease);
+    }
+    .cat-card:active { opacity: 0.6; }
     .cat-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
-    .cat-name { font-size: 14px; font-weight: 550; }
-    .cat-amt { font-size: 14px; font-weight: 650; }
-    .cat-sub { font-size: 11.5px; color: var(--text-faint); margin-top: 3px; }
-    /* A single fine line — the ink stroke, not a filled meter */
-    .bar { height: 1.5px; background: var(--line); margin-top: 13px; overflow: hidden; }
-    .bar-fill { height: 100%; background: var(--teal); transition: width 0.8s var(--ease); }
+    .cat-name { font-size: 15px; font-weight: 600; }
+    .cat-amt { font-size: 15px; font-weight: 700; }
+    .cat-of { font-size: 13px; font-weight: 600; color: var(--text-faint); margin-left: 4px; }
+    .cat-sub { font-size: 13px; font-weight: 500; color: var(--text-faint); margin-top: 8px; }
+    .cat-sub.over { color: var(--red); font-weight: 600; }
+    .cat-recur { font-size: 13px; font-weight: 600; color: var(--text-mid); margin-top: 6px; }
+    /* Real progress bars — filled to the eye, not a hairline */
+    .bar { height: 10px; border-radius: 999px; background: var(--line-soft); margin-top: 11px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 999px; background: var(--teal); transition: width 0.8s var(--ease); }
     .bar-fill.warn { background: var(--amber); }
     .bar-fill.over { background: var(--red); }
-    .bar-fill.wine { background: var(--wine); opacity: 0.85; }
-    .bar-fill.teal { background: var(--naomi); opacity: 0.85; }
+    .bar-fill.wine { background: var(--wine); opacity: 0.9; }
+    .bar-fill.clancy { background: var(--clancy); }
+    .bar-fill.naomi { background: var(--naomi); }
 
     /* Transaction rows */
     .txn {
@@ -241,21 +232,21 @@
     .txn:active { opacity: 0.55; }
     .txn-thumb {
       width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
-      background: transparent; color: var(--wine);
+      background: var(--clancy-soft); color: var(--clancy-ink);
       border: 1px solid var(--line);
       display: flex; align-items: center; justify-content: center;
-      font-size: 11px; font-weight: 400; overflow: hidden; letter-spacing: 0.06em;
+      font-size: 13px; font-weight: 600; overflow: hidden; letter-spacing: 0.06em;
     }
-    .txn-thumb.naomi { background: #E0F2F7; color: var(--naomi); }
+    .txn-thumb.naomi { background: var(--naomi-soft); color: var(--naomi-ink); }
     .txn-thumb.bills { background: #EFEAE3; color: var(--text-mid); }
     .txn-thumb img { width: 100%; height: 100%; object-fit: cover; }
     .txn-mid { flex: 1; min-width: 0; }
-    .txn-vendor { font-size: 14.5px; font-weight: 550; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .txn-meta { font-size: 11.5px; color: var(--text-faint); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .txn-amt { font-size: 14.5px; font-weight: 650; flex-shrink: 0; }
-    .date-head { font-size: 11px; font-weight: 650; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.07em; margin: 20px 2px 8px; }
+    .txn-vendor { font-size: 14.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .txn-meta { font-size: 13px; font-weight: 500; color: var(--text-faint); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .txn-amt { font-size: 14.5px; font-weight: 700; flex-shrink: 0; }
+    .date-head { font-size: 13px; font-weight: 700; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.06em; margin: 20px 2px 8px; }
 
-    .empty { text-align: center; color: var(--text-faint); font-size: 14px; padding: 36px 20px; line-height: 1.6; }
+    .empty { text-align: center; color: var(--text-faint); font-size: 14px; font-weight: 500; padding: 36px 20px; line-height: 1.6; }
 
     /* Month nav + filters (history) */
     .month-nav { display: flex; align-items: center; justify-content: center; gap: 4px; margin: 4px 0 12px; }
@@ -264,12 +255,12 @@
     .filters { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 6px; scrollbar-width: none; }
     .filters::-webkit-scrollbar { display: none; }
     .chip {
-      padding: 7px 14px; border-radius: 999px; font-size: 12.5px; font-weight: 550;
+      padding: 7px 14px; border-radius: 999px; font-size: 13px; font-weight: 600;
       background: var(--card); color: var(--text-mid); white-space: nowrap;
       box-shadow: var(--shadow-sm); flex-shrink: 0;
       transition: all 0.15s var(--ease);
     }
-    .chip.on { background: var(--ink); color: var(--card); font-weight: 600; }
+    .chip.on { background: var(--ink); color: var(--card); font-weight: 700; }
 
     /* ── Bottom nav ──────────────────────────────────────── */
     .bottom-nav {
@@ -285,9 +276,9 @@
     }
     .nav-btn {
       display: flex; flex-direction: column; align-items: center; gap: 6px;
-      font-size: 9.5px; font-weight: 400; color: var(--text-faint);
+      font-size: 11px; font-weight: 600; color: var(--text-faint);
       padding: 8px 0; border-radius: 12px;
-      letter-spacing: 0.14em; text-transform: uppercase;
+      letter-spacing: 0.08em; text-transform: uppercase;
       transition: color 0.18s var(--ease);
     }
     .nav-btn.on { color: var(--ink); }
@@ -299,7 +290,7 @@
       display: flex; align-items: center; justify-content: center; gap: 7px;
       height: 42px; padding: 0 26px; border-radius: 999px;
       background: var(--ink); color: var(--bg);
-      font-size: 11.5px; font-weight: 400; letter-spacing: 0.16em; text-transform: uppercase;
+      font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
       transition: opacity 0.18s var(--ease);
     }
     .snap-btn:active { opacity: 0.7; }
@@ -322,7 +313,7 @@
     .sheet-title { font-size: 21px; font-weight: 700; letter-spacing: -0.035em; margin-bottom: 16px; }
 
     .field { margin-bottom: 14px; }
-    .field label { display: block; font-size: 10.5px; font-weight: 650; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.09em; margin-bottom: 6px; }
+    .field label { display: block; font-size: 13px; font-weight: 700; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
     .field input, .field textarea {
       width: 100%; padding: 13px 14px; border: 1px solid var(--line); border-radius: 12px;
       background: var(--card); color: var(--text); outline: none;
@@ -338,29 +329,29 @@
 
     .cat-grid { display: flex; flex-wrap: wrap; gap: 8px; }
     .cat-chip {
-      padding: 8px 13px; border-radius: 999px; font-size: 12.5px; font-weight: 550;
+      padding: 8px 13px; border-radius: 999px; font-size: 13px; font-weight: 600;
       background: var(--card); color: var(--text-mid); border: 1px solid var(--line);
       transition: all 0.15s var(--ease);
     }
-    .cat-chip.on { background: var(--ink); color: var(--card); border-color: var(--text); font-weight: 600; }
+    .cat-chip.on { background: var(--ink); color: var(--card); border-color: var(--text); font-weight: 700; }
 
     .confirm-photo { width: 100%; max-height: 200px; object-fit: contain; border-radius: 14px; background: var(--card); margin-bottom: 14px; }
     .save-hint { display: none; font-size: 13px; font-weight: 600; color: var(--red); text-align: center; margin-top: 10px; }
-    .learned-note { font-size: 11.5px; font-weight: 600; color: var(--green); text-align: center; margin: -6px 0 12px; }
-    .date-warn { font-size: 12px; font-weight: 600; color: var(--amber); margin-top: 6px; }
-    .date-warn button { font-weight: 700; color: var(--wine); text-decoration: underline; font-size: 12px; }
+    .learned-note { font-size: 13px; font-weight: 600; color: var(--green); text-align: center; margin: -6px 0 12px; }
+    .date-warn { font-size: 13px; font-weight: 600; color: var(--amber); margin-top: 6px; }
+    .date-warn button { font-weight: 700; color: var(--wine); text-decoration: underline; font-size: 13px; }
 
     /* Weekly pace strip */
     .week-strip { padding: 0 0 4px; margin-bottom: 0; }
     .week-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-    .week-label { font-size: 10px; font-weight: 400; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.22em; }
-    .week-amt { font-size: 30px; font-weight: 280; letter-spacing: -0.025em; margin-top: 14px; line-height: 1; color: var(--ink); }
+    .week-label { font-size: 13px; font-weight: 600; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.08em; }
+    .week-amt { font-size: 30px; font-weight: 700; letter-spacing: -0.025em; margin-top: 14px; line-height: 1; color: var(--ink); }
     .week-amt.over { color: var(--red); }
-    .week-right { font-size: 11.5px; font-weight: 400; color: var(--text-faint); letter-spacing: 0.02em; }
-    .week-bar { height: 1.5px; background: var(--line); margin-top: 20px; overflow: hidden; }
-    .week-note { font-size: 11.5px; font-weight: 400; color: var(--text-mid); margin-top: 14px; letter-spacing: 0.01em; }
-    .week-what { font-size: 11px; font-weight: 400; color: var(--text-faint); margin-top: 5px; letter-spacing: 0.01em; }
-    .week-bar-fill { height: 100%; background: var(--teal); transition: width 0.8s var(--ease); }
+    .week-right { font-size: 13px; font-weight: 600; color: var(--text-faint); letter-spacing: 0.02em; }
+    .week-bar { height: 10px; border-radius: 999px; background: var(--line-soft); margin-top: 16px; overflow: hidden; }
+    .week-note { font-size: 13px; font-weight: 500; color: var(--text-mid); margin-top: 14px; letter-spacing: 0.01em; }
+    .week-what { font-size: 13px; font-weight: 500; color: var(--text-faint); margin-top: 5px; letter-spacing: 0.01em; }
+    .week-bar-fill { height: 100%; border-radius: 999px; background: var(--teal); transition: width 0.8s var(--ease); }
     .week-bar-fill.warn { background: var(--amber); }
     .week-bar-fill.over { background: var(--red); }
 
@@ -373,10 +364,10 @@
     }
     .goal-card:active { background: var(--line-soft); }
     .goal-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
-    .goal-name { font-size: 14.5px; font-weight: 650; letter-spacing: -0.015em; }
-    .goal-saved { font-size: 13.5px; font-weight: 650; }
-    .goal-sub { font-size: 11.5px; color: var(--text-faint); margin-top: 3px; }
-    .goal-pace { font-size: 11.5px; font-weight: 600; color: var(--text-mid); margin-top: 8px; }
+    .goal-name { font-size: 14.5px; font-weight: 700; letter-spacing: -0.015em; }
+    .goal-saved { font-size: 13.5px; font-weight: 700; }
+    .goal-sub { font-size: 13px; font-weight: 500; color: var(--text-faint); margin-top: 3px; }
+    .goal-pace { font-size: 13px; font-weight: 600; color: var(--text-mid); margin-top: 8px; }
     .goal-pace.done { color: var(--green); }
 
     /* Recap */
@@ -394,7 +385,7 @@
     /* Business toggle in the confirm sheet */
     .biz-toggle { display: flex; align-items: center; justify-content: space-between; background: var(--card); border-radius: var(--radius); padding: 13px 16px; margin-bottom: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
     .biz-label { font-size: 14.5px; font-weight: 600; }
-    .biz-sub { font-size: 11.5px; color: var(--text-faint); margin-top: 2px; }
+    .biz-sub { font-size: 13px; font-weight: 500; color: var(--text-faint); margin-top: 2px; }
     .switch { width: 50px; height: 30px; border-radius: 999px; background: var(--line); position: relative; flex-shrink: 0; transition: background 0.18s; }
     .switch.on { background: var(--wine); }
     .switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2); transition: transform 0.18s; }
@@ -431,16 +422,32 @@
     .budget-row .name { font-size: 14px; font-weight: 600; flex: 1; }
     .budget-row input { width: 110px; padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 10px; background: var(--card); text-align: right; outline: none; }
     .budget-row input:focus { border-color: var(--wine); }
-    .budget-group { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-faint); margin: 16px 0 8px; }
+    .budget-group { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); margin: 16px 0 8px; }
 
     /* Recurring bill rows */
-    .rec-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; }
+    .rec-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; align-items: center; }
     .rec-row input, .rec-row select { padding: 10px 10px; border: 1.5px solid var(--line); border-radius: 10px; background: var(--card); outline: none; font-size: 14px; }
     .rec-row input:focus, .rec-row select:focus { border-color: var(--wine); }
-    .rec-name { flex: 1; min-width: 0; }
-    .rec-amt { width: 82px; text-align: right; }
-    .rec-cat { width: 118px; color: var(--text-mid); }
+    .rec-name { flex: 1 1 100%; min-width: 0; }
+    .rec-amt { width: 90px; text-align: right; }
+    .rec-due { width: 68px; text-align: center; }
+    .rec-cat { flex: 1; min-width: 108px; color: var(--text-mid); }
     .rec-del { color: var(--red); font-size: 20px; font-weight: 700; padding: 0 4px; flex-shrink: 0; }
+
+    /* Budgeted-but-not-paid-yet bills (Home) */
+    .bill-row { display: flex; align-items: center; gap: 10px; padding: 14px 0; border-bottom: 1px solid var(--line-soft); }
+    .bill-row:last-child { border-bottom: none; }
+    .bill-mid { flex: 1; min-width: 0; }
+    .bill-label { font-size: 14.5px; font-weight: 600; color: var(--ink); }
+    .bill-meta { font-size: 13px; font-weight: 500; color: var(--text-faint); margin-top: 2px; }
+    .bill-amt { font-size: 14.5px; font-weight: 700; color: var(--ink); flex-shrink: 0; }
+    .bill-pay {
+      flex-shrink: 0; padding: 9px 15px; border-radius: 999px;
+      background: var(--ink); color: var(--card); font-size: 13px; font-weight: 600;
+      transition: opacity 0.15s var(--ease);
+    }
+    .bill-pay:active { opacity: 0.6; }
+    .bill-pay:disabled { opacity: 0.4; }
 
     /* Spinner + toast */
     .spin-back { position: fixed; inset: 0; z-index: 90; background: rgba(250,248,244,0.85); display: none; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
@@ -534,12 +541,14 @@ const state = {
   txns: [],
   budgets: {},
   goals: [],
+  recurring: null, // { bills, paid, month } — loaded soft; null until (if ever) loaded
   person: localStorage.getItem('velocity_person') || null, // null → ask whose phone this is
   lastSync: 0,
   screen: 'home',
   month: new Date().toISOString().slice(0, 7), // YYYY-MM
   filter: 'All',
   showAll: false,
+  showBiz: false,
   pinMode: null, // 'enter' | 'create' | 'confirm'
   pinBuf: '',
   pinFirst: '',
@@ -655,8 +664,8 @@ function askWhoseParty() {
   openSheet(`
     <div class="sheet-title">Whose phone is this?</div>
     <div style="font-size:13px;color:var(--text-mid);margin-bottom:16px">Everything you log from this phone gets tagged to you. You can change it anytime in Settings.</div>
-    <button class="snap-opt" data-whose="Clancy" style="justify-content:center;color:var(--wine)">This is Clancy's phone</button>
-    <button class="snap-opt" data-whose="Naomi" style="justify-content:center;color:var(--naomi)">This is Naomi's phone</button>
+    <button class="snap-opt" data-whose="Clancy" style="justify-content:center;color:var(--clancy-ink)">This is Clancy's phone</button>
+    <button class="snap-opt" data-whose="Naomi" style="justify-content:center;color:var(--naomi-ink)">This is Naomi's phone</button>
   `);
   document.querySelectorAll('[data-whose]').forEach(b => b.onclick = () => {
     state.person = b.dataset.whose;
@@ -689,10 +698,16 @@ async function syncNow() {
 /* ── Data ───────────────────────────────────────────────── */
 async function loadData() {
   try {
-    const [t, b, g] = await Promise.all([api('transactions'), api('budgets'), api('goals')]);
+    // Recurring bills are a separate, newer endpoint — catch it locally so a
+    // failure there never breaks the Promise.all for the core data below.
+    const [t, b, g, r] = await Promise.all([
+      api('transactions'), api('budgets'), api('goals'),
+      api('recurring').catch(() => null),
+    ]);
     state.txns = t.transactions || [];
     state.budgets = b.budgets || {};
     state.goals = g.goals || [];
+    if (r) state.recurring = { bills: r.bills || [], paid: r.paid || {}, month: r.month || '' };
   } catch (e) {
     if (e.message !== 'locked') toast(e.message);
   }
@@ -723,6 +738,20 @@ function render() {
 
 const HEART = '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-1px;margin-left:4px;opacity:0.85"><path d="M12 21s-8-5.2-8-10.4A4.6 4.6 0 0 1 12 7a4.6 4.6 0 0 1 8 3.6C20 15.8 12 21 12 21z"/></svg>';
 const catLabel = c => esc(c.replace('Biz: ', '')) + (c === 'Dates' ? HEART : '');
+const catPlain = c => c.replace('Biz: ', ''); // plain-text category name, no markup
+
+function ordinal(n) {
+  n = parseInt(n, 10);
+  if (!n) return '';
+  const rem100 = n % 100;
+  if (rem100 >= 11 && rem100 <= 13) return n + 'th';
+  switch (n % 10) {
+    case 1: return n + 'st';
+    case 2: return n + 'nd';
+    case 3: return n + 'rd';
+    default: return n + 'th';
+  }
+}
 
 function txnRowHTML(t) {
   const initial = (t.person || 'C')[0];
@@ -755,97 +784,105 @@ function renderHome() {
   txns.forEach(t => { byCat[t.category] = (byCat[t.category] || 0) + Math.abs(t.amount); });
   const visible = new Set(Object.keys({ ...byCat, ...state.budgets }));
 
-  const catCard = c => {
-    const spent = byCat[c] || 0;
-    const budget = state.budgets[c] || 0;
-    let barHTML = '', sub = '';
-    if (budget > 0) {
-      const pct = Math.min(100, spent / budget * 100);
-      const cls = spent > budget ? 'over' : pct >= 80 ? 'warn' : '';
-      barHTML = `<div class="bar"><div class="bar-fill ${cls}" style="width:${pct}%"></div></div>`;
-      sub = spent > budget
-        ? `<div class="cat-sub">${fmt0(spent - budget)} over the ${fmt0(budget)} budget</div>`
-        : `<div class="cat-sub">${fmt0(budget - spent)} left of ${fmt0(budget)}</div>`;
-    }
-    return `<div class="cat-card"><div class="cat-top"><div class="cat-name">${catLabel(c)}</div><div class="cat-amt">${fmt(spent)}</div></div>${sub}${barHTML}</div>`;
-  };
-
-  const groupSection = (name, catList) => {
-    const cats = catList.filter(c => visible.has(c))
-      .sort((a, b) => (byCat[b] || 0) - (byCat[a] || 0));
-    // catch categories renamed/removed from the app but still present in data
-    if (name === 'Personal') {
-      const known = new Set(CATEGORIES);
-      [...visible].filter(c => !known.has(c)).forEach(c => cats.push(c));
-    }
-    if (!cats.length) return '';
-    const spent = cats.reduce((s, c) => s + (byCat[c] || 0), 0);
-    const budget = cats.reduce((s, c) => s + (state.budgets[c] || 0), 0);
-    const head = budget > 0 ? `${fmt0(spent)} of ${fmt0(budget)}` : fmt0(spent);
-    return `<div class="section-title">${name} <span style="text-transform:none;letter-spacing:0">${head}</span></div>` + cats.map(catCard).join('');
-  };
-
-  // Top 4 most-used categories: ranked by how often you snap them
-  // (this month + last month, auto bills excluded), core weeklies as fallback
-  const prevMonth = shiftMonth(nowMonth, -1);
-  const useCount = {};
-  state.txns.forEach(t => {
-    if (t.person === 'Bills' || !t.date) return;
-    if (!t.date.startsWith(nowMonth) && !t.date.startsWith(prevMonth)) return;
-    useCount[t.category] = (useCount[t.category] || 0) + 1;
+  // Recurring bills: budgeted in, but they aren't real spending — and don't
+  // touch byCat/total above — until Clancy marks one paid. state.recurring
+  // stays null if that endpoint ever failed to load (fail-soft in loadData).
+  const rec = state.recurring;
+  const recLoaded = !!(rec && Array.isArray(rec.bills));
+  const recBills = recLoaded ? rec.bills : [];
+  const recPaid = recLoaded ? (rec.paid || {}) : {};
+  const unpaidBills = recBills.filter(b => !recPaid[b.id]);
+  const unpaidTotal = unpaidBills.reduce((s, b) => s + Math.abs(b.amount), 0);
+  // Keep the bill names, not just the total — "Car insurance" tells her more
+  // than the category it happens to be filed under.
+  const unpaidByCat = {};
+  unpaidBills.forEach(b => {
+    const e = unpaidByCat[b.category] || (unpaidByCat[b.category] = { amount: 0, labels: [] });
+    e.amount += Math.abs(b.amount);
+    e.labels.push(b.label);
   });
-  const ranked = Object.keys(useCount)
-    .sort((a, b) => useCount[b] - useCount[a] || (byCat[b] || 0) - (byCat[a] || 0));
-  ['Groceries', 'Dates', 'Clancy Fun', 'Naomi Fun'].forEach(c => { if (!ranked.includes(c)) ranked.push(c); });
-  const top4 = ranked.slice(0, 4);
 
-  const topTile = c => {
-    const spent = byCat[c] || 0;
-    const budget = state.budgets[c] || 0;
-    let bar = '', sub = '';
+  // One card component, reused for top categories, personal, and business.
+  // opts: { label, spent, budget, attrs } — all optional overrides.
+  const catCardHTML = (cat, opts = {}) => {
+    const spent = opts.spent != null ? opts.spent : (byCat[cat] || 0);
+    const budget = opts.budget != null ? opts.budget : (state.budgets[cat] || 0);
+    const name = opts.label || catLabel(cat);
+    let bar = '', sub, budgetOf = '';
     if (budget > 0) {
       const pct = Math.min(100, spent / budget * 100);
       const over = spent > budget;
-      const cls = over ? 'over' : pct >= 80 ? 'warn' : '';
+      // Clancy and Naomi keep their own colour until the bar turns into a
+      // warning — then amber/red wins, because that's the part she needs to see.
+      const cls = over ? 'over' : pct >= 80 ? 'warn' : (opts.tint || '');
       bar = `<div class="bar"><div class="bar-fill ${cls}" style="width:${Math.max(pct, spent > 0 ? 2 : 0)}%"></div></div>`;
       sub = over
-        ? `<div class="row-sub over">${fmt0(spent - budget)} over budget</div>`
-        : `<div class="row-sub">${fmt0(budget - spent)} left of ${fmt0(budget)}</div>`;
+        ? `<div class="cat-sub over">${fmt0(spent - budget)} over</div>`
+        : `<div class="cat-sub">${fmt0(budget - spent)} left</div>`;
+      budgetOf = ` <span class="cat-of">of ${fmt0(budget)}</span>`;
     } else {
-      sub = `<div class="row-sub">No budget set</div>`;
+      sub = `<div class="cat-sub">No budget set</div>`;
     }
-    return `
-      <div class="row">
-        <div class="row-top"><div class="row-name">${catLabel(c)}</div><div class="row-amt">${fmt(spent)}</div></div>
-        ${bar}${sub}
-      </div>`;
+    const recur = unpaidByCat[cat];
+    const recurLine = recur
+      ? `<div class="cat-recur">${fmt0(recur.amount)} not paid yet — ${esc(recur.labels.join(', '))}</div>` : '';
+    const tag = opts.attrs ? 'button' : 'div';
+    return `<${tag} class="cat-card"${opts.attrs ? ' ' + opts.attrs : ''}>
+      <div class="cat-top"><div class="cat-name">${name}</div><div class="cat-amt">${fmt(spent)}${budgetOf}</div></div>
+      ${bar}${sub}${recurLine}
+    </${tag}>`;
   };
 
-  // Clancy & Naomi player cards — each one's fun-money budget this month
-  const playerCard = (p, cls, barCls) => {
-    const budget = state.budgets[`${p} Fun`] || 0;
-    const spentFun = txns.filter(t => t.category === `${p} Fun`).reduce((s, t) => s + Math.abs(t.amount), 0);
-    const left = Math.max(0, budget - spentFun);
-    const monthTotal = p === 'Clancy' ? cTotal : nTotal;
-    const pct = budget > 0 ? Math.min(100, spentFun / budget * 100) : 0;
-    return { p, cls, barCls, budget, spentFun, left, monthTotal, pct,
-      ratio: budget > 0 ? left / budget : 0 };
-  };
-  const pc = playerCard('Clancy', 'clancy', 'wine');
-  const pn = playerCard('Naomi', 'naomi', 'teal');
-  const leader = (pc.budget > 0 && pn.budget > 0 && pc.ratio !== pn.ratio)
-    ? (pc.ratio > pn.ratio ? 'Clancy' : 'Naomi') : null;
-  const playerHTML = d => `
-    <button class="player ${d.cls}" data-pfilter="${d.p}">
-      <div class="player-head"><div class="player-name">${d.p}</div></div>
-      <div class="player-fun">${fmt0(d.left)}<span>left</span></div>
-      ${d.budget > 0 ? `<div class="bar" style="margin-top:11px"><div class="bar-fill ${d.barCls}" style="width:${Math.max(d.pct, d.spentFun > 0 ? 2 : 0)}%"></div></div>` : ''}
-      <div class="player-sub">${fmt0(d.monthTotal)} spent this month</div>
-    </button>`;
-  const playersHTML = `<div class="players">${playerHTML(pc)}${playerHTML(pn)}</div>`;
+  // Top categories — fixed lineup, not frequency-ranked
+  const TOP_ORDER = [
+    { cat: 'Clancy Fun', label: 'Clancy', tint: 'clancy', attrs: 'data-pfilter="Clancy"' },
+    { cat: 'Naomi Fun', label: 'Naomi', tint: 'naomi', attrs: 'data-pfilter="Naomi"' },
+    { cat: 'Groceries' },
+    { cat: 'Dates' },
+  ];
+  const topHTML = `<div class="group">${TOP_ORDER.map(t => catCardHTML(t.cat, t)).join('')}</div>`;
 
-  const allHTML = groupSection('Personal', GROUPS.Personal) + groupSection('Business', GROUPS.Business);
-  // Weekly pace on the categories you actually live week to week
+  // The rest of Personal, behind the "All categories" toggle
+  const TOP_CATS = new Set(TOP_ORDER.map(t => t.cat));
+  const knownCats = new Set(CATEGORIES);
+  const personalRest = GROUPS.Personal.filter(c => !TOP_CATS.has(c));
+  // catch categories renamed/removed from the app but still present in data
+  [...visible].filter(c => !knownCats.has(c)).forEach(c => personalRest.push(c));
+  const personalHTML = personalRest.length ? `
+    <button class="btn-all" id="btnAll">${state.showAll ? 'Show less' : 'All categories'}</button>
+    ${state.showAll ? personalRest.map(c => catCardHTML(c)).join('') : ''}
+  ` : '';
+
+  // Business — its own section, own total, always visible (not gated by the
+  // Personal toggle above), collapsed to a total + expand by default.
+  const bizSpent = GROUPS.Business.reduce((s, c) => s + (byCat[c] || 0), 0);
+  const bizBudget = GROUPS.Business.reduce((s, c) => s + (state.budgets[c] || 0), 0);
+  const businessHTML = `
+    <div class="section-title">Business<span style="text-transform:none;letter-spacing:0.02em">${bizBudget > 0 ? fmt0(bizSpent) + ' of ' + fmt0(bizBudget) : fmt0(bizSpent)}</span></div>
+    <button class="btn-all" id="btnBiz">${state.showBiz ? 'Show less' : `Show ${GROUPS.Business.length} categories`}</button>
+    ${state.showBiz ? GROUPS.Business.map(c => catCardHTML(c)).join('') : ''}
+  `;
+
+  // Budgeted this month — recurring bills, budgeted in but not posted (and
+  // not counted anywhere as spent) until marked paid.
+  const billRowHTML = b => `
+    <div class="bill-row">
+      <div class="bill-mid">
+        <div class="bill-label">${esc(b.label)}</div>
+        <div class="bill-meta">${catLabel(b.category)}${b.dueDay ? ' · due the ' + ordinal(b.dueDay) : ''}</div>
+      </div>
+      <div class="bill-amt">${fmt0(b.amount)}</div>
+      <button class="bill-pay" data-pay="${esc(b.id)}">Mark paid</button>
+    </div>`;
+  const recurringHTML = recLoaded && recBills.length ? `
+    <div class="section-title">Budgeted this month${unpaidBills.length ? `<span style="text-transform:none;letter-spacing:0.02em">${fmt0(unpaidTotal)} still to pay</span>` : ''}</div>
+    ${unpaidBills.length
+      ? unpaidBills.map(billRowHTML).join('')
+      : `<div class="empty" style="padding:20px 8px">Nothing left to pay this month.</div>`}
+  ` : '';
+
+  // Weekly pace on the categories you actually live week to week — now the
+  // lead number on the screen since the month total moved to the bottom
   const WEEKLY = ['Groceries', 'Dates', 'Clancy Fun', 'Naomi Fun'];
   const weekStart = (() => {
     const d = new Date();
@@ -873,13 +910,6 @@ function renderHome() {
       <div class="week-what">Covers groceries, dates, and both fun budgets</div>
     </div>` : '';
 
-  const catHTML = visible.size === 0
-    ? `<div class="empty">Nothing yet this month.<br>Tap the camera to snap your first receipt.</div>`
-    : `<div class="section-title">Top categories</div>
-       <div class="group">${top4.map(topTile).join('')}</div>
-       <button class="btn-all" id="btnAll">${state.showAll ? 'Show less' : 'All categories'}</button>
-       ${state.showAll ? allHTML : ''}`;
-
   const recent = state.txns.slice(0, 5).map(txnRowHTML).join('');
 
   return `
@@ -897,21 +927,23 @@ function renderHome() {
       </button>
       </div>
     </div>
-    <div class="hero" style="margin-top:16px">
+    <div class="section-title" style="margin-top:22px">This week</div>
+    ${weekHTML}
+    <div class="section-title">Top categories</div>
+    ${topHTML}
+    ${goalsHTML()}
+    ${personalHTML}
+    ${businessHTML}
+    ${recurringHTML}
+    <div class="hero">
       <div class="hero-label">Spent in ${monthLabel(nowMonth).split(' ')[0]}</div>
       <div class="hero-amount">${heroAmount(total)}</div>
       <div class="hero-split">
-        <span class="seg"><span class="dot" style="background:var(--wine)"></span>Clancy <b>${fmt0(cTotal)}</b></span>
+        <span class="seg"><span class="dot" style="background:var(--clancy)"></span>Clancy <b>${fmt0(cTotal)}</b></span>
         <span class="seg"><span class="dot" style="background:var(--naomi)"></span>Naomi <b>${fmt0(nTotal)}</b></span>
         ${bTotal > 0 ? `<span class="seg"><span class="dot" style="background:var(--text-faint)"></span>Bills <b>${fmt0(bTotal)}</b></span>` : ''}
       </div>
     </div>
-    <div class="section-title">This week</div>
-    ${weekHTML}
-    <div class="section-title">Fun money<span style="text-transform:none;letter-spacing:0.02em">${leader ? leader + ' ahead' : ''}</span></div>
-    ${playersHTML}
-    ${goalsHTML()}
-    ${catHTML}
     ${recent ? `<div class="section-title">Recent</div>${recent}` : ''}
   `;
 }
@@ -964,7 +996,22 @@ function bindContent() {
   const bg = $('btnGoals'); if (bg) bg.onclick = openGoals;
   document.querySelectorAll('[data-goal]').forEach(b => b.onclick = () => openGoalAdd(b.dataset.goal));
   const ba = $('btnAll'); if (ba) ba.onclick = () => { state.showAll = !state.showAll; render(); };
+  const bz = $('btnBiz'); if (bz) bz.onclick = () => { state.showBiz = !state.showBiz; render(); };
   const aw = $('btnAwards'); if (aw) aw.onclick = openAwards;
+  document.querySelectorAll('[data-pay]').forEach(b => b.onclick = async () => {
+    b.disabled = true;
+    b.textContent = '…';
+    try {
+      await api('recurring/pay', { method: 'POST', body: JSON.stringify({ billId: b.dataset.pay }) });
+      await loadData();
+      render();
+      toast('Marked paid');
+    } catch (e) {
+      b.disabled = false;
+      b.textContent = 'Mark paid';
+      if (e.message !== 'locked') toast(e.message);
+    }
+  });
   const sy = $('btnSync'); if (sy) sy.onclick = async () => {
     sy.style.opacity = '0.4';
     const added = await syncNow();
@@ -1326,16 +1373,17 @@ function openRecurring() {
     const bills = res.bills || [];
     const catOpts = sel => CATEGORIES.map(c =>
       `<option value="${esc(c)}" ${c === sel ? 'selected' : ''}>${esc(c.replace('Biz: ', ''))}</option>`).join('');
-    const row = (b = { label: '', amount: '', category: 'Biz: Bills & Subs' }) => `
-      <div class="rec-row">
+    const row = (b = { id: '', label: '', amount: '', category: 'Biz: Bills & Subs', dueDay: '' }) => `
+      <div class="rec-row" data-bid="${esc(b.id || '')}">
         <input class="rec-name" placeholder="Bill name" value="${esc(b.label)}">
         <input class="rec-amt" type="number" inputmode="decimal" placeholder="0" value="${b.amount || ''}">
+        <input class="rec-due" type="number" inputmode="numeric" min="1" max="31" placeholder="Day" value="${b.dueDay || ''}">
         <select class="rec-cat">${catOpts(b.category)}</select>
         <button class="rec-del">×</button>
       </div>`;
     openSheet(`
       <div class="sheet-title">Monthly bills</div>
-      <div style="font-size:13px;color:var(--text-mid);margin-bottom:14px">These post themselves on the 1st of every month, tagged "Bills" — no snapping needed.</div>
+      <div style="font-size:13px;color:var(--text-mid);margin-bottom:14px">These stay budgeted in each month, but don't post to the ledger until you mark them paid from Home.</div>
       <div id="recRows">${bills.map(b => row(b)).join('')}</div>
       <button class="btn-ghost" id="btnAddRec" style="text-align:left;color:var(--wine)">+ Add a bill</button>
       <button class="btn-primary" id="btnSaveRec">Save bills</button>
@@ -1355,12 +1403,17 @@ function openRecurring() {
         const label = r.querySelector('.rec-name').value.trim();
         const amount = parseFloat(r.querySelector('.rec-amt').value);
         const category = r.querySelector('.rec-cat').value;
-        if (label && amount > 0) out.push({ label, amount, category });
+        const dueDayVal = parseInt(r.querySelector('.rec-due').value, 10);
+        const dueDay = dueDayVal >= 1 && dueDayVal <= 31 ? dueDayVal : undefined;
+        const id = r.dataset.bid || undefined;
+        if (label && amount > 0) out.push({ id, label, amount, category, dueDay });
       });
       try {
         await api('recurring', { method: 'PUT', body: JSON.stringify({ bills: out }) });
         closeSheet();
-        toast('Bills saved — they post on the 1st');
+        toast('Bills saved');
+        await loadData();
+        render();
       } catch (e) { if (e.message !== 'locked') toast(e.message); }
     };
   }).catch(e => { spin(false); if (e.message !== 'locked') toast(e.message); });
@@ -1579,7 +1632,7 @@ function openRules() {
       : rules.sort((a, b) => (b[1].updated_at || '').localeCompare(a[1].updated_at || '')).map(([k, r]) => `
         <div class="rec-row">
           <div class="rec-name" style="font-size:14px;font-weight:600">${esc(r.vendor)}
-            <div style="font-size:11.5px;color:var(--text-faint);font-weight:500">always ${catLabel(r.category)}${r.business ? ' · business' : ''}</div>
+            <div style="font-size:13px;color:var(--text-faint);font-weight:500">always ${catLabel(r.category)}${r.business ? ' · business' : ''}</div>
           </div>
           <button class="rec-del" data-forget="${esc(r.vendor)}">×</button>
         </div>`).join('');
@@ -1621,7 +1674,7 @@ function openSettings() {
     </button>
     <button class="snap-opt" id="optRecurring">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-      Monthly bills (auto-post)
+      Monthly bills
     </button>
     <button class="snap-opt" id="optGoals">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg>
@@ -1647,7 +1700,7 @@ function openSettings() {
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
       Lock app
     </button>
-    <div style="text-align:center;font-size:12px;color:var(--text-faint);margin-top:12px">Money is Fun</div>
+    <div style="text-align:center;font-size:13px;color:var(--text-faint);margin-top:12px">Money is Fun</div>
   `);
   $('optWho').onclick = () => { closeSheet(); askWhoseParty(); };
   $('optRecurring').onclick = () => { closeSheet(); openRecurring(); };
