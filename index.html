@@ -919,7 +919,7 @@ function renderHome() {
     const spent = opts.spent != null ? opts.spent : (byCat[cat] || 0);
     const budget = opts.budget != null ? opts.budget : (state.budgets[cat] || 0);
     const name = opts.label || catLabel(cat);
-    let bar = '', sub, budgetOf = '';
+    let bar = '', sub, budgetOf = '', amt = fmt(spent);
     if (budget > 0) {
       const pct = Math.min(100, spent / budget * 100);
       const over = spent > budget;
@@ -927,10 +927,16 @@ function renderHome() {
       // warning — then amber/red wins, because that's the part she needs to see.
       const cls = over ? 'over' : pct >= 80 ? 'warn' : (opts.tint || '');
       bar = `<div class="bar"><div class="bar-fill ${cls}" style="width:${Math.max(pct, spent > 0 ? 2 : 0)}%"></div></div>`;
-      sub = over
-        ? `<div class="cat-sub over">${fmt0(spent - budget)} over</div>`
-        : `<div class="cat-sub">${fmt0(budget - spent)} left</div>`;
-      budgetOf = ` <span class="cat-of">of ${fmt0(budget)}</span>`;
+      if (opts.leftFirst) {
+        // Spending money: what's LEFT is the decision number, so it leads
+        amt = over ? `<span style="color:var(--red)">${fmt0(spent - budget)} over</span>` : `${fmt0(budget - spent)} left`;
+        sub = `<div class="cat-sub">${fmt0(spent)} spent of ${fmt0(budget)}</div>`;
+      } else {
+        sub = over
+          ? `<div class="cat-sub over">${fmt0(spent - budget)} over</div>`
+          : `<div class="cat-sub">${fmt0(budget - spent)} left</div>`;
+        budgetOf = ` <span class="cat-of">of ${fmt0(budget)}</span>`;
+      }
     } else {
       sub = `<div class="cat-sub">No budget set</div>`;
     }
@@ -939,22 +945,22 @@ function renderHome() {
       ? `<div class="cat-recur">${fmt0(recur.amount)} not paid yet — ${esc(recur.labels.join(', '))}</div>` : '';
     const tag = opts.attrs ? 'button' : 'div';
     return `<${tag} class="cat-card"${opts.attrs ? ' ' + opts.attrs : ''}>
-      <div class="cat-top"><div class="cat-name">${name}</div><div class="cat-amt">${fmt(spent)}${budgetOf}</div></div>
+      <div class="cat-top"><div class="cat-name">${name}</div><div class="cat-amt">${amt}${budgetOf}</div></div>
       ${bar}${sub}${recurLine}
     </${tag}>`;
   };
 
-  // Top categories — fixed lineup, not frequency-ranked
-  const TOP_ORDER = [
-    { cat: 'Clancy Fun', label: 'Clancy', tint: 'clancy', attrs: 'data-pfilter="Clancy"' },
-    { cat: 'Naomi Fun', label: 'Naomi', tint: 'naomi', attrs: 'data-pfilter="Naomi"' },
-    { cat: 'Groceries', attrs: 'data-cfilter="Groceries"' },
-    { cat: 'Dates' },
+  // Spending money — the budgets they live out of, left-amount first.
+  // Groceries has its own hero above, so it's not repeated here.
+  const SPEND_ORDER = [
+    { cat: 'Clancy Fun', label: 'Clancy', tint: 'clancy', leftFirst: true, attrs: 'data-pfilter="Clancy"' },
+    { cat: 'Naomi Fun', label: 'Naomi', tint: 'naomi', leftFirst: true, attrs: 'data-pfilter="Naomi"' },
+    { cat: 'Dates', leftFirst: true, attrs: 'data-cfilter="Dates"' },
   ];
-  const topHTML = `<div class="group">${TOP_ORDER.map(t => catCardHTML(t.cat, t)).join('')}</div>`;
+  const spendHTML = `<div class="group">${SPEND_ORDER.map(t => catCardHTML(t.cat, t)).join('')}</div>`;
 
   // The rest of Personal, behind the "All categories" toggle
-  const TOP_CATS = new Set(TOP_ORDER.map(t => t.cat));
+  const TOP_CATS = new Set([...SPEND_ORDER.map(t => t.cat), 'Groceries']);
   const knownCats = new Set(CATEGORIES);
   const personalRest = GROUPS.Personal.filter(c => !TOP_CATS.has(c));
   // catch categories renamed/removed from the app but still present in data
@@ -991,35 +997,6 @@ function renderHome() {
       ? unpaidBills.map(billRowHTML).join('')
       : `<div class="empty" style="padding:20px 8px">Nothing left to pay this month.</div>`}
   ` : '';
-
-  // Weekly pace on the categories you actually live week to week — now the
-  // lead number on the screen since the month total moved to the bottom
-  const WEEKLY = ['Groceries', 'Dates', 'Clancy Fun', 'Naomi Fun'];
-  const weekStart = (() => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() - d.getDay()); // Sunday
-    return d.toISOString().slice(0, 10);
-  })();
-  const weeklyBudget = WEEKLY.reduce((s, c) => s + (state.budgets[c] || 0), 0) / 4.33;
-  const weekSpent = state.txns
-    .filter(t => t.person !== 'Bills' && WEEKLY.includes(t.category) && t.date >= weekStart)
-    .reduce((s, t) => s + Math.abs(t.amount), 0);
-  const weekLeft = weeklyBudget - weekSpent;
-  const weekPct = weeklyBudget > 0 ? Math.min(100, weekSpent / weeklyBudget * 100) : 0;
-  const weekDaysLeft = 6 - new Date().getDay(); // days remaining after today
-  const weekHTML = weeklyBudget > 0 ? `
-    <div class="week-strip">
-      <div class="week-head">
-        <div class="week-amt ${weekLeft < 0 ? 'over' : ''}" style="margin-top:0">${weekLeft < 0 ? fmt0(-weekLeft) + ' over' : fmt0(weekLeft)}</div>
-        <div class="week-right">${fmt0(weekSpent)} of ${fmt0(weeklyBudget)}</div>
-      </div>
-      <div class="week-bar"><div class="week-bar-fill ${weekLeft < 0 ? 'over' : weekPct >= 80 ? 'warn' : ''}" style="width:${Math.max(weekPct, weekSpent > 0 ? 2 : 0)}%"></div></div>
-      <div class="week-note">${weekDaysLeft === 0 ? 'Last day of the week'
-        : weekLeft < 0 ? `${weekDaysLeft} ${weekDaysLeft === 1 ? 'day' : 'days'} left in the week`
-        : `${fmt0(weekLeft / Math.max(weekDaysLeft, 1))} a day for the next ${weekDaysLeft} ${weekDaysLeft === 1 ? 'day' : 'days'}`}</div>
-      <div class="week-what">Covers groceries, dates, and both fun budgets</div>
-    </div>` : '';
 
   // Groceries — lead block for Naomi (and Clancy)
   const groBudget = state.budgets['Groceries'] || 0;
@@ -1063,10 +1040,8 @@ function renderHome() {
       </div>
     </div>
     ${groBudget > 0 ? `<div class="section-title" style="margin-top:22px">Groceries</div>${groHTML}` : ''}
-    <div class="section-title">This week</div>
-    ${weekHTML}
-    <div class="section-title">Top categories</div>
-    ${topHTML}
+    <div class="section-title">Spending money</div>
+    ${spendHTML}
     ${goalsHTML()}
     ${personalHTML}
     ${businessHTML}
