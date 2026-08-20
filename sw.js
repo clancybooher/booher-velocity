@@ -1,6 +1,6 @@
 // Velocity service worker — network-first so deploys show up immediately,
 // cached shell as offline fallback. API calls are never cached.
-const CACHE = 'mif-v3';
+const CACHE = 'mif-v4';
 
 self.addEventListener('install', () => self.skipWaiting());
 

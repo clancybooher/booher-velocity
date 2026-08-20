@@ -598,8 +598,7 @@
   <div id="toast"></div>
 
   <input type="file" accept="image/*" capture="environment" id="fileCamera" hidden>
-  <!-- "multiple" makes iOS skip the Library/Camera/File menu and open Photos directly -->
-  <input type="file" accept="image/*" multiple id="fileLibrary" hidden>
+  <input type="file" accept="image/*" id="fileLibrary" hidden>
 
 <script>
 const GROUPS = {
@@ -1964,11 +1963,7 @@ $('navHistory').onclick = () => setScreen('history');
 $('navSnap').onclick = () => $('fileCamera').click();
 $('navSnapMore').onclick = openSnapMenu;
 $('fileCamera').addEventListener('change', e => { handleImage(e.target.files[0]); e.target.value = ''; });
-$('fileLibrary').addEventListener('change', e => {
-  if (e.target.files.length > 1) toast('One receipt at a time — using the first photo');
-  handleImage(e.target.files[0]);
-  e.target.value = '';
-});
+$('fileLibrary').addEventListener('change', e => { handleImage(e.target.files[0]); e.target.value = ''; });
 
 renderKeypad();
 renderDots();
