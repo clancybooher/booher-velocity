@@ -79,6 +79,7 @@ export async function writeLedger(env, entries) {
 
 function applyOptionalFields(entry, body) {
   if (body.jobId !== undefined) entry.jobId = body.jobId ? String(body.jobId) : null;
+  if (body.jobName !== undefined) entry.jobName = body.jobName ? String(body.jobName).trim() : null;
   if (body.clientId !== undefined) entry.clientId = body.clientId ? String(body.clientId) : null;
   if (body.receiptDriveId !== undefined) {
     entry.receiptDriveId = body.receiptDriveId ? String(body.receiptDriveId) : null;
@@ -172,6 +173,7 @@ export async function onRequestPost({ request, env }) {
       card,
       // Job costing + tax (optional; null when omitted)
       jobId: body.jobId ? String(body.jobId) : null,
+      jobName: body.jobName ? String(body.jobName).trim() : null,
       clientId: body.clientId ? String(body.clientId) : null,
       receiptDriveId: body.receiptDriveId ? String(body.receiptDriveId) : null,
       taxCategory,

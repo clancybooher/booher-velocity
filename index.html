@@ -349,6 +349,7 @@
       transition: all 0.15s var(--ease);
     }
     .cat-chip.on { background: var(--ink); color: var(--card); border-color: var(--text); font-weight: 700; }
+    .cat-group-label { font-size: 13px; font-weight: 400; color: var(--text-faint); margin: 10px 2px 6px; }
 
     .confirm-photo { width: 100%; max-height: 200px; object-fit: contain; border-radius: 14px; background: var(--card); margin-bottom: 14px; }
     .save-hint { display: none; font-size: 13px; font-weight: 600; color: var(--red); text-align: center; margin-top: 10px; }
@@ -590,23 +591,43 @@
 
 <script>
 const TAX_LABELS = {
-  materials: 'Materials',
-  subcontractors: 'Subcontractors',
+  materials: 'Job materials',
+  disposal: 'Dump',
+  permits_fees: 'Permits',
+  subcontractors: 'Subs',
   vehicle_fuel: 'Fuel',
-  vehicle_maint: 'Vehicle / trailer',
+  vehicle_maint: 'Truck & trailer',
   tools_equipment: 'Tools',
   ads_marketing: 'Ads',
-  office_software: 'Software & phone',
-  insurance: 'Insurance',
-  permits_fees: 'Permits & fees',
-  disposal: 'Disposal',
   meals: 'Work meals',
+  office_software: 'Office',
+  insurance: 'Insurance',
   travel: 'Travel',
-  rent_storage: 'Rent / storage',
-  professional: 'Professional',
+  rent_storage: 'Storage / shop',
+  professional: 'CPA / legal',
   training: 'Training',
   misc_business: 'Other business',
 };
+const BIZ_SECTIONS = [
+  { name: 'On a job', cats: ['materials', 'disposal', 'permits_fees', 'subcontractors'] },
+  { name: 'Truck', cats: ['vehicle_fuel', 'vehicle_maint', 'tools_equipment'] },
+  { name: 'Shop', cats: ['ads_marketing', 'meals', 'office_software'] },
+];
+const BIZ_MORE = ['insurance', 'travel', 'rent_storage', 'professional', 'training', 'misc_business'];
+const BIZ_MAIN = BIZ_SECTIONS.flatMap(s => s.cats);
+function jobSlug(name) {
+  return String(name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
+}
+function recentJobs() {
+  const seen = new Map();
+  state.txns.forEach(t => {
+    const name = (t.jobName || '').trim();
+    const id = (t.jobId || '').trim();
+    if (name) seen.set(id || jobSlug(name), name);
+    else if (id && /[a-z]/i.test(id) && !/^[a-f0-9]{8,}$/i.test(id)) seen.set(id, id);
+  });
+  return [...seen.entries()].slice(0, 8);
+}
 const LEGACY_BIZ = [
   'Biz: Diesel', 'Biz: Advertising', 'Biz: Coffee Shop', 'Biz: Tesla',
   'Biz: Trailer', 'Biz: Bills & Subs',
@@ -887,7 +908,7 @@ function txnRowHTML(t) {
       ${thumb}
       <div class="txn-mid">
         <div class="txn-vendor">${esc(t.vendor)}</div>
-        <div class="txn-meta">${catLabel(t.category)}${t.notes ? ' · ' + esc(t.notes) : ''}</div>
+        <div class="txn-meta">${catLabel(t.category)}${t.jobName ? ' · ' + esc(t.jobName) : ''}${t.notes ? ' · ' + esc(t.notes) : ''}</div>
       </div>
       <div class="txn-amt">${fmt(t.amount)}</div>
     </button>`;
@@ -984,7 +1005,7 @@ function renderHome() {
 
   // Business — its own section, own total, always visible (not gated by the
   // Personal toggle above), collapsed to a total + expand by default.
-  const bizShow = [...GROUPS.Business, ...[...visible].filter(c => isBizCat(c) && !GROUPS.Business.includes(c))];
+  const bizShow = [...BIZ_MAIN, ...[...visible].filter(c => isBizCat(c) && !BIZ_MAIN.includes(c))];
   const bizSpent = txns.filter(t => t.card === 'business' || isBizCat(t.category) || t.taxCategory)
     .reduce((s, t) => s + Math.abs(t.amount), 0);
   const bizBudget = bizShow.reduce((s, c) => s + (state.budgets[c] || 0), 0);
@@ -1328,7 +1349,7 @@ function openQuickConfirm(draft, photoId, ai) {
 
   function flipBiz() {
     isBiz = !isBiz;
-    if (isBiz && !isBizCat(selCat)) selCat = 'misc_business';
+    if (isBiz && !isBizCat(selCat)) selCat = 'materials';
     if (!isBiz && isBizCat(selCat)) selCat = 'Everything Else';
     selCard = isBiz ? 'business' : 'personal';
     const bizBtn = $('quickBiz');
@@ -1363,7 +1384,9 @@ function openQuickConfirm(draft, photoId, ai) {
     person: selPerson,
     card: selCard,
     cardLast4: draft.cardLast4 || null,
-    taxCategory: isBiz ? (draft.taxCategory || (isBizCat(selCat) ? selCat : 'misc_business')) : null,
+    taxCategory: isBiz ? (draft.taxCategory || (isBizCat(selCat) ? selCat : 'materials')) : null,
+    jobName: (draft.jobName || '').trim(),
+    jobId: jobSlug(draft.jobName || '') || draft.jobId || null,
     notes: (draft.note || draft.notes || '').trim(),
   }, photoId, null, ai, $('btnQuickSave'));
 }
@@ -1404,6 +1427,11 @@ function openFullConfirm(draft, photoId, existingId, ai = {}) {
       </div>
     </div>
     <div class="field"><label>Category</label><div id="catGrid"></div></div>
+    <div class="field" id="jobField" style="${startBiz ? '' : 'display:none'}">
+      <label>Job (optional)</label>
+      <input id="fJob" value="${esc(draft.jobName || '')}" placeholder="Smith house, Oak St…">
+      <div id="jobChips" class="cat-grid" style="margin-top:8px"></div>
+    </div>
     <div class="field"><label>Note (optional)</label><input id="fNote" value="${esc(draft.note || draft.notes || '')}" placeholder=""></div>
     <div id="saveHint" class="save-hint"></div>
     <button class="btn-primary" id="btnSave">${existingId ? 'Save changes' : 'Save expense'}</button>
@@ -1418,14 +1446,38 @@ function openFullConfirm(draft, photoId, existingId, ai = {}) {
 
   // Category chips follow the Business switch — personal list or business list
   function paintCats() {
-    const list = isBiz ? GROUPS.Business : GROUPS.Personal;
-    if (!list.includes(selCat)) selCat = isBiz ? 'misc_business' : 'Everything Else';
-    $('catGrid').innerHTML = `<div class="cat-grid">${list.map(c =>
-      `<button class="cat-chip ${c === selCat ? 'on' : ''}" data-cat="${esc(c)}">${catLabel(c)}</button>`
-    ).join('')}</div>`;
+    const jobEl = $('jobField');
+    if (jobEl) jobEl.style.display = isBiz ? '' : 'none';
+    if (!isBiz) {
+      if (!GROUPS.Personal.includes(selCat)) selCat = 'Everything Else';
+      $('catGrid').innerHTML = `<div class="cat-grid">${GROUPS.Personal.map(c =>
+        `<button class="cat-chip ${c === selCat ? 'on' : ''}" data-cat="${esc(c)}">${catLabel(c)}</button>`
+      ).join('')}</div>`;
+    } else {
+      if (!isBizCat(selCat)) selCat = 'materials';
+      const chip = c => `<button class="cat-chip ${c === selCat ? 'on' : ''}" data-cat="${esc(c)}">${catLabel(c)}</button>`;
+      const extra = isBizCat(selCat) && !BIZ_MAIN.includes(selCat) && !BIZ_MORE.includes(selCat)
+        ? `<div class="cat-group-label">This expense</div><div class="cat-grid">${chip(selCat)}</div>` : '';
+      $('catGrid').innerHTML = BIZ_SECTIONS.map(s =>
+        `<div class="cat-group-label">${s.name}</div><div class="cat-grid">${s.cats.map(chip).join('')}</div>`
+      ).join('') + extra + `<div class="cat-group-label">Other</div><div class="cat-grid">${BIZ_MORE.map(chip).join('')}</div>`;
+    }
     document.querySelectorAll('#catGrid .cat-chip').forEach(b => b.onclick = () => {
       selCat = b.dataset.cat;
       document.querySelectorAll('#catGrid .cat-chip').forEach(x => x.classList.toggle('on', x === b));
+    });
+    paintJobChips();
+  }
+
+  function paintJobChips() {
+    const wrap = $('jobChips');
+    if (!wrap) return;
+    const jobs = recentJobs();
+    wrap.innerHTML = jobs.map(([id, name]) =>
+      `<button type="button" class="cat-chip" data-job="${esc(name)}">${esc(name)}</button>`
+    ).join('');
+    wrap.querySelectorAll('[data-job]').forEach(b => b.onclick = () => {
+      $('fJob').value = b.dataset.job;
     });
   }
   paintCats();
@@ -1484,7 +1536,9 @@ function openFullConfirm(draft, photoId, existingId, ai = {}) {
       person: selPerson,
       card: selCard,
       cardLast4: draft.cardLast4 || null,
-      taxCategory: isBiz ? (draft.taxCategory || (isBizCat(selCat) ? selCat : 'misc_business')) : null,
+      taxCategory: isBiz ? (draft.taxCategory || (isBizCat(selCat) ? selCat : 'materials')) : null,
+      jobName: isBiz ? ($('fJob')?.value || '').trim() : '',
+      jobId: isBiz ? (jobSlug(($('fJob')?.value || '').trim()) || null) : null,
       notes: $('fNote').value.trim(),
     };
     await performSaveExpense(payload, photoId, existingId, ai, $('btnSave'));
@@ -1507,7 +1561,7 @@ function openFullConfirm(draft, photoId, existingId, ai = {}) {
 function openDetail(id) {
   const t = state.txns.find(x => x.id === id);
   if (!t) return;
-  openConfirm({ vendor: t.vendor, amount: Math.abs(t.amount), date: t.date, category: t.category, notes: t.notes, person: t.person, card: t.card }, t.photoId, t.id);
+  openConfirm({ vendor: t.vendor, amount: Math.abs(t.amount), date: t.date, category: t.category, notes: t.notes, person: t.person, card: t.card, jobName: t.jobName || '', jobId: t.jobId || null, business: t.card === 'business' || isBizCat(t.category), taxCategory: t.taxCategory }, t.photoId, t.id);
 }
 
 /* ── Awards ─────────────────────────────────────────────── */

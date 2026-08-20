@@ -33,27 +33,24 @@ export const CATEGORIES = [
 ];
 
 const TAX_HINTS = `
-Business tax categories (window & door contractor — use these snake_case codes for ANY business expense):
-  * materials — windows, doors, lumber, hardware, glass, foam, caulk, flashing, consumables (COGS/supplies)
-  * subcontractors — other trades paid on a job (contract labor)
-  * vehicle_fuel — diesel / gas for work truck
-  * vehicle_maint — tires, service, Tesla charging, trailer repairs
-  * tools_equipment — tools and equipment (flag big capital items in note)
-  * ads_marketing — Google/Facebook ads, website, signs, print
-  * office_software — SaaS, phone, software, business subscriptions
-  * insurance — liability, auto, workers comp
-  * permits_fees — building permits, dump fees, licenses
-  * disposal — dump runs, dumpster, haul-away
-  * meals — client/crew meals while working (partial deductibility — flag in note if client meal)
-  * travel — hotel, out-of-area job travel
-  * rent_storage — storage unit, shop rent
-  * professional — CPA, lawyer, bookkeeping
-  * training — classes, certifications
-  * misc_business — catch-all business; prefer a tighter code when possible
+Peak View business categories — pick the one Clancy would say out loud:
+  ON A JOB
+  * materials — Home Depot / Lowe's / lumber / foam / caulk / flashing / windows / doors (job materials)
+  * disposal — dump, transfer station, dumpster, haul-away
+  * permits_fees — building permits, licenses
+  * subcontractors — other trades paid on a job
+  TRUCK
+  * vehicle_fuel — diesel, gas, Costco gas, Tesla charging for work
+  * vehicle_maint — Tesla payment, trailer payment, tires, service
+  * tools_equipment — Harbor Freight and tool suppliers
+  SHOP
+  * ads_marketing — Google / Facebook ads, website, signs
+  * meals — coffee or lunch while working (Starbucks, Dutch Bros, Chipotle on a job)
+  * office_software — phone, Starlink, Jobber, software, business bills
+  OTHER (only if none of the above)
+  * insurance, travel, rent_storage, professional, training, misc_business
 
-Legacy labels still accepted (map in your head): Biz: Diesel→vehicle_fuel, Biz: Advertising→ads_marketing,
-Biz: Coffee Shop→meals, Biz: Tesla/Trailer→vehicle_maint, Biz: Bills & Subs→office_software.
-Prefer the snake_case tax codes above over Biz:* labels.
+Prefer materials / disposal / vehicle_fuel / vehicle_maint / tools_equipment / ads_marketing / meals / office_software.
 `;
 
 export async function onRequestPost(context) {
@@ -136,12 +133,15 @@ ${TAX_HINTS}
   * Restaurant/coffee/dessert for two people → Dates (personal)
   * A solo treat, hobby, or personal purchase → "${person} Fun"
   * Pet or dog supplies → Dog Food
-  * Diesel or gas station fuel for work → category vehicle_fuel (or Biz: Diesel), taxCategory vehicle_fuel
-  * Google/Facebook/online ads → ads_marketing
-  * Hardware store job materials (lumber, fasteners, foam) → materials
-  * Tools from Harbor Freight / tool suppliers → tools_equipment
-  * Dump / transfer fees → disposal or permits_fees
-  * Anything that doesn't clearly fit personal → Everything Else; business catch-all → misc_business
+  * Diesel / gas / Tesla charging for work → vehicle_fuel
+  * Tesla payment, trailer payment, tires → vehicle_maint
+  * Google/Facebook ads → ads_marketing
+  * Home Depot, Lowe's, lumber, foam, caulk, windows, doors → materials
+  * Harbor Freight / tool suppliers → tools_equipment
+  * Dump / transfer station → disposal
+  * Coffee or lunch while working → meals
+  * Phone, Starlink, Jobber, software → office_software
+  * Anything that doesn't clearly fit personal → Everything Else; business catch-all → office_software if it looks like a bill, else misc_business
 - They run Peak View Windows and Doors, a window & door installation business in Bend, OR.
   HOUSEHOLD RULE — apply this first, it overrides your own judgment:
   * Hardware, home improvement, building supply, tool, or lumber stores are ALWAYS business.
