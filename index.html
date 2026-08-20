@@ -589,17 +589,42 @@
   <input type="file" accept="image/*" id="fileLibrary" hidden>
 
 <script>
+const TAX_LABELS = {
+  materials: 'Materials',
+  subcontractors: 'Subcontractors',
+  vehicle_fuel: 'Fuel',
+  vehicle_maint: 'Vehicle / trailer',
+  tools_equipment: 'Tools',
+  ads_marketing: 'Ads',
+  office_software: 'Software & phone',
+  insurance: 'Insurance',
+  permits_fees: 'Permits & fees',
+  disposal: 'Disposal',
+  meals: 'Work meals',
+  travel: 'Travel',
+  rent_storage: 'Rent / storage',
+  professional: 'Professional',
+  training: 'Training',
+  misc_business: 'Other business',
+};
+const LEGACY_BIZ = [
+  'Biz: Diesel', 'Biz: Advertising', 'Biz: Coffee Shop', 'Biz: Tesla',
+  'Biz: Trailer', 'Biz: Bills & Subs',
+];
 const GROUPS = {
   Personal: [
     'Groceries', 'Dates', 'Clancy Fun', 'Naomi Fun', 'Dog Food',
     'House & Projects', 'Rent', 'Subscriptions', 'Everything Else',
   ],
-  Business: [
-    'Biz: Diesel', 'Biz: Advertising', 'Biz: Coffee Shop', 'Biz: Tesla',
-    'Biz: Trailer', 'Biz: Bills & Subs',
-  ],
+  Business: Object.keys(TAX_LABELS),
 };
-const CATEGORIES = [...GROUPS.Personal, ...GROUPS.Business];
+const CATEGORIES = [...GROUPS.Personal, ...GROUPS.Business, ...LEGACY_BIZ];
+const isBizCat = c => GROUPS.Business.includes(c) || LEGACY_BIZ.includes(c) || String(c || '').startsWith('Biz:');
+const defaultCard = d => {
+  if (d && (d.card === 'business' || d.card === 'personal')) return d.card;
+  if (d && (d.business || isBizCat(d.category) || d.taxCategory)) return 'business';
+  return 'personal';
+};
 
 const $ = id => document.getElementById(id);
 const fmt = n => '$' + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -835,8 +860,8 @@ function render() {
   bindContent();
 }
 
-const catLabel = c => esc(c.replace('Biz: ', ''));
-const catPlain = c => c.replace('Biz: ', ''); // plain-text category name, no markup
+const catPlain = c => TAX_LABELS[c] || String(c || '').replace('Biz: ', '');
+const catLabel = c => esc(catPlain(c));
 
 function ordinal(n) {
   n = parseInt(n, 10);
@@ -951,7 +976,7 @@ function renderHome() {
   const knownCats = new Set(CATEGORIES);
   const personalRest = GROUPS.Personal.filter(c => !TOP_CATS.has(c));
   // catch categories renamed/removed from the app but still present in data
-  [...visible].filter(c => !knownCats.has(c)).forEach(c => personalRest.push(c));
+  [...visible].filter(c => !knownCats.has(c) && !isBizCat(c)).forEach(c => personalRest.push(c));
   const personalHTML = personalRest.length ? `
     <button class="btn-all" id="btnAll">${state.showAll ? 'Show less' : 'More categories'}</button>
     ${state.showAll ? `<div class="group">${personalRest.map(c => catCardHTML(c)).join('')}</div>` : ''}
@@ -959,12 +984,14 @@ function renderHome() {
 
   // Business — its own section, own total, always visible (not gated by the
   // Personal toggle above), collapsed to a total + expand by default.
-  const bizSpent = GROUPS.Business.reduce((s, c) => s + (byCat[c] || 0), 0);
-  const bizBudget = GROUPS.Business.reduce((s, c) => s + (state.budgets[c] || 0), 0);
+  const bizShow = [...GROUPS.Business, ...[...visible].filter(c => isBizCat(c) && !GROUPS.Business.includes(c))];
+  const bizSpent = txns.filter(t => t.card === 'business' || isBizCat(t.category) || t.taxCategory)
+    .reduce((s, t) => s + Math.abs(t.amount), 0);
+  const bizBudget = bizShow.reduce((s, c) => s + (state.budgets[c] || 0), 0);
   const businessHTML = `
     <div class="section-title">Business<span>${bizBudget > 0 ? fmt0(bizSpent) + ' of ' + fmt0(bizBudget) : fmt0(bizSpent)}</span></div>
-    <button class="btn-all" id="btnBiz">${state.showBiz ? 'Show less' : `Show ${GROUPS.Business.length} categories`}</button>
-    ${state.showBiz ? `<div class="group">${GROUPS.Business.map(c => catCardHTML(c)).join('')}</div>` : ''}
+    <button class="btn-all" id="btnBiz">${state.showBiz ? 'Show less' : `Show ${bizShow.length} categories`}</button>
+    ${state.showBiz ? `<div class="group">${bizShow.map(c => catCardHTML(c)).join('')}</div>` : ''}
   `;
 
   // Budgeted this month — recurring bills, budgeted in but not posted (and
@@ -1294,18 +1321,19 @@ function openConfirm(draft, photoId, existingId, ai = {}) {
 function openQuickConfirm(draft, photoId, ai) {
   let selCat = draft.category || 'Everything Else';
   let selPerson = draft.person || state.person || 'Clancy';
-  let isBiz = GROUPS.Business.includes(selCat);
-  let selCard = draft.card || 'personal';
+  let isBiz = !!(draft.business || isBizCat(selCat) || draft.taxCategory);
+  let selCard = defaultCard(draft);
   const photo = photoId ? `<img class="quick-photo" src="/api/photo/${photoId}" alt="">` : '';
   const dateLabel = new Date(draft.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 
   function flipBiz() {
     isBiz = !isBiz;
-    if (isBiz && !GROUPS.Business.includes(selCat)) selCat = 'Biz: Bills & Subs';
-    if (!isBiz && GROUPS.Business.includes(selCat)) selCat = 'Everything Else';
+    if (isBiz && !isBizCat(selCat)) selCat = 'misc_business';
+    if (!isBiz && isBizCat(selCat)) selCat = 'Everything Else';
+    selCard = isBiz ? 'business' : 'personal';
     const bizBtn = $('quickBiz');
     bizBtn.classList.toggle('on', isBiz);
-    bizBtn.textContent = isBiz ? 'Business expense · tap to switch' : 'Personal · tap to switch';
+    bizBtn.textContent = isBiz ? 'Business card · tap to switch' : 'Personal card · tap to switch';
     $('quickCat').textContent = catPlain(selCat);
   }
 
@@ -1315,8 +1343,8 @@ function openQuickConfirm(draft, photoId, ai) {
       <div class="quick-vendor">${esc(draft.vendor)}</div>
       <div class="quick-amt">${fmt(draft.amount)}</div>
       <div class="quick-meta" id="quickCat">${catPlain(selCat)}</div>
-      <div class="quick-date">${dateLabel}</div>
-      <button type="button" class="quick-biz ${isBiz ? 'on' : ''}" id="quickBiz">${isBiz ? 'Business expense · tap to switch' : 'Personal · tap to switch'}</button>
+      <div class="quick-date">${dateLabel}${draft.cardLast4 ? ' · card ···' + esc(draft.cardLast4) : ''}</div>
+      <button type="button" class="quick-biz ${isBiz ? 'on' : ''}" id="quickBiz">${isBiz ? 'Business card · tap to switch' : 'Personal card · tap to switch'}</button>
       ${ai.learnedHit ? '<div class="learned-note" style="margin-top:12px">Filed the way you did last time</div>' : ''}
     </div>
     <button class="btn-primary" id="btnQuickSave">Save</button>
@@ -1326,7 +1354,7 @@ function openQuickConfirm(draft, photoId, ai) {
 
   $('quickBiz').onclick = flipBiz;
   $('btnCancel').onclick = closeSheet;
-  $('btnQuickEdit').onclick = () => openFullConfirm(draft, photoId, null, ai);
+  $('btnQuickEdit').onclick = () => openFullConfirm({ ...draft, category: selCat, card: selCard, business: isBiz }, photoId, null, ai);
   $('btnQuickSave').onclick = () => performSaveExpense({
     vendor: (draft.vendor || '').trim() || 'Unknown',
     amount: parseFloat(draft.amount) || 0,
@@ -1334,6 +1362,8 @@ function openQuickConfirm(draft, photoId, ai) {
     category: selCat,
     person: selPerson,
     card: selCard,
+    cardLast4: draft.cardLast4 || null,
+    taxCategory: isBiz ? (draft.taxCategory || (isBizCat(selCat) ? selCat : 'misc_business')) : null,
     notes: (draft.note || draft.notes || '').trim(),
   }, photoId, null, ai, $('btnQuickSave'));
 }
@@ -1341,7 +1371,8 @@ function openQuickConfirm(draft, photoId, ai) {
 function openFullConfirm(draft, photoId, existingId, ai = {}) {
   const photo = photoId ? `<img class="confirm-photo" src="/api/photo/${photoId}" alt="">` : '';
   const person = draft.person || state.person || 'Clancy';
-  const startBiz = GROUPS.Business.includes(draft.category);
+  const startBiz = !!(draft.business || isBizCat(draft.category) || draft.taxCategory);
+  const startCard = defaultCard({ ...draft, card: draft.card || (startBiz ? 'business' : 'personal') });
 
   openSheet(`
     <div class="sheet-title">${existingId ? 'Edit expense' : 'Save expense'}</div>
@@ -1368,8 +1399,8 @@ function openFullConfirm(draft, photoId, existingId, ai = {}) {
     ${ai.learnedHit ? '<div class="learned-note">Filed the way you did last time</div>' : ''}
     <div class="field"><label>Paid with</label>
       <div class="person-toggle" style="margin:0">
-        <button data-card="personal" class="${(draft.card || 'personal') === 'personal' ? 'on clancy' : ''}">Personal card</button>
-        <button data-card="business" class="${draft.card === 'business' ? 'on clancy' : ''}">Business card</button>
+        <button data-card="personal" class="${startCard === 'personal' ? 'on clancy' : ''}">Personal card</button>
+        <button data-card="business" class="${startCard === 'business' ? 'on clancy' : ''}">Business card</button>
       </div>
     </div>
     <div class="field"><label>Category</label><div id="catGrid"></div></div>
@@ -1383,11 +1414,12 @@ function openFullConfirm(draft, photoId, existingId, ai = {}) {
   let selCat = draft.category || 'Everything Else';
   let selPerson = person;
   let isBiz = startBiz;
+  let selCard = startCard;
 
   // Category chips follow the Business switch — personal list or business list
   function paintCats() {
     const list = isBiz ? GROUPS.Business : GROUPS.Personal;
-    if (!list.includes(selCat)) selCat = isBiz ? 'Biz: Bills & Subs' : 'Everything Else';
+    if (!list.includes(selCat)) selCat = isBiz ? 'misc_business' : 'Everything Else';
     $('catGrid').innerHTML = `<div class="cat-grid">${list.map(c =>
       `<button class="cat-chip ${c === selCat ? 'on' : ''}" data-cat="${esc(c)}">${catLabel(c)}</button>`
     ).join('')}</div>`;
@@ -1398,23 +1430,33 @@ function openFullConfirm(draft, photoId, existingId, ai = {}) {
   }
   paintCats();
 
+  function paintCard() {
+    document.querySelectorAll('[data-card]').forEach(x =>
+      x.className = x.dataset.card === selCard ? 'on clancy' : '');
+  }
+
   $('bizToggle').onclick = () => {
     isBiz = !isBiz;
+    selCard = isBiz ? 'business' : 'personal';
     $('bizSwitch').classList.toggle('on', isBiz);
     $('bizSub').textContent = isBiz ? 'Write-off — kept out of personal spending' : 'Personal spending';
     paintCats();
+    paintCard();
   };
 
-  // Paying with the business card is a hard signal — flip it to business
-  let selCard = draft.card || 'personal';
   document.querySelectorAll('[data-card]').forEach(b => b.onclick = () => {
     selCard = b.dataset.card;
-    document.querySelectorAll('[data-card]').forEach(x =>
-      x.className = x.dataset.card === selCard ? 'on clancy' : '');
+    paintCard();
     if (selCard === 'business' && !isBiz) {
       isBiz = true;
       $('bizSwitch').classList.add('on');
       $('bizSub').textContent = 'Write-off — kept out of personal spending';
+      paintCats();
+    }
+    if (selCard === 'personal' && isBiz) {
+      isBiz = false;
+      $('bizSwitch').classList.remove('on');
+      $('bizSub').textContent = 'Personal spending';
       paintCats();
     }
   });
@@ -1441,6 +1483,8 @@ function openFullConfirm(draft, photoId, existingId, ai = {}) {
       category: selCat,
       person: selPerson,
       card: selCard,
+      cardLast4: draft.cardLast4 || null,
+      taxCategory: isBiz ? (draft.taxCategory || (isBizCat(selCat) ? selCat : 'misc_business')) : null,
       notes: $('fNote').value.trim(),
     };
     await performSaveExpense(payload, photoId, existingId, ai, $('btnSave'));
@@ -1540,7 +1584,7 @@ function openBudgets() {
     </div>`;
   const rows = `
     <div class="budget-group">Personal</div>${GROUPS.Personal.map(row).join('')}
-    <div class="budget-group">Business</div>${GROUPS.Business.map(row).join('')}`;
+    <div class="budget-group">Business</div>${[...GROUPS.Business, ...Object.keys(state.budgets).filter(c => isBizCat(c) && !GROUPS.Business.includes(c))].map(row).join('')}`;
   openSheet(`
     <div class="sheet-title">Monthly budgets</div>
     <div style="font-size:13px;color:var(--text-mid);margin-bottom:14px">Leave blank to just track spending without a target.</div>
@@ -1551,9 +1595,14 @@ function openBudgets() {
   $('btnCancelB').onclick = closeSheet;
   $('btnSaveBudgets').onclick = async () => {
     const budgets = {};
+    const edited = new Set();
     document.querySelectorAll('[data-budget]').forEach(i => {
+      edited.add(i.dataset.budget);
       const v = parseFloat(i.value);
       if (v > 0) budgets[i.dataset.budget] = v;
+    });
+    Object.entries(state.budgets).forEach(([k, v]) => {
+      if (!edited.has(k) && v > 0) budgets[k] = v;
     });
     try {
       const res = await api('budgets', { method: 'PUT', body: JSON.stringify({ budgets }) });
@@ -1638,7 +1687,7 @@ function openRecap(ym) {
   }
 
   const prevTotal = spentIn(prev);
-  const personal = spentIn(month, t => !GROUPS.Business.includes(t.category));
+  const personal = spentIn(month, t => t.card !== 'business' && !isBizCat(t.category) && !t.taxCategory);
   const business = total - personal;
   const cTotal = spentIn(month, t => t.person === 'Clancy');
   const nTotal = spentIn(month, t => t.person === 'Naomi');
@@ -1795,7 +1844,7 @@ function openExport() {
   const thisYear = new Date().getFullYear();
   const years = [thisYear, thisYear - 1];
   const withPhotos = state.txns.filter(t => t.photoId).length;
-  const bizCount = state.txns.filter(t => GROUPS.Business.includes(t.category)).length;
+  const bizCount = state.txns.filter(t => t.card === 'business' || isBizCat(t.category) || t.taxCategory).length;
   openSheet(`
     <div class="sheet-title">Export for taxes</div>
     <div style="font-size:13px;color:var(--text-mid);margin-bottom:16px">Downloads a spreadsheet with every expense — date, vendor, amount, category, which card, and a link to the receipt photo. ${state.txns.length} expenses on file, ${withPhotos} with photos, ${bizCount} business.</div>

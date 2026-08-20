@@ -9,7 +9,7 @@
 // Optional job-costing / tax fields (all backward-compatible):
 //   jobId, clientId, receiptDriveId, taxCategory, deductible, taxYear
 
-import { learnRule, tidyVendor } from './rules.js';
+import { learnRule, learnCardLast4, tidyVendor } from './rules.js';
 
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
 const LEDGER_KEY = 'household:ledger';
@@ -187,8 +187,9 @@ export async function onRequestPost({ request, env }) {
 
     // If they filed it somewhere other than the AI's guess, remember that
     if (body.aiCategory && body.aiCategory !== entry.category) {
-      await learnRule(env, entry.vendor, entry.category, isBusinessCategory(entry.category) || !!entry.taxCategory, entry.taxCategory);
+      await learnRule(env, entry.vendor, entry.category, isBiz, entry.taxCategory, entry.card);
     }
+    if (body.cardLast4) await learnCardLast4(env, body.cardLast4, entry.card);
 
     return new Response(JSON.stringify({ ok: true, entry }), { headers: JSON_HEADERS });
   } catch (err) {
@@ -241,8 +242,10 @@ export async function onRequestPatch({ request, env }) {
         e.category,
         isBusinessCategory(e.category) || !!e.taxCategory || e.card === 'business',
         e.taxCategory,
+        e.card,
       );
     }
+    if (body.cardLast4) await learnCardLast4(env, body.cardLast4, e.card);
 
     return new Response(JSON.stringify({ ok: true, entry: e }), { headers: JSON_HEADERS });
   } catch (err) {

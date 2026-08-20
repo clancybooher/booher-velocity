@@ -4,7 +4,7 @@
 // confirm. Nothing hits the ledger until the client saves it via
 // POST /api/transactions.
 
-import { readRules, vendorKey, tidyVendor } from './rules.js';
+import { readRules, readCardMap, vendorKey, tidyVendor } from './rules.js';
 import {
   TAX_CATEGORIES,
   LEGACY_BIZ_CATEGORIES,
@@ -89,7 +89,7 @@ export async function onRequestPost(context) {
       .slice(-40)
       .map(r => {
         const tax = r.taxCategory ? ` tax=${r.taxCategory}` : '';
-        return `  * "${r.vendor}" → ${r.category}${r.business ? ' (business)' : ''}${tax}`;
+        return `  * "${r.vendor}" → ${r.category}${r.business || r.card === 'business' ? ' (business card)' : ' (personal card)'}${tax}`;
       })
       .join('\n');
     const learned = ruleLines
@@ -110,7 +110,7 @@ export async function onRequestPost(context) {
 Work through the receipt carefully before answering. Read the printed characters that are actually there — never infer, complete, or guess a number from context.
 
 Return ONLY a JSON object — no markdown, no code blocks. Format:
-{"vendor": "Store Name", "amount": 12.34, "date": "YYYY-MM-DD", "category": "Category Name", "taxCategory": "materials|null", "note": "what was bought", "amountConfidence": "high|low", "dateConfidence": "high|low"}
+{"vendor": "Store Name", "amount": 12.34, "date": "YYYY-MM-DD", "category": "Category Name", "taxCategory": "materials|null", "note": "what was bought", "amountConfidence": "high|low", "dateConfidence": "high|low", "cardLast4": "1234 or null"}
 
 READING THE AMOUNT — this is the field people notice when it's wrong:
 - Report the FINAL AMOUNT CHARGED: the grand total after discounts and tax.
@@ -154,6 +154,7 @@ ${TAX_HINTS}
     bought somewhere that is clearly not a trade supplier.
   * For business expenses prefer snake_case tax codes as the category value (e.g. "materials"
     not "Biz: …"). Legacy Biz:* labels still work if you must.${learned}
+- cardLast4: last 4 digits of the card on the payment line if printed (Visa 1234, ****5678). Null if cash, not shown, or a photo of an item.
 - note: very short (1 line max), or empty string.`
               },
               { inlineData: { mimeType, data: base64Image } }
@@ -246,6 +247,16 @@ ${TAX_HINTS}
       : null;
 
     const business = isBusinessCategory(category) || !!taxCategory;
+    const cardLast4 = String(parsed.cardLast4 || '').replace(/\D/g, '').slice(-4);
+    const cardMap = await readCardMap(env);
+    let card = 'personal';
+    if (cardLast4.length === 4 && cardMap[cardLast4]) {
+      card = cardMap[cardLast4];
+    } else if (rule && (rule.card === 'business' || rule.card === 'personal')) {
+      card = rule.card;
+    } else if (business || (rule && rule.business)) {
+      card = 'business';
+    }
 
     const draft = {
       vendor,
@@ -253,8 +264,11 @@ ${TAX_HINTS}
       date,
       category,
       taxCategory,
-      business,
-      deductible: business,
+      business: card === 'business' || business,
+      card,
+      cardLast4: cardLast4.length === 4 ? cardLast4 : null,
+      person,
+      deductible: card === 'business' || business,
       note: String(parsed.note || '').trim(),
     };
 

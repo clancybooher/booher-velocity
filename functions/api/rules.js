@@ -48,14 +48,35 @@ export async function readRules(env) {
   return raw ? JSON.parse(raw) : {};
 }
 
-export async function learnRule(env, vendor, category, business, taxCategory) {
+const CARDS_KEY = 'household:cards'; // { "1234": "business" | "personal" }
+
+export async function readCardMap(env) {
+  const raw = await env.VELOCITY_KV.get(CARDS_KEY);
+  return raw ? JSON.parse(raw) : {};
+}
+
+export async function learnCardLast4(env, last4, card) {
+  const n = String(last4 || '').replace(/\D/g, '').slice(-4);
+  if (n.length !== 4) return;
+  if (card !== 'business' && card !== 'personal') return;
+  const map = await readCardMap(env);
+  map[n] = card;
+  await env.VELOCITY_KV.put(CARDS_KEY, JSON.stringify(map));
+  return map;
+}
+
+export async function learnRule(env, vendor, category, business, taxCategory, card) {
   const key = vendorKey(vendor);
   if (!key) return;
   const rules = await readRules(env);
   const prev = rules[key] || {};
+  const nextCard = card === 'business' || card === 'personal'
+    ? card
+    : (prev.card || (business ? 'business' : 'personal'));
   rules[key] = {
     category,
     business: !!business,
+    card: nextCard,
     vendor,
     taxCategory: taxCategory !== undefined ? (taxCategory || null) : (prev.taxCategory || null),
     updated_at: new Date().toISOString(),
@@ -96,7 +117,7 @@ export async function onRequestPost({ request, env }) {
            'permits_fees', 'disposal', 'meals', 'travel', 'rent_storage',
            'professional', 'training', 'misc_business',
          ].includes(category));
-    const rule = await learnRule(env, vendor, category, business, body.taxCategory);
+    const rule = await learnRule(env, vendor, category, business, body.taxCategory, body.card);
     const rules = await readRules(env);
     return new Response(JSON.stringify({ ok: true, rule, rules }), { headers: JSON_HEADERS });
   } catch (err) {
