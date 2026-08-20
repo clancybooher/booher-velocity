@@ -99,7 +99,17 @@
     /* ── App shell ───────────────────────────────────────── */
     #app { display: none; flex-direction: column; height: 100%; }
     #app.active { display: flex; }
-    .content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: calc(var(--safe-top) + 20px) 26px 120px; }
+    .content {
+      flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
+      padding: calc(var(--safe-top) + 20px) 26px 120px;
+      transition: opacity 0.2s var(--ease), transform 0.2s var(--ease);
+    }
+    .content.screen-out { opacity: 0; transform: translateY(8px); }
+    .content.screen-in { opacity: 1; transform: none; }
+    @media (prefers-reduced-motion: reduce) {
+      .content { transition: none; }
+      .content.screen-out, .content.screen-in { transform: none; }
+    }
 
     .top-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
     .brand { font-size: 13px; font-weight: 400; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-mid); }
@@ -275,9 +285,9 @@
       z-index: 20;
     }
     .nav-btn {
-      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
       font-size: 11px; font-weight: 600; color: var(--text-faint);
-      padding: 8px 0; border-radius: 12px;
+      min-width: 44px; min-height: 44px; padding: 8px 12px; border-radius: 12px;
       letter-spacing: 0.08em; text-transform: uppercase;
       transition: color 0.18s var(--ease);
     }
@@ -285,15 +295,27 @@
     .nav-btn svg { transition: transform 0.2s var(--ease); }
     .nav-btn:active svg { transform: scale(0.88); }
 
-    /* Snap: a pill that sits in the bar, not a blob on top of it */
+    /* Snap: split pill — camera on tap, chevron for more */
+    .snap-wrap {
+      display: flex; align-items: stretch;
+      background: var(--ink); border-radius: 999px; overflow: hidden;
+    }
     .snap-btn {
       display: flex; align-items: center; justify-content: center; gap: 7px;
-      height: 42px; padding: 0 26px; border-radius: 999px;
-      background: var(--ink); color: var(--bg);
+      min-height: 44px; padding: 0 22px 0 24px;
+      background: transparent; color: var(--bg);
       font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
       transition: opacity 0.18s var(--ease);
     }
     .snap-btn:active { opacity: 0.7; }
+    .snap-more {
+      display: flex; align-items: center; justify-content: center;
+      min-width: 36px; min-height: 44px; padding: 0 10px 0 6px;
+      color: var(--bg); font-size: 18px; font-weight: 700; letter-spacing: 0;
+      opacity: 0.65; border-left: 1px solid rgba(255,255,255,0.14);
+      transition: opacity 0.18s var(--ease);
+    }
+    .snap-more:active { opacity: 1; }
 
     /* ── Sheets (modals) ─────────────────────────────────── */
     .sheet-back {
@@ -309,7 +331,11 @@
       box-shadow: var(--shadow-lg);
     }
     @keyframes slideUp { from { transform: translateY(100%); } to { transform: none; } }
-    .sheet-handle { width: 36px; height: 4px; border-radius: 99px; background: var(--line); margin: 4px auto 16px; }
+    .sheet-handle {
+      width: 36px; height: 4px; border-radius: 99px; background: var(--line);
+      margin: 4px auto 16px; touch-action: none; cursor: grab;
+    }
+    .sheet-handle:active { cursor: grabbing; }
     .sheet-title { font-size: 21px; font-weight: 700; letter-spacing: -0.035em; margin-bottom: 16px; }
 
     .field { margin-bottom: 14px; }
@@ -354,6 +380,42 @@
     .week-bar-fill { height: 100%; border-radius: 999px; background: var(--teal); transition: width 0.8s var(--ease); }
     .week-bar-fill.warn { background: var(--amber); }
     .week-bar-fill.over { background: var(--red); }
+
+    /* Groceries hero — lead block on Home */
+    .gro-hero {
+      display: block; width: 100%; text-align: left;
+      padding: 4px 0 28px; margin-bottom: 4px;
+      border-bottom: 1px solid var(--line-soft);
+      transition: opacity 0.2s var(--ease);
+    }
+    .gro-hero:active { opacity: 0.55; }
+    .gro-amt {
+      font-size: 42px; font-weight: 700; letter-spacing: -0.03em;
+      line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums;
+    }
+    .gro-amt.over { color: var(--red); }
+    .gro-sub { font-size: 13px; font-weight: 500; color: var(--text-faint); margin-top: 10px; letter-spacing: 0.01em; }
+    .gro-sub.over { color: var(--red); font-weight: 600; }
+    .gro-pace { font-size: 13px; font-weight: 500; color: var(--text-mid); margin-top: 12px; letter-spacing: 0.01em; }
+
+    /* Quick confirm — one-tap save after AI read */
+    .quick-card { text-align: center; padding: 4px 0 8px; }
+    .quick-photo {
+      width: 100%; max-height: 140px; object-fit: contain; border-radius: 12px;
+      background: var(--line-soft); margin-bottom: 16px;
+    }
+    .quick-vendor { font-size: 22px; font-weight: 700; letter-spacing: -0.025em; line-height: 1.2; }
+    .quick-amt { font-size: 36px; font-weight: 800; letter-spacing: -0.03em; margin-top: 8px; font-variant-numeric: tabular-nums; }
+    .quick-meta { font-size: 14px; font-weight: 600; color: var(--text-mid); margin-top: 10px; }
+    .quick-date { font-size: 13px; font-weight: 500; color: var(--text-faint); margin-top: 4px; }
+    .quick-biz {
+      display: inline-flex; align-items: center; gap: 6px;
+      margin-top: 14px; padding: 8px 14px; border-radius: 999px;
+      background: var(--line-soft); font-size: 13px; font-weight: 600; color: var(--text-mid);
+      transition: background 0.15s var(--ease);
+    }
+    .quick-biz:active { background: var(--line); }
+    .quick-biz.on { background: var(--wine-soft); color: var(--wine); }
 
     /* Goals */
     .goal-card {
@@ -450,10 +512,26 @@
     .bill-pay:disabled { opacity: 0.4; }
 
     /* Spinner + toast */
-    .spin-back { position: fixed; inset: 0; z-index: 90; background: rgba(250,248,244,0.85); display: none; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
+    .spin-back { position: fixed; inset: 0; z-index: 90; background: rgba(250,248,244,0.92); display: none; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 24px; }
     .spin-back.open { display: flex; }
+    .spin-thumb-wrap {
+      position: relative; width: min(220px, 72vw); border-radius: 14px; overflow: hidden;
+      box-shadow: var(--shadow-md); background: var(--line-soft);
+    }
+    .spin-thumb-wrap.hidden { display: none; }
+    .spin-thumb { display: block; width: 100%; max-height: 180px; object-fit: contain; }
+    .spin-thumb-wrap::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.45) 50%, transparent 60%);
+      animation: shimmer 1.4s ease-in-out infinite;
+    }
+    @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+    @media (prefers-reduced-motion: reduce) {
+      .spin-thumb-wrap::after { animation: none; opacity: 0.25; }
+    }
     .spinner { width: 44px; height: 44px; border: 4px solid var(--wine-soft); border-top-color: var(--wine); border-radius: 50%; animation: spin 0.8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { .spinner { animation: none; border-top-color: var(--wine-soft); opacity: 0.6; } }
     .spin-label { font-size: 15px; font-weight: 600; color: var(--text-mid); }
     #toast {
       position: fixed; left: 50%; bottom: calc(var(--safe-bottom) + 100px);
@@ -493,10 +571,13 @@
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
         Home
       </button>
-      <button class="snap-btn" id="navSnap" aria-label="Add expense">
-        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-        Snap
-      </button>
+      <div class="snap-wrap">
+        <button class="snap-btn" id="navSnap" aria-label="Snap receipt">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          Snap
+        </button>
+        <button class="snap-more" id="navSnapMore" aria-label="More add options">⋯</button>
+      </div>
       <button class="nav-btn" id="navHistory">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
         History
@@ -508,7 +589,11 @@
   <div class="sheet-back" id="sheetBack"><div class="sheet" id="sheetBody"></div></div>
 
   <!-- Spinner -->
-  <div class="spin-back" id="spin"><div class="spinner"></div><div class="spin-label" id="spinLabel">Reading receipt…</div></div>
+  <div class="spin-back" id="spin">
+    <div class="spin-thumb-wrap hidden" id="spinThumbWrap"><img class="spin-thumb" id="spinThumb" alt=""></div>
+    <div class="spinner"></div>
+    <div class="spin-label" id="spinLabel">Reading receipt…</div>
+  </div>
 
   <div id="toast"></div>
 
@@ -562,9 +647,22 @@ function toast(msg) {
   t._h = setTimeout(() => t.classList.remove('show'), 2600);
 }
 
-function spin(on, label) {
+function spin(on, label, thumbUrl) {
   $('spinLabel').textContent = label || 'Working…';
+  const wrap = $('spinThumbWrap');
+  const thumb = $('spinThumb');
+  if (thumbUrl) {
+    thumb.src = thumbUrl;
+    wrap.classList.remove('hidden');
+  } else {
+    thumb.removeAttribute('src');
+    wrap.classList.add('hidden');
+  }
   $('spin').classList.toggle('open', !!on);
+  if (!on && spin._preview) {
+    URL.revokeObjectURL(spin._preview);
+    spin._preview = null;
+  }
 }
 
 async function api(path, opts = {}) {
@@ -724,11 +822,24 @@ function monthLabel(ym) {
 
 /* ── Screens ────────────────────────────────────────────── */
 function setScreen(name) {
-  state.screen = name;
-  $('navHome').classList.toggle('on', name === 'home');
-  $('navHistory').classList.toggle('on', name === 'history');
-  render();
-  $('content').scrollTop = 0;
+  if (name === state.screen) return;
+  const content = $('content');
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const go = () => {
+    state.screen = name;
+    $('navHome').classList.toggle('on', name === 'home');
+    $('navHistory').classList.toggle('on', name === 'history');
+    render();
+    content.scrollTop = 0;
+    if (!reduced) {
+      content.classList.remove('screen-out');
+      content.classList.add('screen-in');
+      requestAnimationFrame(() => content.classList.remove('screen-in'));
+    }
+  };
+  if (reduced) { go(); return; }
+  content.classList.add('screen-out');
+  setTimeout(go, 180);
 }
 
 function render() {
@@ -837,7 +948,7 @@ function renderHome() {
   const TOP_ORDER = [
     { cat: 'Clancy Fun', label: 'Clancy', tint: 'clancy', attrs: 'data-pfilter="Clancy"' },
     { cat: 'Naomi Fun', label: 'Naomi', tint: 'naomi', attrs: 'data-pfilter="Naomi"' },
-    { cat: 'Groceries' },
+    { cat: 'Groceries', attrs: 'data-cfilter="Groceries"' },
     { cat: 'Dates' },
   ];
   const topHTML = `<div class="group">${TOP_ORDER.map(t => catCardHTML(t.cat, t)).join('')}</div>`;
@@ -910,6 +1021,30 @@ function renderHome() {
       <div class="week-what">Covers groceries, dates, and both fun budgets</div>
     </div>` : '';
 
+  // Groceries — lead block for Naomi (and Clancy)
+  const groBudget = state.budgets['Groceries'] || 0;
+  const groSpent = byCat['Groceries'] || 0;
+  const groLeft = groBudget - groSpent;
+  const groOver = groBudget > 0 && groSpent > groBudget;
+  const groPct = groBudget > 0 ? Math.min(100, groSpent / groBudget * 100) : 0;
+  const groBarCls = groOver ? 'over' : groPct >= 80 ? 'warn' : '';
+  const groDaysLeft = (() => {
+    const d = new Date();
+    const last = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+    return last - d.getDate() + 1;
+  })();
+  const groWeeksLeft = groDaysLeft / 7;
+  const groPace = groLeft > 0 && groWeeksLeft > 0 ? groLeft / groWeeksLeft : 0;
+  const groHTML = groBudget > 0 ? `
+    <button class="gro-hero" data-cfilter="Groceries">
+      <div class="gro-amt ${groOver ? 'over' : ''}">${groOver ? fmt0(-groLeft) + ' over' : fmt0(groLeft)}</div>
+      <div class="gro-sub ${groOver ? 'over' : ''}">${groOver ? fmt0(groSpent) + ' spent of ' + fmt0(groBudget) : 'left of ' + fmt0(groBudget) + ' this month'}</div>
+      <div class="bar"><div class="bar-fill ${groBarCls}" style="width:${Math.max(groPct, groSpent > 0 ? 2 : 0)}%"></div></div>
+      <div class="gro-pace">${groOver ? 'Over budget — tap for history'
+        : groPace > 0 ? 'about ' + fmt0(groPace) + ' a week from here'
+        : groDaysLeft <= 1 ? 'Last day of the month' : fmt0(groLeft) + ' left with ' + groDaysLeft + ' days to go'}</div>
+    </button>` : '';
+
   const recent = state.txns.slice(0, 5).map(txnRowHTML).join('');
 
   return `
@@ -927,7 +1062,8 @@ function renderHome() {
       </button>
       </div>
     </div>
-    <div class="section-title" style="margin-top:22px">This week</div>
+    ${groBudget > 0 ? `<div class="section-title" style="margin-top:22px">Groceries</div>${groHTML}` : ''}
+    <div class="section-title">This week</div>
     ${weekHTML}
     <div class="section-title">Top categories</div>
     ${topHTML}
@@ -1023,6 +1159,11 @@ function bindContent() {
     state.month = new Date().toISOString().slice(0, 7);
     setScreen('history');
   });
+  document.querySelectorAll('[data-cfilter]').forEach(b => b.onclick = () => {
+    state.filter = b.dataset.cfilter;
+    state.month = new Date().toISOString().slice(0, 7);
+    setScreen('history');
+  });
   const mp = $('mPrev'), mn = $('mNext');
   if (mp) mp.onclick = () => { state.month = shiftMonth(state.month, -1); state.filter = 'All'; render(); };
   if (mn) mn.onclick = () => { state.month = shiftMonth(state.month, 1); state.filter = 'All'; render(); };
@@ -1037,10 +1178,38 @@ function shiftMonth(ym, delta) {
 /* ── Sheets ─────────────────────────────────────────────── */
 function openSheet(html) {
   $('sheetBody').innerHTML = '<div class="sheet-handle"></div>' + html;
+  $('sheetBody').style.transform = '';
   $('sheetBack').classList.add('open');
+  bindSheetSwipe();
 }
-function closeSheet() { $('sheetBack').classList.remove('open'); }
+function closeSheet() {
+  $('sheetBack').classList.remove('open');
+  $('sheetBody').style.transform = '';
+}
 $('sheetBack').addEventListener('click', e => { if (e.target === $('sheetBack')) closeSheet(); });
+
+function bindSheetSwipe() {
+  const handle = document.querySelector('.sheet-handle');
+  const sheet = $('sheetBody');
+  if (!handle) return;
+  let startY = 0, dragging = false;
+  handle.addEventListener('touchstart', e => {
+    startY = e.touches[0].clientY;
+    dragging = true;
+  }, { passive: true });
+  handle.addEventListener('touchmove', e => {
+    if (!dragging) return;
+    const dy = e.touches[0].clientY - startY;
+    if (dy > 0) sheet.style.transform = `translateY(${dy}px)`;
+  }, { passive: true });
+  handle.addEventListener('touchend', e => {
+    if (!dragging) return;
+    dragging = false;
+    const dy = e.changedTouches[0].clientY - startY;
+    sheet.style.transform = '';
+    if (dy > 72) closeSheet();
+  }, { passive: true });
+}
 
 /* Snap options */
 function openSnapMenu() {
@@ -1067,9 +1236,14 @@ function openSnapMenu() {
 /* Image → compress → parse */
 async function handleImage(file) {
   if (!file) return;
-  spin(true, 'Reading it…');
+  spin._preview = URL.createObjectURL(file);
+  spin(true, 'Reading it…', spin._preview);
   try {
     const blob = await compressImage(file);
+    const blobUrl = URL.createObjectURL(blob);
+    if (spin._preview) { URL.revokeObjectURL(spin._preview); spin._preview = null; }
+    spin._preview = blobUrl;
+    spin(true, 'Reading it…', blobUrl);
     const fd = new FormData();
     fd.append('image', blob, 'receipt.jpg');
     fd.append('person', state.person || 'Clancy');
@@ -1109,7 +1283,103 @@ function compressImage(file) {
 }
 
 /* Confirm / edit card — used for new snaps, manual adds, and editing */
+function canQuickConfirm(draft, ai, existingId) {
+  if (existingId) return false;
+  if (ai.dateWarning || ai.amountWarning) return false;
+  if (!draft.vendor || !draft.amount || !draft.date || !draft.category) return false;
+  return true;
+}
+
+async function performSaveExpense(payload, photoId, existingId, ai, btn) {
+  if (!payload.amount) {
+    if ($('fAmount')) {
+      const amt = $('fAmount');
+      amt.style.borderColor = 'var(--red)';
+      $('saveHint').textContent = "Add the amount — I couldn't read a price on that photo.";
+      $('saveHint').style.display = 'block';
+      amt.focus();
+    } else {
+      toast('Add an amount first');
+    }
+    return;
+  }
+  if (btn) btn.disabled = true;
+  try {
+    if (existingId) {
+      await api('transactions', { method: 'PATCH', body: JSON.stringify({ id: existingId, ...payload }) });
+      toast('Updated');
+    } else {
+      await api('transactions', { method: 'POST', body: JSON.stringify({ ...payload, photoId: photoId || null, aiCategory: ai.aiCategory || null }) });
+    }
+    closeSheet();
+    await loadData();
+    if (!existingId) {
+      const corrected = ai.aiCategory && ai.aiCategory !== payload.category;
+      const streak = calcStreak();
+      toast(corrected ? `Saved — I'll remember ${payload.vendor}`
+          : streak >= 2 ? `Saved — ${streak}-day streak`
+          : 'Saved — ' + payload.category.replace('Biz: ', ''));
+    }
+    render();
+  } catch (e) {
+    if (btn) btn.disabled = false;
+    if (e.message !== 'locked') toast(e.message);
+  }
+}
+
 function openConfirm(draft, photoId, existingId, ai = {}) {
+  if (canQuickConfirm(draft, ai, existingId)) openQuickConfirm(draft, photoId, ai);
+  else openFullConfirm(draft, photoId, existingId, ai);
+}
+
+function openQuickConfirm(draft, photoId, ai) {
+  let selCat = draft.category || 'Everything Else';
+  let selPerson = draft.person || state.person || 'Clancy';
+  let isBiz = GROUPS.Business.includes(selCat);
+  let selCard = draft.card || 'personal';
+  const photo = photoId ? `<img class="quick-photo" src="/api/photo/${photoId}" alt="">` : '';
+  const dateLabel = new Date(draft.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+
+  function flipBiz() {
+    isBiz = !isBiz;
+    if (isBiz && !GROUPS.Business.includes(selCat)) selCat = 'Biz: Bills & Subs';
+    if (!isBiz && GROUPS.Business.includes(selCat)) selCat = 'Everything Else';
+    const bizBtn = $('quickBiz');
+    bizBtn.classList.toggle('on', isBiz);
+    bizBtn.textContent = isBiz ? 'Business expense · tap to switch' : 'Personal · tap to switch';
+    $('quickCat').textContent = catPlain(selCat);
+  }
+
+  openSheet(`
+    <div class="quick-card">
+      ${photo}
+      <div class="quick-vendor">${esc(draft.vendor)}</div>
+      <div class="quick-amt">${fmt(draft.amount)}</div>
+      <div class="quick-meta" id="quickCat">${catPlain(selCat)}</div>
+      <div class="quick-date">${dateLabel}</div>
+      <button type="button" class="quick-biz ${isBiz ? 'on' : ''}" id="quickBiz">${isBiz ? 'Business expense · tap to switch' : 'Personal · tap to switch'}</button>
+      ${ai.learnedHit ? '<div class="learned-note" style="margin-top:12px">Filed the way you did last time</div>' : ''}
+    </div>
+    <button class="btn-primary" id="btnQuickSave">Save</button>
+    <button class="btn-ghost" id="btnQuickEdit">Edit details</button>
+    <button class="btn-ghost" id="btnCancel">Cancel</button>
+  `);
+
+  $('quickBiz').onclick = flipBiz;
+  $('btnCancel').onclick = closeSheet;
+  $('btnQuickEdit').onclick = () => openFullConfirm(draft, photoId, null, ai);
+  $('btnQuickSave').onclick = () => performSaveExpense({
+    vendor: (draft.vendor || '').trim() || 'Unknown',
+    amount: parseFloat(draft.amount) || 0,
+    date: draft.date,
+    category: selCat,
+    person: selPerson,
+    card: selCard,
+    notes: (draft.note || draft.notes || '').trim(),
+  }, photoId, null, ai, $('btnQuickSave'));
+}
+
+function openFullConfirm(draft, photoId, existingId, ai = {}) {
   const photo = photoId ? `<img class="confirm-photo" src="/api/photo/${photoId}" alt="">` : '';
   const person = draft.person || state.person || 'Clancy';
   const startBiz = GROUPS.Business.includes(draft.category);
@@ -1214,36 +1484,7 @@ function openConfirm(draft, photoId, existingId, ai = {}) {
       card: selCard,
       notes: $('fNote').value.trim(),
     };
-    if (!payload.amount) {
-      const amt = $('fAmount');
-      amt.style.borderColor = 'var(--red)';
-      $('saveHint').textContent = "Add the amount — I couldn't read a price on that photo.";
-      $('saveHint').style.display = 'block';
-      amt.focus();
-      return;
-    }
-    $('btnSave').disabled = true;
-    try {
-      if (existingId) {
-        await api('transactions', { method: 'PATCH', body: JSON.stringify({ id: existingId, ...payload }) });
-        toast('Updated');
-      } else {
-        await api('transactions', { method: 'POST', body: JSON.stringify({ ...payload, photoId: photoId || null, aiCategory: ai.aiCategory || null }) });
-      }
-      closeSheet();
-      await loadData();
-      if (!existingId) {
-        const corrected = ai.aiCategory && ai.aiCategory !== payload.category;
-        const streak = calcStreak();
-        toast(corrected ? `Saved — I'll remember ${payload.vendor}`
-            : streak >= 2 ? `Saved — ${streak}-day streak`
-            : 'Saved — ' + payload.category.replace('Biz: ', ''));
-      }
-      render();
-    } catch (e) {
-      $('btnSave').disabled = false;
-      if (e.message !== 'locked') toast(e.message);
-    }
+    await performSaveExpense(payload, photoId, existingId, ai, $('btnSave'));
   };
 
   if (existingId) {
@@ -1719,7 +1960,8 @@ function openSettings() {
 /* ── Wire up ────────────────────────────────────────────── */
 $('navHome').onclick = () => setScreen('home');
 $('navHistory').onclick = () => setScreen('history');
-$('navSnap').onclick = openSnapMenu;
+$('navSnap').onclick = () => $('fileCamera').click();
+$('navSnapMore').onclick = openSnapMenu;
 $('fileCamera').addEventListener('change', e => { handleImage(e.target.files[0]); e.target.value = ''; });
 $('fileLibrary').addEventListener('change', e => { handleImage(e.target.files[0]); e.target.value = ''; });
 
