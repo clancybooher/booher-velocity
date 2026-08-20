@@ -12,9 +12,9 @@
   <link rel="apple-touch-icon" href="/icon-192.png">
   <style>
     :root {
-      --wine: #111111;
-      --wine-dark: #000000;
-      --wine-soft: #E5E5EA;
+      --wine: #7C2033;
+      --wine-dark: #5A1725;
+      --wine-soft: #F3E6E9;
       --bg: #F2F2F7;
       --card: #FFFFFF;
       --ink: #000000;
@@ -29,12 +29,13 @@
       --green: #34C759;
       --red: #FF3B30;
       --amber: #FF9F0A;
-      --clancy: #8E8E93;
-      --clancy-ink: #000000;
-      --clancy-soft: #F2F2F7;
-      --naomi: #8E8E93;
-      --naomi-ink: #000000;
-      --naomi-soft: #F2F2F7;
+      --clancy: #3D7EA6;
+      --clancy-ink: #2A5A78;
+      --clancy-soft: #E8F1F7;
+      --naomi: #C45B78;
+      --naomi-ink: #8A3D56;
+      --naomi-soft: #F8E8EE;
+      --dates: #2F8A6A;
       --radius: 10px;
       --radius-lg: 12px;
       --shadow-sm: none;
@@ -218,6 +219,7 @@
     .bar-fill.wine { background: var(--wine); opacity: 0.9; }
     .bar-fill.clancy { background: var(--clancy); }
     .bar-fill.naomi { background: var(--naomi); }
+    .bar-fill.dates { background: var(--dates); }
 
     /* Transaction rows */
     .txn {
@@ -285,7 +287,7 @@
     /* Snap: split pill — camera on tap, chevron for more */
     .snap-wrap {
       display: flex; align-items: stretch;
-      background: var(--ink); border-radius: 8px; overflow: hidden;
+      background: var(--wine); border-radius: 8px; overflow: hidden;
     }
     .snap-btn {
       display: flex; align-items: center; justify-content: center; gap: 6px;
@@ -558,9 +560,9 @@
         Home
       </button>
       <div class="snap-wrap">
-        <button class="snap-btn" id="navSnap" aria-label="Add receipt">
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-          Add
+        <button class="snap-btn" id="navSnap" aria-label="Snap receipt">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M9.15 3.75 7.8 6H4.5A1.75 1.75 0 0 0 2.75 7.75v10.5c0 .97.78 1.75 1.75 1.75h15c.97 0 1.75-.78 1.75-1.75V7.75A1.75 1.75 0 0 0 19.5 6h-3.3l-1.35-2.25H9.15ZM12 17.25a3.75 3.75 0 1 1 0-7.5 3.75 3.75 0 0 1 0 7.5Zm0-2.1a1.65 1.65 0 1 0 0-3.3 1.65 1.65 0 0 0 0 3.3ZM18.1 8.7a.7.7 0 1 1 0-1.4.7.7 0 0 1 0 1.4Z"/></svg>
+          Snap
         </button>
         <button class="snap-more" id="navSnapMore" aria-label="More add options">⋯</button>
       </div>
@@ -940,7 +942,7 @@ function renderHome() {
   const SPEND_ORDER = [
     { cat: 'Clancy Fun', label: 'Clancy', tint: 'clancy', leftFirst: true, attrs: 'data-pfilter="Clancy"' },
     { cat: 'Naomi Fun', label: 'Naomi', tint: 'naomi', leftFirst: true, attrs: 'data-pfilter="Naomi"' },
-    { cat: 'Dates', leftFirst: true, attrs: 'data-cfilter="Dates"' },
+    { cat: 'Dates', tint: 'dates', leftFirst: true, attrs: 'data-cfilter="Dates"' },
   ];
   const spendHTML = `<div class="group">${SPEND_ORDER.map(t => catCardHTML(t.cat, t)).join('')}</div>`;
 
