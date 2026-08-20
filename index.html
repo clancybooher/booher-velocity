@@ -6,57 +6,49 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="theme-color" content="#FAF8F4">
+  <meta name="theme-color" content="#F2F2F7">
   <title>Money is Fun</title>
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/icon-192.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --wine: #8E4A4A;         /* enji — muted crimson */
-      --wine-dark: #6B3636;
-      --wine-soft: #F0E7E4;
-      /* washi paper, sumi ink, and pigments — nothing pure, nothing loud */
-      --bg: #F2EFE9;           /* kinari — undyed paper */
-      --card: #F2EFE9;         /* no card: content sits on the paper */
-      --ink: #33302B;          /* sumi — soft black with warmth */
-      --ink-deep: #211F1C;
-      --text: #33302B;
-      --text-mid: #57524A;
-      --text-faint: #7B7469;
-      --line: #DDD8CE;         /* the thin rule, used sparingly */
-      --line-soft: #E8E4DB;
-      --teal: #6B8E7F;         /* matcha */
-      --teal-soft: #E7EDE8;
-      --green: #6B8E7F;
-      --red: #A85B52;          /* akane — madder */
-      --amber: #B8925C;        /* kihada */
-      /* The two of them, in pigment: Clancy a creamy sky, Naomi a creamy rose.
-         Each has a deeper "-ink" for text, since the pastel alone can't carry
-         contrast on paper this warm. */
-      --clancy: #8FB0C7;       /* sorairo — soft sky */
-      --clancy-ink: #4E748E;
-      --clancy-soft: #E6EEF4;
-      --naomi: #CE96A4;        /* sakura — dusty rose */
-      --naomi-ink: #96606F;
-      --naomi-soft: #F4E8EB;
-      --radius: 12px;
-      --radius-lg: 18px;
-      /* Depth comes from hairlines and spacing, not drop shadows */
+      --wine: #111111;
+      --wine-dark: #000000;
+      --wine-soft: #E5E5EA;
+      --bg: #F2F2F7;
+      --card: #FFFFFF;
+      --ink: #000000;
+      --ink-deep: #000000;
+      --text: #000000;
+      --text-mid: #3C3C43;
+      --text-faint: #8E8E93;
+      --line: #C6C6C8;
+      --line-soft: #E5E5EA;
+      --teal: #34C759;
+      --teal-soft: #E8F8EC;
+      --green: #34C759;
+      --red: #FF3B30;
+      --amber: #FF9F0A;
+      --clancy: #8E8E93;
+      --clancy-ink: #000000;
+      --clancy-soft: #F2F2F7;
+      --naomi: #8E8E93;
+      --naomi-ink: #000000;
+      --naomi-soft: #F2F2F7;
+      --radius: 10px;
+      --radius-lg: 12px;
       --shadow-sm: none;
-      --shadow-md: 0 1px 2px rgba(18,21,26,0.04);
-      --shadow-lg: 0 -1px 40px rgba(18,21,26,0.16);
-      --hairline: 1px solid var(--line);
+      --shadow-md: none;
+      --shadow-lg: 0 -10px 28px rgba(0,0,0,0.14);
+      --hairline: 0.5px solid var(--line);
       --safe-top: env(safe-area-inset-top, 0px);
       --safe-bottom: env(safe-area-inset-bottom, 0px);
-      --ease: cubic-bezier(0.32, 0.72, 0, 1);
+      --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
     }
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html, body { height: 100%; overscroll-behavior: none; }
     body {
-      font-family: 'Inter', -apple-system, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
       background: var(--bg);
       color: var(--text);
       display: flex;
@@ -64,8 +56,7 @@
       position: fixed;
       inset: 0;
       -webkit-font-smoothing: antialiased;
-      font-feature-settings: 'cv11', 'ss01';
-      letter-spacing: -0.011em;
+      letter-spacing: 0;
     }
     /* Tabular figures everywhere money is shown — columns line up, no jitter */
     .hero-amount, .top-amt, .txn-amt, .cat-amt, .cat-of, .week-amt,
@@ -101,7 +92,7 @@
     #app.active { display: flex; }
     .content {
       flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
-      padding: calc(var(--safe-top) + 20px) 26px 120px;
+      padding: calc(var(--safe-top) + 16px) 16px 120px;
       transition: opacity 0.2s var(--ease), transform 0.2s var(--ease);
     }
     .content.screen-out { opacity: 0; transform: translateY(8px); }
@@ -111,8 +102,8 @@
       .content.screen-out, .content.screen-in { transform: none; }
     }
 
-    .top-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
-    .brand { font-size: 13px; font-weight: 400; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-mid); }
+    .top-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+    .brand { font-size: 17px; font-weight: 600; letter-spacing: -0.022em; color: var(--ink); }
     .icon-btn {
       width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;
       border-radius: 10px; color: var(--text-mid);
@@ -147,32 +138,29 @@
 
     /* Month hero */
     /* ma — the number is given room, and sits left like a brushstroke */
-    .hero { text-align: left; margin: 44px 0 52px; }
+    .hero { text-align: left; margin: 22px 0 8px; padding: 0 4px; }
     .hero-label {
-      font-size: 13px; font-weight: 600; color: var(--text-faint);
-      text-transform: uppercase; letter-spacing: 0.08em;
+      font-size: 13px; font-weight: 400; color: var(--text-faint);
     }
     .hero-amount {
-      font-size: 54px; font-weight: 700; letter-spacing: -0.03em;
-      margin-top: 18px; line-height: 1; color: var(--ink);
+      font-size: 28px; font-weight: 600; letter-spacing: -0.03em;
+      margin-top: 4px; line-height: 1.1; color: var(--ink);
     }
     .hero-amount .cents { font-size: 0.42em; font-weight: 600; color: var(--text-faint); letter-spacing: 0; margin-left: 1px; }
     .hero-split {
-      display: flex; align-items: center; gap: 20px;
-      font-size: 13px; font-weight: 500; color: var(--text-mid); margin-top: 26px;
-      letter-spacing: 0.02em;
+      display: flex; align-items: center; gap: 16px;
+      font-size: 13px; font-weight: 400; color: var(--text-mid); margin-top: 8px;
     }
     .hero-split .dot { width: 4px; height: 4px; border-radius: 50%; flex-shrink: 0; }
     .hero-split .seg { display: inline-flex; align-items: center; gap: 7px; }
     .hero-split b { font-weight: 700; color: var(--ink); }
 
     .section-title {
-      font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em;
-      color: var(--text-faint); margin: 52px 0 4px;
+      font-size: 13px; font-weight: 400;
+      color: var(--text-faint); margin: 22px 16px 8px;
       display: flex; justify-content: space-between; align-items: center;
-      padding-bottom: 14px; border-bottom: 1px solid var(--line);
     }
-    .section-title button { font-size: 13px; font-weight: 500; color: var(--text-mid); text-transform: none; letter-spacing: 0.02em; }
+    .section-title button { font-size: 13px; font-weight: 400; color: #007AFF; }
     .section-title button:active { opacity: 0.5; }
 
     /* Awards */
@@ -184,9 +172,11 @@
     .award-desc { font-size: 13px; font-weight: 500; color: var(--text-faint); margin-top: 2px; }
     .award-prog { font-size: 13px; font-weight: 600; color: var(--text-mid); margin-left: auto; flex-shrink: 0; }
 
-    /* Top-4 grid */
-    /* No containers. Content rests on the paper, divided by a single rule. */
-    .group { }
+    .group {
+      background: var(--card);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
     .row {
       display: block; width: 100%; text-align: left;
       padding: 20px 0 19px; border-bottom: 1px solid var(--line-soft);
@@ -200,29 +190,28 @@
     .row-sub { font-size: 13px; font-weight: 500; color: var(--text-faint); margin-top: 9px; letter-spacing: 0.01em; }
     .row-sub.over { color: var(--red); font-weight: 600; }
     .btn-all {
-      display: block; width: 100%; text-align: center; padding: 14px; margin-top: 8px;
-      font-size: 13px; font-weight: 600; color: var(--text-mid); letter-spacing: -0.015em;
-      border-radius: 10px; transition: background 0.15s var(--ease);
+      display: block; width: 100%; text-align: center; padding: 12px; margin-top: 10px;
+      font-size: 15px; font-weight: 400; color: #007AFF;
     }
     .btn-all:active { background: var(--line-soft); }
 
-    /* Category cards — one component, used for top categories, personal, and business */
+    /* Category rows — iOS grouped list, one primitive */
     .cat-card {
-      background: var(--card); border: var(--hairline); border-radius: var(--radius);
-      padding: 14px 16px; margin-bottom: 8px;
+      background: transparent; border: none; border-radius: 0;
+      padding: 12px 16px; margin-bottom: 0;
       width: 100%; text-align: left; display: block;
-      transition: opacity 0.2s var(--ease);
+      border-bottom: 0.5px solid var(--line-soft);
     }
-    .cat-card:active { opacity: 0.6; }
+    .cat-card:last-child { border-bottom: none; }
+    .cat-card:active { background: #E5E5EA; }
     .cat-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
-    .cat-name { font-size: 15px; font-weight: 600; }
-    .cat-amt { font-size: 15px; font-weight: 700; }
-    .cat-of { font-size: 13px; font-weight: 600; color: var(--text-faint); margin-left: 4px; }
-    .cat-sub { font-size: 13px; font-weight: 500; color: var(--text-faint); margin-top: 8px; }
-    .cat-sub.over { color: var(--red); font-weight: 600; }
-    .cat-recur { font-size: 13px; font-weight: 600; color: var(--text-mid); margin-top: 6px; }
-    /* Real progress bars — filled to the eye, not a hairline */
-    .bar { height: 10px; border-radius: 999px; background: var(--line-soft); margin-top: 11px; overflow: hidden; }
+    .cat-name { font-size: 17px; font-weight: 400; }
+    .cat-amt { font-size: 17px; font-weight: 400; }
+    .cat-of { font-size: 13px; font-weight: 400; color: var(--text-faint); margin-left: 4px; }
+    .cat-sub { font-size: 13px; font-weight: 400; color: var(--text-faint); margin-top: 3px; }
+    .cat-sub.over { color: var(--red); font-weight: 400; }
+    .cat-recur { font-size: 13px; font-weight: 400; color: var(--text-mid); margin-top: 4px; }
+    .bar { height: 3px; border-radius: 2px; background: var(--line-soft); margin-top: 8px; overflow: hidden; }
     .bar-fill { height: 100%; border-radius: 999px; background: var(--teal); transition: width 0.8s var(--ease); }
     .bar-fill.warn { background: var(--amber); }
     .bar-fill.over { background: var(--red); }
@@ -233,13 +222,15 @@
     /* Transaction rows */
     .txn {
       display: flex; align-items: center; gap: 12px;
-      background: var(--card); border-radius: var(--radius);
-      padding: 16px 0; margin-bottom: 0;
-      border-bottom: 1px solid var(--line-soft); border-radius: 0;
+      background: var(--card);
+      padding: 11px 16px; margin-bottom: 0;
+      border-bottom: 0.5px solid var(--line-soft); border-radius: 0;
       width: 100%; text-align: left;
-      transition: opacity 0.2s var(--ease);
     }
-    .txn:active { opacity: 0.55; }
+    .group .txn:first-child { border-radius: var(--radius) var(--radius) 0 0; }
+    .group .txn:last-child { border-bottom: none; border-radius: 0 0 var(--radius) var(--radius); }
+    .group .txn:only-child { border-radius: var(--radius); }
+    .txn:active { background: #E5E5EA; }
     .txn-thumb {
       width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
       background: var(--clancy-soft); color: var(--clancy-ink);
@@ -251,10 +242,10 @@
     .txn-thumb.bills { background: #EFEAE3; color: var(--text-mid); }
     .txn-thumb img { width: 100%; height: 100%; object-fit: cover; }
     .txn-mid { flex: 1; min-width: 0; }
-    .txn-vendor { font-size: 14.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .txn-meta { font-size: 13px; font-weight: 500; color: var(--text-faint); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .txn-amt { font-size: 14.5px; font-weight: 700; flex-shrink: 0; }
-    .date-head { font-size: 13px; font-weight: 700; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.06em; margin: 20px 2px 8px; }
+    .txn-vendor { font-size: 17px; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .txn-meta { font-size: 13px; font-weight: 400; color: var(--text-faint); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .txn-amt { font-size: 17px; font-weight: 400; flex-shrink: 0; }
+    .date-head { font-size: 13px; font-weight: 400; color: var(--text-faint); margin: 18px 16px 8px; }
 
     .empty { text-align: center; color: var(--text-faint); font-size: 14px; font-weight: 500; padding: 36px 20px; line-height: 1.6; }
 
@@ -275,21 +266,17 @@
     /* ── Bottom nav ──────────────────────────────────────── */
     .bottom-nav {
       position: fixed; left: 0; right: 0; bottom: 0;
-      background: rgba(247,246,243,0.88);
-      backdrop-filter: saturate(180%) blur(20px);
-      -webkit-backdrop-filter: saturate(180%) blur(20px);
-      border-top: var(--hairline);
+      background: #F9F9F9;
+      border-top: 0.5px solid var(--line);
       display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
       gap: 8px;
-      padding: 8px 16px calc(var(--safe-bottom) + 8px);
+      padding: 6px 16px calc(var(--safe-bottom) + 6px);
       z-index: 20;
     }
     .nav-btn {
-      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
-      font-size: 11px; font-weight: 600; color: var(--text-faint);
-      min-width: 44px; min-height: 44px; padding: 8px 12px; border-radius: 12px;
-      letter-spacing: 0.08em; text-transform: uppercase;
-      transition: color 0.18s var(--ease);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+      font-size: 10px; font-weight: 500; color: var(--text-faint);
+      min-width: 44px; min-height: 44px; padding: 4px 12px; border-radius: 8px;
     }
     .nav-btn.on { color: var(--ink); }
     .nav-btn svg { transition: transform 0.2s var(--ease); }
@@ -298,13 +285,13 @@
     /* Snap: split pill — camera on tap, chevron for more */
     .snap-wrap {
       display: flex; align-items: stretch;
-      background: var(--ink); border-radius: 999px; overflow: hidden;
+      background: var(--ink); border-radius: 8px; overflow: hidden;
     }
     .snap-btn {
-      display: flex; align-items: center; justify-content: center; gap: 7px;
-      min-height: 44px; padding: 0 22px 0 24px;
-      background: transparent; color: var(--bg);
-      font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      min-height: 44px; padding: 0 16px 0 18px;
+      background: transparent; color: #fff;
+      font-size: 15px; font-weight: 600;
       transition: opacity 0.18s var(--ease);
     }
     .snap-btn:active { opacity: 0.7; }
@@ -339,7 +326,7 @@
     .sheet-title { font-size: 21px; font-weight: 700; letter-spacing: -0.035em; margin-bottom: 16px; }
 
     .field { margin-bottom: 14px; }
-    .field label { display: block; font-size: 13px; font-weight: 700; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .field label { display: block; font-size: 13px; font-weight: 400; color: var(--text-faint); margin-bottom: 6px; }
     .field input, .field textarea {
       width: 100%; padding: 13px 14px; border: 1px solid var(--line); border-radius: 12px;
       background: var(--card); color: var(--text); outline: none;
@@ -381,22 +368,21 @@
     .week-bar-fill.warn { background: var(--amber); }
     .week-bar-fill.over { background: var(--red); }
 
-    /* Groceries hero — lead block on Home */
+    /* Groceries leftover — one grouped cell */
     .gro-hero {
       display: block; width: 100%; text-align: left;
-      padding: 4px 0 28px; margin-bottom: 4px;
-      border-bottom: 1px solid var(--line-soft);
-      transition: opacity 0.2s var(--ease);
+      padding: 16px; margin: 0;
+      background: var(--card); border-radius: var(--radius);
     }
-    .gro-hero:active { opacity: 0.55; }
+    .gro-hero:active { background: #E5E5EA; }
     .gro-amt {
-      font-size: 42px; font-weight: 700; letter-spacing: -0.03em;
+      font-size: 34px; font-weight: 600; letter-spacing: -0.03em;
       line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums;
     }
     .gro-amt.over { color: var(--red); }
-    .gro-sub { font-size: 13px; font-weight: 500; color: var(--text-faint); margin-top: 10px; letter-spacing: 0.01em; }
-    .gro-sub.over { color: var(--red); font-weight: 600; }
-    .gro-pace { font-size: 13px; font-weight: 500; color: var(--text-mid); margin-top: 12px; letter-spacing: 0.01em; }
+    .gro-sub { font-size: 13px; font-weight: 400; color: var(--text-faint); margin-top: 6px; }
+    .gro-sub.over { color: var(--red); }
+    .gro-pace { font-size: 13px; font-weight: 400; color: var(--text-mid); margin-top: 8px; }
 
     /* Quick confirm — one-tap save after AI read */
     .quick-card { text-align: center; padding: 4px 0 8px; }
@@ -572,15 +558,15 @@
         Home
       </button>
       <div class="snap-wrap">
-        <button class="snap-btn" id="navSnap" aria-label="Snap receipt">
+        <button class="snap-btn" id="navSnap" aria-label="Add receipt">
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-          Snap
+          Add
         </button>
         <button class="snap-more" id="navSnapMore" aria-label="More add options">⋯</button>
       </div>
       <button class="nav-btn" id="navHistory">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-        History
+        Activity
       </button>
     </div>
   </div>
@@ -847,8 +833,7 @@ function render() {
   bindContent();
 }
 
-const HEART = '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-1px;margin-left:4px;opacity:0.85"><path d="M12 21s-8-5.2-8-10.4A4.6 4.6 0 0 1 12 7a4.6 4.6 0 0 1 8 3.6C20 15.8 12 21 12 21z"/></svg>';
-const catLabel = c => esc(c.replace('Biz: ', '')) + (c === 'Dates' ? HEART : '');
+const catLabel = c => esc(c.replace('Biz: ', ''));
 const catPlain = c => c.replace('Biz: ', ''); // plain-text category name, no markup
 
 function ordinal(n) {
@@ -966,8 +951,8 @@ function renderHome() {
   // catch categories renamed/removed from the app but still present in data
   [...visible].filter(c => !knownCats.has(c)).forEach(c => personalRest.push(c));
   const personalHTML = personalRest.length ? `
-    <button class="btn-all" id="btnAll">${state.showAll ? 'Show less' : 'All categories'}</button>
-    ${state.showAll ? personalRest.map(c => catCardHTML(c)).join('') : ''}
+    <button class="btn-all" id="btnAll">${state.showAll ? 'Show less' : 'More categories'}</button>
+    ${state.showAll ? `<div class="group">${personalRest.map(c => catCardHTML(c)).join('')}</div>` : ''}
   ` : '';
 
   // Business — its own section, own total, always visible (not gated by the
@@ -975,9 +960,9 @@ function renderHome() {
   const bizSpent = GROUPS.Business.reduce((s, c) => s + (byCat[c] || 0), 0);
   const bizBudget = GROUPS.Business.reduce((s, c) => s + (state.budgets[c] || 0), 0);
   const businessHTML = `
-    <div class="section-title">Business<span style="text-transform:none;letter-spacing:0.02em">${bizBudget > 0 ? fmt0(bizSpent) + ' of ' + fmt0(bizBudget) : fmt0(bizSpent)}</span></div>
+    <div class="section-title">Business<span>${bizBudget > 0 ? fmt0(bizSpent) + ' of ' + fmt0(bizBudget) : fmt0(bizSpent)}</span></div>
     <button class="btn-all" id="btnBiz">${state.showBiz ? 'Show less' : `Show ${GROUPS.Business.length} categories`}</button>
-    ${state.showBiz ? GROUPS.Business.map(c => catCardHTML(c)).join('') : ''}
+    ${state.showBiz ? `<div class="group">${GROUPS.Business.map(c => catCardHTML(c)).join('')}</div>` : ''}
   `;
 
   // Budgeted this month — recurring bills, budgeted in but not posted (and
@@ -1031,31 +1016,28 @@ function renderHome() {
       <button class="icon-btn" id="btnSync" aria-label="Refresh">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
       </button>
-      <button class="icon-btn" id="btnAwards" aria-label="Awards">
-        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
-      </button>
       <button class="icon-btn" id="btnSettings" aria-label="Settings">
         <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </button>
       </div>
     </div>
-    ${groBudget > 0 ? `<div class="section-title" style="margin-top:22px">Groceries</div>${groHTML}` : ''}
-    <div class="section-title">Spending money</div>
+    ${groBudget > 0 ? `<div class="section-title" style="margin-top:0">Groceries</div>${groHTML}` : ''}
+    <div class="section-title">Spending</div>
     ${spendHTML}
-    ${goalsHTML()}
-    ${personalHTML}
-    ${businessHTML}
-    ${recurringHTML}
+    ${recent ? `<div class="section-title">Recent</div><div class="group">${recent}</div>` : ''}
     <div class="hero">
       <div class="hero-label">Spent in ${monthLabel(nowMonth).split(' ')[0]}</div>
       <div class="hero-amount">${heroAmount(total)}</div>
       <div class="hero-split">
-        <span class="seg"><span class="dot" style="background:var(--clancy)"></span>Clancy <b>${fmt0(cTotal)}</b></span>
-        <span class="seg"><span class="dot" style="background:var(--naomi)"></span>Naomi <b>${fmt0(nTotal)}</b></span>
-        ${bTotal > 0 ? `<span class="seg"><span class="dot" style="background:var(--text-faint)"></span>Bills <b>${fmt0(bTotal)}</b></span>` : ''}
+        <span class="seg">Clancy <b>${fmt0(cTotal)}</b></span>
+        <span class="seg">Naomi <b>${fmt0(nTotal)}</b></span>
+        ${bTotal > 0 ? `<span class="seg">Bills <b>${fmt0(bTotal)}</b></span>` : ''}
       </div>
     </div>
-    ${recent ? `<div class="section-title">Recent</div>${recent}` : ''}
+    ${personalHTML}
+    ${state.showAll ? businessHTML : ''}
+    ${state.showAll ? recurringHTML : ''}
+    ${state.showAll ? goalsHTML() : ''}
   `;
 }
 
@@ -1736,7 +1718,7 @@ function goalsHTML() {
         <div class="goal-pace ${pace.done ? 'done' : ''}">${esc(pace.text)}${when && !pace.done ? ` · by ${when}` : ''}</div>
       </button>`;
   }).join('');
-  return `<div class="section-title">Saving for <button id="btnGoals">Edit</button></div>${cards}`;
+  return `<div class="section-title">Saving for <button id="btnGoals">Edit</button></div><div class="group">${cards}</div>`;
 }
 
 function openGoalAdd(id) {
@@ -1912,6 +1894,10 @@ function openSettings() {
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
       Monthly budgets
     </button>
+    <button class="snap-opt" id="optAwards">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
+      Awards
+    </button>
     <button class="snap-opt" id="optLogout">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
       Lock app
@@ -1925,6 +1911,7 @@ function openSettings() {
   $('optExport').onclick = () => { closeSheet(); openExport(); };
   $('optRules').onclick = () => { closeSheet(); openRules(); };
   $('optBudgets2').onclick = () => { closeSheet(); openBudgets(); };
+  $('optAwards').onclick = () => { closeSheet(); openAwards(); };
   $('optLogout').onclick = async () => {
     try { await fetch('/api/auth/pin', { method: 'DELETE' }); } catch {}
     closeSheet();
