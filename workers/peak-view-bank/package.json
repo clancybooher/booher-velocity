@@ -4,6 +4,8 @@
   "type": "module",
   "scripts": {
     "test": "node --test test/*.test.js",
+    "cashflow": "node scripts/cashflow-month.mjs",
+    "watch": "node scripts/watch-morning.mjs",
     "deploy": "wrangler deploy"
   }
 }
