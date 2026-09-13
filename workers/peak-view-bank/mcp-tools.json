@@ -1,0 +1,79 @@
+{
+  "server": {
+    "name": "peak-view-bank-mcp",
+    "title": "Peak View Bank MCP",
+    "version": "1.0.0",
+    "transport": "streamable-http",
+    "url": "https://peak-view-bank-mcp.clancybooher.workers.dev/mcp",
+    "auth": {
+      "header": "X-Sync-Secret",
+      "alt": "Authorization: Bearer <SYNC_SECRET>"
+    }
+  },
+  "enrollment": {
+    "shared": "velocity-teller-sync TELLER_TOKEN + teller-velocity mTLS certificate",
+    "isolated": "PEAK_VIEW_BANK_KV pending/ledger/cursor only",
+    "do_not_use": "Peak View Teller app_q175 Connect"
+  },
+  "tools": [
+    {
+      "name": "bank_health",
+      "description": "Peak View bank enrollment + KV health. Uses Velocity Teller Chase enrollment. Does not read or write the household ledger.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "bank_sync",
+      "description": "Pull recent Chase transactions via the working Velocity Teller token and queue Peak View supplier debits ≥ $50 as pending expenses (status needs_job). Writes PEAK_VIEW_BANK_KV only.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "days": {
+            "type": "number",
+            "description": "Lookback window in days (1–90). Default 14."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "bank_list_pending",
+      "description": "List Peak View pending supplier expenses waiting for a job tag. Shape: { teller_transaction_id, date, vendor, amount, status }.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "Filter by status. Default needs_job."
+          },
+          "limit": {
+            "type": "number",
+            "description": "Max rows to return (1–200). Default 50."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "bank_list_recent",
+      "description": "List recent Peak View-normalized Chase transactions from the last sync (Peak View KV, not the household ledger).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "number",
+            "description": "Max rows to return (1–100). Default 25."
+          },
+          "supplier_only": {
+            "type": "boolean",
+            "description": "If true, only supplier-matched rows."
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  ]
+}
