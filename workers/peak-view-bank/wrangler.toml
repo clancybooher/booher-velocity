@@ -1,0 +1,21 @@
+# Peak View Bank MCP — isolated from the household Velocity ledger.
+# Shared with Velocity: TELLER_TOKEN + the teller-velocity mTLS cert.
+# Isolated: PEAK_VIEW_BANK_KV only. This Worker does not bind VELOCITY_KV.
+name = "peak-view-bank-mcp"
+main = "src/index.js"
+compatibility_date = "2026-09-13"
+compatibility_flags = ["nodejs_compat"]
+
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[[kv_namespaces]]
+binding = "PEAK_VIEW_BANK_KV"
+id = "e3e93131d54841e1a1ee5e3d1442fc71"
+
+# Working Velocity Chase enrollment (teller-velocity). Do NOT swap this
+# for the brand-new peak-view-teller / app_q175 certificate.
+[[mtls_certificates]]
+binding = "TELLER_MTLS"
+certificate_id = "6a100d45-6f1e-4a2c-b83b-bc250af9eccf"

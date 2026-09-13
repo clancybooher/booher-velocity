@@ -48,3 +48,7 @@ npx wrangler kv key delete auth:pin --namespace-id 8377d67f2e2a40d799ea0b8594aa8
 ```
 
 (Old May-2026 data from the bank-sync experiment is backed up in `.backup/`, not committed.)
+
+## Peak View Bank MCP (separate from this app)
+
+Peak View ops bank tools live in [`workers/peak-view-bank/`](workers/peak-view-bank/README.md). They reuse the working Velocity Teller Chase enrollment for **read/sync only** and write pending supplier expenses to `PEAK_VIEW_BANK_KV`. They do **not** write this household ledger (`VELOCITY_KV` / Money is Fun).
