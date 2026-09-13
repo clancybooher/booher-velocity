@@ -4,6 +4,12 @@ Live Worker: `https://peak-view-bank-mcp.clancybooher.workers.dev`
 Auth: `X-Sync-Secret: $SYNC_SECRET` (same secret as `peak-view-teller-sync`).  
 Alt: `Authorization: Bearer $SYNC_SECRET`.
 
+Deployed 2026-09-13 (content-only, secrets/mTLS kept):
+- Worker version `74b2d923-e09b-4930-9423-372e53f51303`
+- Deployment `7a538ed3-dd3f-4ae9-a1ea-5ebd6420be25`
+- Bindings unchanged: `PEAK_VIEW_BANK_KV` `e3e93131d54841e1a1ee5e3d1442fc71`, `TELLER_MTLS` `6a100d45-6f1e-4a2c-b83b-bc250af9eccf`, secrets `SYNC_SECRET` + `TELLER_TOKEN`
+- Public `/health` now includes `ledger_count` + `seen_ids_count`. Both are `0` until CoS runs the 35-day sync below.
+
 This cloud agent does **not** have `SYNC_SECRET`. CoS does. Do not paste the secret into chat, git, or a PR.
 
 Robinhood rule: outflows to Robinhood are **Robinhood Gold credit card payoffs** (business + personal). Not investments. Not transfers to invest.
