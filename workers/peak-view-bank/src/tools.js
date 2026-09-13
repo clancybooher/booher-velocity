@@ -14,7 +14,7 @@ export const TOOL_SCHEMAS = [
   {
     name: 'bank_health',
     description:
-      'Peak View bank enrollment + KV health. Uses Velocity Teller Chase enrollment. Does not read or write the household ledger.',
+      'Peak View bank enrollment + KV health (ledger_count, seen_ids_count). Uses Velocity Teller Chase enrollment. Does not read or write the household ledger.',
     inputSchema: {
       type: 'object',
       properties: {},
@@ -79,6 +79,7 @@ export const TOOL_SCHEMAS = [
 export async function bankHealth(env) {
   const cursor = env?.PEAK_VIEW_BANK_KV ? await loadCursor(env) : { lastSyncAt: null, seenIds: [] };
   const pending = env?.PEAK_VIEW_BANK_KV ? await loadPending(env) : [];
+  const ledger = env?.PEAK_VIEW_BANK_KV ? await loadLedger(env) : [];
   return {
     ok: true,
     service: SERVICE,
@@ -86,23 +87,28 @@ export async function bankHealth(env) {
     has_sync_secret: Boolean(env?.SYNC_SECRET),
     last_sync_at: cursor.lastSyncAt,
     pending_needs_job: pending.filter((p) => p.status === 'needs_job').length,
+    ledger_count: ledger.length,
+    seen_ids_count: Array.isArray(cursor.seenIds) ? cursor.seenIds.length : 0,
     isolation: isolationReport(),
   };
 }
 
 export async function bankSync(env, args = {}) {
   const days = clampDays(args.days, DEFAULT_LOOKBACK_DAYS);
-  const { accountsChecked, txns, startDate } = await pullRecent(env, days);
+  const { accountsChecked, txns, startDate, accounts, teller_query } = await pullRecent(env, days);
   const { fresh, queued } = await persistIngest(env, txns);
   return {
     ok: true,
     enrollment_source: ENROLLMENT_SOURCE,
     start_date: startDate,
     accounts_checked: accountsChecked,
+    pulled_count: txns.length,
     new_count: fresh.length,
     queued_count: queued.length,
     queued,
     new_transactions: fresh.map(toPublic),
+    accounts,
+    teller_query,
     isolation: isolationReport(),
   };
 }

@@ -18,7 +18,7 @@
   "tools": [
     {
       "name": "bank_health",
-      "description": "Peak View bank enrollment + KV health. Uses Velocity Teller Chase enrollment. Does not read or write the household ledger.",
+      "description": "Peak View bank enrollment + KV health (ledger_count, seen_ids_count). Uses Velocity Teller Chase enrollment. Does not read or write the household ledger.",
       "inputSchema": {
         "type": "object",
         "properties": {},

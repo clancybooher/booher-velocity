@@ -92,7 +92,7 @@ Usage:
 Flags:
   --days N          Sync lookback (default ${SYNC_LOOKBACK_DAYS}, max 90)
   --window N        Summary window in days (default ${DEFAULT_WINDOW_DAYS})
-  --limit N         GET /recent limit (default 500; live Worker may clamp to 100)
+  --limit N         GET /recent limit (default 500)
   --dry-run         Print the template with $0 placeholders. No network.
   --fixture FILE    Build the summary from a saved JSON file. No secret needed.
   --json            Also print machine JSON after the email.
@@ -177,9 +177,6 @@ async function main() {
   };
 
   console.log(`# source ${source}  sync_days=${days}  recent_count=${recent.count ?? recent.items?.length ?? 0}`);
-  if (!fixture && (recent.count ?? 0) >= 100 && limit > 100) {
-    console.log('# note: live GET /recent may still clamp to 100 until the Worker is redeployed with the 500 cap.');
-  }
   console.log('');
   console.log('--- plain summary ---');
   console.log(formatPlainSummary(summary, extra));

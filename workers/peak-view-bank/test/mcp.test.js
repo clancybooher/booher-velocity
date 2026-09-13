@@ -41,6 +41,8 @@ describe('bridge + tools', () => {
     assert.equal(health.uses_peak_view_connect, false);
     assert.equal(health.isolation.binds_velocity_kv, false);
     assert.equal(health.isolation.writes_household_ledger, false);
+    assert.equal(health.ledger_count, 0);
+    assert.equal(health.seen_ids_count, 0);
   });
 
   it('bank_sync queues Home Depot ≥ $50 into Peak View pending only', async () => {

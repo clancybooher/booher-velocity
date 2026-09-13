@@ -44,7 +44,9 @@ Existing Worker `peak-view-teller-sync` can keep serving `/health` / webhooks. C
 
 CoS curls, a 30-day in/out template, the weekday-morning watch, and the Chase email draft live in [`COS.md`](./COS.md). Run `node scripts/cashflow-month.mjs` with `SYNC_SECRET` to fill dollar figures. Robinhood outflows are **Gold card payoffs**, not investments.
 
-`GET /health` is public and returns booleans only (no tokens).
+`GET /health` is public and returns booleans plus `ledger_count` / `seen_ids_count` (no tokens).
+
+Teller pulls match `velocity-teller-sync`: `count` + `from_id` only. Do **not** send `start_date` — that param made live `/sync` return five accounts and zero rows. Lookback is applied after the pull. Authorized `/sync` includes per-account `raw_count`, `normalized_count`, and `sample_error` (no tokens).
 
 ### Tools
 
