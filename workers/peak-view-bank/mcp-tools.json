@@ -65,7 +65,7 @@
         "properties": {
           "limit": {
             "type": "number",
-            "description": "Max rows to return (1–100). Default 25."
+            "description": "Max rows to return (1–500). Default 25. Use 500 for a month cashflow."
           },
           "supplier_only": {
             "type": "boolean",

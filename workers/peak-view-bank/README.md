@@ -42,6 +42,8 @@ Existing Worker `peak-view-teller-sync` can keep serving `/health` / webhooks. C
 3. Header: `X-Sync-Secret: <SYNC_SECRET>` (or `Authorization: Bearer <SYNC_SECRET>`).
 4. Daily loop: `bank_sync` → `bank_list_pending` → tag each `needs_job` row onto a Jobber job (that tagging is CoS / expense-tagger, not this Worker).
 
+CoS curls, a 30-day in/out template, the weekday-morning watch, and the Chase email draft live in [`COS.md`](./COS.md). Run `node scripts/cashflow-month.mjs` with `SYNC_SECRET` to fill dollar figures. Robinhood outflows are **Gold card payoffs**, not investments.
+
 `GET /health` is public and returns booleans only (no tokens).
 
 ### Tools
@@ -100,6 +102,8 @@ Optional: deploy this same folder as `peak-view-teller-sync` (`npx wrangler depl
 
 ```bash
 cd workers/peak-view-bank && node --test
+node scripts/cashflow-month.mjs --dry-run
+node scripts/cashflow-month.mjs --fixture test/fixtures/month.json
 ```
 
-No live Teller calls; Chase responses are mocked.
+No live Teller calls in `node --test`; Chase responses are mocked. The cashflow script talks to the live Worker only when `SYNC_SECRET` is set.

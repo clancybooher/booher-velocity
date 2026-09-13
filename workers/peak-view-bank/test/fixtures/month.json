@@ -1,0 +1,105 @@
+{
+  "recent": {
+    "ok": true,
+    "count": 8,
+    "items": [
+      {
+        "date": "2026-08-20",
+        "vendor": "ACME WINDOWS LLC",
+        "amount": 4200.0,
+        "category": "other",
+        "type": "credit",
+        "supplier": null
+      },
+      {
+        "date": "2026-08-22",
+        "vendor": "HOME DEPOT #4012",
+        "amount": -312.18,
+        "category": "supplier",
+        "type": "debit",
+        "supplier": "Home Depot"
+      },
+      {
+        "date": "2026-08-25",
+        "vendor": "QXO BEND",
+        "amount": -1488.5,
+        "category": "supplier",
+        "type": "debit",
+        "supplier": "QXO"
+      },
+      {
+        "date": "2026-08-28",
+        "vendor": "BEND GLASS AND GLAZING",
+        "amount": -640.0,
+        "category": "supplier",
+        "type": "debit",
+        "supplier": "glass"
+      },
+      {
+        "date": "2026-09-02",
+        "vendor": "ROBINHOOD GOLD",
+        "amount": -850.0,
+        "category": "other",
+        "type": "debit",
+        "supplier": null
+      },
+      {
+        "date": "2026-09-05",
+        "vendor": "ONLINE TRANSFER TO CLANCY BOOHER",
+        "amount": -2000.0,
+        "category": "other",
+        "type": "debit",
+        "supplier": null
+      },
+      {
+        "date": "2026-09-08",
+        "vendor": "STARBUCKS",
+        "amount": -7.45,
+        "category": "other",
+        "type": "debit",
+        "supplier": null
+      },
+      {
+        "date": "2026-09-10",
+        "vendor": "HOME DEPOT #4012",
+        "amount": 45.0,
+        "category": "supplier",
+        "type": "credit",
+        "supplier": "Home Depot"
+      }
+    ]
+  },
+  "pending": {
+    "ok": true,
+    "status": "needs_job",
+    "count": 2,
+    "items": [
+      {
+        "teller_transaction_id": "txn_qxo",
+        "date": "2026-08-25",
+        "vendor": "QXO BEND",
+        "amount": 1488.5,
+        "status": "needs_job"
+      },
+      {
+        "teller_transaction_id": "txn_glass",
+        "date": "2026-08-28",
+        "vendor": "BEND GLASS AND GLAZING",
+        "amount": 640.0,
+        "status": "needs_job"
+      }
+    ]
+  },
+  "sync": {
+    "queued": [
+      {
+        "teller_transaction_id": "txn_qxo",
+        "date": "2026-08-25",
+        "vendor": "QXO BEND",
+        "amount": 1488.5,
+        "status": "needs_job"
+      }
+    ],
+    "new_transactions": []
+  }
+}

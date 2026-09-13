@@ -64,7 +64,7 @@ export const TOOL_SCHEMAS = [
       properties: {
         limit: {
           type: 'number',
-          description: 'Max rows to return (1–100). Default 25.',
+          description: 'Max rows to return (1–500). Default 25. Use 500 for a month cashflow.',
         },
         supplier_only: {
           type: 'boolean',
@@ -121,7 +121,7 @@ export async function bankListPending(env, args = {}) {
 }
 
 export async function bankListRecent(env, args = {}) {
-  const limit = clampLimit(args.limit, 25, 100);
+  const limit = clampLimit(args.limit, 25, 500);
   const supplierOnly = Boolean(args.supplier_only);
   let items = await loadLedger(env);
   if (supplierOnly) items = items.filter((t) => t.category === 'supplier');
