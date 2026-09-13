@@ -10,7 +10,7 @@ Robinhood rule: outflows to Robinhood are **Robinhood Gold credit card payoffs**
 
 Writes stay on `PEAK_VIEW_BANK_KV` only. Household Velocity ledger is untouched.
 
-`GET /health` is public. It returns booleans, `last_sync_at`, and `pending_needs_job`. No tokens.
+`GET /health` is public. It returns booleans, `last_sync_at`, `pending_needs_job`, `ledger_count`, and `seen_ids_count`. No tokens.
 
 ---
 
@@ -29,8 +29,7 @@ curl -sS -X POST "$BASE/sync" \
   -H "X-Sync-Secret: $SYNC_SECRET" \
   -d '{"days":35}'
 
-# Last-sync ledger rows. Ask for 500; live Worker may still clamp to 100
-# until this branch is deployed. Script merges /sync new_transactions with /recent.
+# Last-sync ledger rows. Cap is 500.
 curl -sS "$BASE/recent?limit=500" \
   -H "X-Sync-Secret: $SYNC_SECRET"
 
@@ -55,8 +54,25 @@ Unauthenticated `/sync`, `/recent`, `/pending` return `401 {"ok":false,"error":"
   "enrollment_source": "velocity-teller-sync",
   "start_date": "YYYY-MM-DD",
   "accounts_checked": 0,
+  "pulled_count": 0,
   "new_count": 0,
   "queued_count": 0,
+  "accounts": [
+    {
+      "name": "Business Checking",
+      "last_four": "1234",
+      "type": "depository",
+      "subtype": "checking",
+      "status": "open",
+      "has_transactions_link": true,
+      "raw_count": 0,
+      "normalized_count": 0,
+      "pages": 1,
+      "used_start_date": false,
+      "sample_error": null
+    }
+  ],
+  "teller_query": { "count": 250, "start_date": false, "filter": "local", "from_id": "page" },
   "queued": [
     {
       "teller_transaction_id": "txn_…",
@@ -248,7 +264,31 @@ node scripts/watch-morning.mjs --days 2
 
 Exit `0` = quiet. Exit `3` = ping once. Weekend no-ops unless `--force`.
 
-Public hint without the secret: `GET /health` → `pending_needs_job`. Checked from this agent on 2026-09-13: `pending_needs_job` was `0`, `last_sync_at` was set, enrollment was Velocity.
+Public hint without the secret: `GET /health` → `pending_needs_job`, `ledger_count`, `seen_ids_count`.
+
+### After a Worker deploy (CoS — this agent has no SYNC_SECRET)
+
+```bash
+BASE=https://peak-view-bank-mcp.clancybooher.workers.dev
+curl -sS "$BASE/health"
+# expect ledger_count and seen_ids_count fields
+
+curl -sS -X POST "$BASE/sync" \
+  -H "content-type: application/json" \
+  -H "X-Sync-Secret: $SYNC_SECRET" \
+  -d '{"days":35}'
+# expect pulled_count > 0, accounts[].raw_count populated,
+# teller_query.start_date === false, no secrets in the body
+
+curl -sS "$BASE/recent?limit=500" \
+  -H "X-Sync-Secret: $SYNC_SECRET"
+# expect count > 0
+
+curl -sS "$BASE/health"
+# expect ledger_count > 0
+```
+
+Teller list no longer sends `start_date`. That query param is what emptied every account on 2026-09-13 (`accounts_checked=5`, `new_count=0`, ledger 404). Velocity's working worker only sends `count` + optional `from_id`. We filter the 35-day window locally.
 
 ---
 
