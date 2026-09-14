@@ -46,14 +46,16 @@ CoS curls, a 30-day in/out template, the weekday-morning watch, and the Chase em
 
 `GET /health` is public and returns booleans plus `ledger_count` / `seen_ids_count` (no tokens).
 
-Teller pulls match `velocity-teller-sync`: `count` + `from_id` only. Do **not** send `start_date` — that param made live `/sync` return five accounts and zero rows. Lookback is applied after the pull. Authorized `/sync` includes per-account `raw_count`, `normalized_count`, and `sample_error` (no tokens).
+Teller pulls match `velocity-teller-sync`: `count` + `from_id` only. Do **not** send `start_date`. Lookback is applied after a resilient `normalizeTxn` (id aliases, amount shapes, date shapes; pending kept). Authorized `/sync` includes per-account `raw_count`, `normalized_count` (pre-filter), `kept_count` (post-filter), `drop_reasons`, and `sample_raw` when rows arrived but none normalized (field names + types only).
+
+Peak View ledger / pending / cashflow use **business checking + savings only**: BUS COMPLETE CHK `7120` and CHASE BUS TOTAL SAV `7736`. Personal Clancy and Naomi `3340`, Maples Place `7915`, and Freedom Unlimited `0185` are listed on `/sync` with `peak_view: false` and are not ingested.
 
 ### Tools
 
 | Tool | What it does |
 |---|---|
 | `bank_health` | Enrollment source, mTLS/token flags, pending count, isolation report |
-| `bank_sync` | Pull Chase via Velocity token; queue supplier debits ≥ $50 |
+| `bank_sync` | Pull business Chase via Velocity token; queue supplier debits ≥ $50 |
 | `bank_list_pending` | Pending Peak View expenses (`status` default `needs_job`) |
 | `bank_list_recent` | Last-sync Peak View rows (optional `supplier_only`) |
 

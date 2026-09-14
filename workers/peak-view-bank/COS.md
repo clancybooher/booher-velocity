@@ -4,15 +4,32 @@ Live Worker: `https://peak-view-bank-mcp.clancybooher.workers.dev`
 Auth: `X-Sync-Secret: $SYNC_SECRET` (same secret as `peak-view-teller-sync`).  
 Alt: `Authorization: Bearer $SYNC_SECRET`.
 
-Deployed 2026-09-13 (content-only, secrets/mTLS kept):
-- Worker version `74b2d923-e09b-4930-9423-372e53f51303`
-- Deployment `7a538ed3-dd3f-4ae9-a1ea-5ebd6420be25`
+Deployed 2026-09-14 (content-only, secrets/mTLS kept):
+- Worker version `dfcf1e37-6b71-44bd-b91e-368bca8b94c6`
+- Deployment `ae974c40-a533-4103-8ee5-8edca2f5a677`
 - Bindings unchanged: `PEAK_VIEW_BANK_KV` `e3e93131d54841e1a1ee5e3d1442fc71`, `TELLER_MTLS` `6a100d45-6f1e-4a2c-b83b-bc250af9eccf`, secrets `SYNC_SECRET` + `TELLER_TOKEN`
-- Public `/health` now includes `ledger_count` + `seen_ids_count`. Both are `0` until CoS runs the 35-day sync below.
+- Public `/health` includes `ledger_count` + `seen_ids_count` + `account_filter`. Live check after this deploy: `ledger_count` 14, `seen_ids_count` 14.
 
 This cloud agent does **not** have `SYNC_SECRET`. CoS does. Do not paste the secret into chat, git, or a PR.
 
-Robinhood rule: outflows to Robinhood are **Robinhood Gold credit card payoffs** (business + personal). Not investments. Not transfers to invest.
+### Account filter (Peak View ledger / cashflow / pending)
+
+Default is **business checking + savings only**. Personal Chase stays on the Velocity enrollment for household use.
+
+| Include | last four | Why |
+|---|---|---|
+| BUS COMPLETE CHK | 7120 | Peak View business checking |
+| CHASE BUS TOTAL SAV | 7736 | Peak View business savings |
+
+| Exclude | last four | Why |
+|---|---|---|
+| Clancy and Naomi | 3340 | personal joint |
+| Maples Place | 7915 | personal |
+| Freedom Unlimited | 0185 | personal credit card |
+
+Allowlist last fours win. Name match (`BUS` / `COMPLETE CHK` / `TOTAL SAV`) + depository type can add a future business account. Personal names / last fours never enter supplier pending or cashflow.
+
+Robinhood rule: outflows to Robinhood are **Robinhood Gold credit card payoffs**. Not investments. Not transfers to invest. On Peak View this is whatever posts on the business accounts (still a card payoff).
 
 Writes stay on `PEAK_VIEW_BANK_KV` only. Household Velocity ledger is untouched.
 
@@ -59,23 +76,33 @@ Unauthenticated `/sync`, `/recent`, `/pending` return `401 {"ok":false,"error":"
   "ok": true,
   "enrollment_source": "velocity-teller-sync",
   "start_date": "YYYY-MM-DD",
-  "accounts_checked": 0,
+  "accounts_checked": 5,
+  "peak_view_accounts": 2,
   "pulled_count": 0,
   "new_count": 0,
   "queued_count": 0,
+  "account_filter": {
+    "mode": "business_depository",
+    "allowlist_last_fours": ["7120", "7736"],
+    "exclude_last_fours": ["3340", "7915", "0185"]
+  },
   "accounts": [
     {
-      "name": "Business Checking",
-      "last_four": "1234",
+      "name": "BUS COMPLETE CHK",
+      "last_four": "7120",
       "type": "depository",
       "subtype": "checking",
       "status": "open",
       "has_transactions_link": true,
       "raw_count": 0,
       "normalized_count": 0,
+      "kept_count": 0,
       "pages": 1,
       "used_start_date": false,
-      "sample_error": null
+      "sample_error": null,
+      "sample_raw": null,
+      "peak_view": true,
+      "drop_reasons": { "missing_id": 0, "bad_amount": 0, "not_object": 0, "date_filter": 0 }
     }
   ],
   "teller_query": { "count": 250, "start_date": false, "filter": "local", "from_id": "page" },
@@ -101,7 +128,9 @@ Unauthenticated `/sync`, `/recent`, `/pending` return `401 {"ok":false,"error":"
 }
 ```
 
-`queued` is only supplier **debits ≥ $50**. Amount on queued rows is absolute. `new_transactions` keep the signed Teller amount.
+`queued` is only supplier **debits ≥ $50** on Peak View business accounts. Amount on queued rows is absolute. `new_transactions` keep the signed Teller amount.
+
+`normalized_count` is successful `normalizeTxn` rows **before** the local 35-day filter. `kept_count` is after the date filter (what can land on the ledger). If `raw_count > 0` and `normalized_count === 0`, `sample_raw` is one sanitized shape: field names + amount/date types only. No vendor, description, dollars, or full ids.
 
 **GET /recent**
 
@@ -283,18 +312,27 @@ curl -sS -X POST "$BASE/sync" \
   -H "content-type: application/json" \
   -H "X-Sync-Secret: $SYNC_SECRET" \
   -d '{"days":35}'
-# expect pulled_count > 0, accounts[].raw_count populated,
-# teller_query.start_date === false, no secrets in the body
+# expect teller_query.start_date === false
+# expect accounts with last_four 7120 and 7736: peak_view true, raw_count > 0
+# expect personal 3340 / 7915 / 0185: peak_view false, skip_reason=personal_excluded
+# expect pulled_count > 0 and ledger rows only from 7120 / 7736
+# if a peak_view account still has normalized_count===0 && raw_count>0,
+# read accounts[].sample_raw (keys + types only) and drop_reasons
 
 curl -sS "$BASE/recent?limit=500" \
   -H "X-Sync-Secret: $SYNC_SECRET"
-# expect count > 0
+# expect count > 0, account_last_four in 7120|7736 only
 
 curl -sS "$BASE/health"
 # expect ledger_count > 0
 ```
 
-Teller list no longer sends `start_date`. That query param is what emptied every account on 2026-09-13 (`accounts_checked=5`, `new_count=0`, ledger 404). Velocity's working worker only sends `count` + optional `from_id`. We filter the 35-day window locally.
+Teller list still does **not** send `start_date`. Velocity's working worker only sends `count` + optional `from_id`. We filter the lookback locally after `normalizeTxn`.
+
+2026-09-13 live evidence after the start_date fix: Teller returned rows (`raw_count` 250/250/250/250/23) but `normalized_count` was 0 on every account. Two bugs stacked:
+
+1. `normalizeTxn` required `txn.id` + `Number.parseFloat(String(txn.amount))` and treated the raw Teller date as already `YYYY-MM-DD`. Velocity's worker reads `t.id` / `t.amount` / `t.date` the same way, but live Chase payloads also show `transaction_id`, dollar/`(87.40)` amounts, and `MM/DD/YYYY` or timestamps. Those failed normalize **or** the local date compare (`"09/13/2026" < "2026-08-09"`), and `normalized_count` was counted *after* the date filter so both looked like a normalize wipe.
+2. Peak View was ingesting every open account, including personal Clancy and Naomi / Maples Place / Freedom Unlimited. Ledger and cashflow are now business 7120 + 7736 only.
 
 ---
 

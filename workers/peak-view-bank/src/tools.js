@@ -1,6 +1,8 @@
 import {
   DEFAULT_LOOKBACK_DAYS,
   ENROLLMENT_SOURCE,
+  PEAK_VIEW_LAST_FOURS,
+  PERSONAL_LAST_FOURS,
   SERVICE,
   clampDays,
   clampLimit,
@@ -89,25 +91,33 @@ export async function bankHealth(env) {
     pending_needs_job: pending.filter((p) => p.status === 'needs_job').length,
     ledger_count: ledger.length,
     seen_ids_count: Array.isArray(cursor.seenIds) ? cursor.seenIds.length : 0,
+    account_filter: {
+      mode: 'business_depository',
+      allowlist_last_fours: [...PEAK_VIEW_LAST_FOURS],
+      exclude_last_fours: [...PERSONAL_LAST_FOURS],
+    },
     isolation: isolationReport(),
   };
 }
 
 export async function bankSync(env, args = {}) {
   const days = clampDays(args.days, DEFAULT_LOOKBACK_DAYS);
-  const { accountsChecked, txns, startDate, accounts, teller_query } = await pullRecent(env, days);
+  const { accountsChecked, peakViewAccounts, txns, startDate, accounts, teller_query, account_filter } =
+    await pullRecent(env, days);
   const { fresh, queued } = await persistIngest(env, txns);
   return {
     ok: true,
     enrollment_source: ENROLLMENT_SOURCE,
     start_date: startDate,
     accounts_checked: accountsChecked,
+    peak_view_accounts: peakViewAccounts,
     pulled_count: txns.length,
     new_count: fresh.length,
     queued_count: queued.length,
     queued,
     new_transactions: fresh.map(toPublic),
     accounts,
+    account_filter,
     teller_query,
     isolation: isolationReport(),
   };
