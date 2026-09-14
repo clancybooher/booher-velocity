@@ -4,11 +4,11 @@ Live Worker: `https://peak-view-bank-mcp.clancybooher.workers.dev`
 Auth: `X-Sync-Secret: $SYNC_SECRET` (same secret as `peak-view-teller-sync`).  
 Alt: `Authorization: Bearer $SYNC_SECRET`.
 
-Deployed 2026-09-13 (content-only, secrets/mTLS kept):
-- Worker version `PENDING_AFTER_DEPLOY`
-- Deployment `PENDING_AFTER_DEPLOY`
+Deployed 2026-09-14 (content-only, secrets/mTLS kept):
+- Worker version `dfcf1e37-6b71-44bd-b91e-368bca8b94c6`
+- Deployment `ae974c40-a533-4103-8ee5-8edca2f5a677`
 - Bindings unchanged: `PEAK_VIEW_BANK_KV` `e3e93131d54841e1a1ee5e3d1442fc71`, `TELLER_MTLS` `6a100d45-6f1e-4a2c-b83b-bc250af9eccf`, secrets `SYNC_SECRET` + `TELLER_TOKEN`
-- Public `/health` includes `ledger_count` + `seen_ids_count`.
+- Public `/health` includes `ledger_count` + `seen_ids_count` + `account_filter`. Live check after this deploy: `ledger_count` 14, `seen_ids_count` 14.
 
 This cloud agent does **not** have `SYNC_SECRET`. CoS does. Do not paste the secret into chat, git, or a PR.
 
