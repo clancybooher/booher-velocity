@@ -45,47 +45,125 @@ describe('Teller query shape', () => {
     assert.ok(env._tellerUrls.every((u) => !u.includes('start_date')));
     assert.ok(env._tellerUrls.some((u) => u.includes('/transactions?count=')));
     assert.equal(out.accounts[0].raw_count, 2);
-    assert.equal(out.accounts[0].normalized_count, 1);
+    assert.equal(out.accounts[0].normalized_count, 2);
+    assert.equal(out.accounts[0].kept_count, 1);
+    assert.equal(out.accounts[0].drop_reasons.date_filter, 1);
     assert.equal(out.accounts[0].used_start_date, false);
     assert.equal(out.accounts[0].type, 'depository');
     assert.equal(out.accounts[0].subtype, 'checking');
   });
 
-  it('pulls credit cards and checking in the same sync', async () => {
+  it('ingests only Peak View business depository accounts', async () => {
     const day = new Date().toISOString().slice(0, 10);
     const env = mockEnv({
       accounts: [
         {
-          id: 'acc_check',
-          name: 'Business Checking',
+          id: 'acc_bus',
+          name: 'BUS COMPLETE CHK',
           status: 'open',
           type: 'depository',
           subtype: 'checking',
-          last_four: '1111',
-          links: { transactions: 'https://api.teller.io/accounts/acc_check/transactions' },
+          last_four: '7120',
+          links: { transactions: 'https://api.teller.io/accounts/acc_bus/transactions' },
+        },
+        {
+          id: 'acc_sav',
+          name: 'CHASE BUS TOTAL SAV',
+          status: 'open',
+          type: 'depository',
+          subtype: 'savings',
+          last_four: '7736',
+          links: { transactions: 'https://api.teller.io/accounts/acc_sav/transactions' },
+        },
+        {
+          id: 'acc_joint',
+          name: 'Clancy and Naomi',
+          status: 'open',
+          type: 'depository',
+          subtype: 'checking',
+          last_four: '3340',
+        },
+        {
+          id: 'acc_maples',
+          name: 'Maples Place',
+          status: 'open',
+          type: 'depository',
+          subtype: 'checking',
+          last_four: '7915',
         },
         {
           id: 'acc_card',
-          name: 'Ink Card',
+          name: 'Freedom Unlimited',
           status: 'open',
           type: 'credit',
           subtype: 'credit_card',
-          last_four: '2222',
-          links: { transactions: 'https://api.teller.io/accounts/acc_card/transactions' },
+          last_four: '0185',
         },
       ],
       txnsByAccount: {
-        acc_check: [txn('txn_chk', day, '-50.00', 'QXO BEND')],
+        acc_bus: [txn('txn_chk', day, '-50.00', 'QXO BEND')],
+        acc_sav: [txn('txn_sav', day, '20.00', 'INTEREST')],
+        acc_joint: [txn('txn_joint', day, '-12.00', 'STARBUCKS')],
+        acc_maples: [txn('txn_map', day, '-80.00', 'HOME DEPOT')],
         acc_card: [txn('txn_card', day, '-12.00', 'STARBUCKS')],
       },
     });
     const out = await pullRecent(env, 14);
-    assert.equal(out.accountsChecked, 2);
+    assert.equal(out.accountsChecked, 5);
+    assert.equal(out.peakViewAccounts, 2);
     assert.equal(out.txns.length, 2);
     assert.deepEqual(
-      out.accounts.map((a) => a.type).sort(),
-      ['credit', 'depository'],
+      out.txns.map((t) => t.id).sort(),
+      ['txn_chk', 'txn_sav'],
     );
+    const skipped = out.accounts.filter((a) => !a.peak_view);
+    assert.equal(skipped.length, 3);
+    assert.ok(skipped.every((a) => a.skip_reason === 'personal_excluded'));
+    assert.ok(!env._tellerUrls.some((u) => u.includes('acc_joint') || u.includes('acc_card')));
+  });
+
+  it('exposes sample_raw when rows arrive but none normalize', async () => {
+    const env = mockEnv({
+      txns: [
+        {
+          amt: '-12.00',
+          posted_on: '2026-09-01',
+          memo: 'HOME DEPOT SECRET',
+        },
+      ],
+    });
+    const out = await pullRecent(env, 35);
+    assert.equal(out.accounts[0].raw_count, 1);
+    assert.equal(out.accounts[0].normalized_count, 0);
+    assert.ok(out.accounts[0].sample_raw);
+    assert.equal(out.accounts[0].sample_raw.has_id, false);
+    assert.equal(out.accounts[0].drop_reasons.missing_id, 1);
+    const blob = JSON.stringify(out.accounts[0].sample_raw);
+    assert.equal(blob.includes('HOME DEPOT'), false);
+    assert.equal(blob.includes('SECRET'), false);
+    assert.deepEqual(out.accounts[0].sample_raw.keys.sort(), ['amt', 'memo', 'posted_on']);
+  });
+
+  it('keeps MM/DD/YYYY Teller dates inside the local lookback', async () => {
+    const now = new Date();
+    const iso = now.toISOString().slice(0, 10);
+    const [y, m, d] = iso.split('-');
+    const env = mockEnv({
+      txns: [
+        {
+          id: 'txn_mdy',
+          date: `${m}/${d}/${y}`,
+          amount: '-87.40',
+          description: 'HOME DEPOT',
+        },
+      ],
+    });
+    const out = await pullRecent(env, 35);
+    assert.equal(out.txns.length, 1);
+    assert.equal(out.txns[0].date, iso);
+    assert.equal(out.accounts[0].normalized_count, 1);
+    assert.equal(out.accounts[0].kept_count, 1);
+    assert.equal(out.accounts[0].sample_raw, null);
   });
 
   it('pages with from_id until the lookback is covered', async () => {
@@ -116,8 +194,8 @@ describe('Teller error objects', () => {
     const day = new Date().toISOString().slice(0, 10);
     const env = mockEnv({
       accounts: [
-        { id: 'acc_ok', name: 'Checking', status: 'open', type: 'depository', subtype: 'checking', last_four: '0001' },
-        { id: 'acc_bad', name: 'Closed-ish', status: 'open', type: 'credit', subtype: 'credit_card', last_four: '0002' },
+        { id: 'acc_ok', name: 'BUS COMPLETE CHK', status: 'open', type: 'depository', subtype: 'checking', last_four: '7120' },
+        { id: 'acc_bad', name: 'CHASE BUS TOTAL SAV', status: 'open', type: 'depository', subtype: 'savings', last_four: '7736' },
       ],
       txnsByAccount: {
         acc_ok: [txn('txn_ok', day, '-60.00')],
@@ -130,7 +208,7 @@ describe('Teller error objects', () => {
     assert.equal(out.ok, true);
     assert.equal(out.new_count, 1);
     assert.equal(out.accounts.length, 2);
-    const bad = out.accounts.find((a) => a.last_four === '0002');
+    const bad = out.accounts.find((a) => a.last_four === '7736');
     assert.match(bad.sample_error, /teller_http_403/);
     assert.equal(bad.raw_count, 0);
   });

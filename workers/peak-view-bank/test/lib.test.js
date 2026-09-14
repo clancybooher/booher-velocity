@@ -5,10 +5,14 @@ import {
   FORBIDDEN_VELOCITY_KEYS,
   assertAllowedPeakViewKey,
   assertNotHouseholdKey,
+  classifyAccount,
   isForbiddenVelocityKey,
   matchSupplier,
   mergePending,
   normalizeTxn,
+  parseTellerAmount,
+  parseTellerDate,
+  sampleRawShape,
   shouldQueueExpense,
   toPending,
 } from '../src/lib.js';
@@ -77,6 +81,124 @@ describe('pending expense queue', () => {
     const again = mergePending(first, [hd]);
     assert.equal(first.length, 1);
     assert.equal(again.length, 1);
+  });
+});
+
+describe('Teller payload shapes', () => {
+  it('accepts transaction_id, dollar amounts, and MM/DD/YYYY dates', () => {
+    const n = normalizeTxn({
+      transaction_id: 'txn_alt',
+      date: '09/11/2026',
+      amount: '$(87.40)',
+      description: 'HOME DEPOT #4012',
+      status: 'pending',
+      type: 'card_payment',
+    });
+    assert.equal(n.id, 'txn_alt');
+    assert.equal(n.date, '2026-09-11');
+    assert.equal(n.amount, -87.4);
+    assert.equal(n.status, 'pending');
+    assert.equal(n.category, 'supplier');
+  });
+
+  it('unwraps { transaction } and reads id from links.self', () => {
+    const n = normalizeTxn({
+      transaction: {
+        amount: { value: '-12.00' },
+        date: 1726185600000,
+        description: 'QXO',
+        links: { self: 'https://api.teller.io/accounts/acc_x/transactions/txn_from_link' },
+      },
+    });
+    assert.equal(n.id, 'txn_from_link');
+    assert.equal(n.amount, -12);
+    assert.match(n.date, /^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it('does not drop pending or posted for missing status filter', () => {
+    const pending = normalizeTxn({
+      id: 'txn_p',
+      date: '2026-09-12',
+      amount: '-50.00',
+      status: 'pending',
+      description: 'ALPINE',
+    });
+    const posted = normalizeTxn({
+      id: 'txn_o',
+      date: '2026-09-12',
+      amount: '-50.00',
+      status: 'posted',
+      description: 'ALPINE',
+    });
+    assert.equal(pending.category, 'supplier');
+    assert.equal(posted.category, 'supplier');
+  });
+
+  it('parses Teller amount strings the same way Velocity does', () => {
+    assert.equal(parseTellerAmount({ amount: '-87.40' }), -87.4);
+    assert.equal(parseTellerAmount({ amount: 86.46 }), 86.46);
+    assert.equal(Number.isFinite(parseTellerAmount({ amount: { value: '1.00' } })), true);
+  });
+
+  it('normalizes date shapes that would fail YYYY-MM-DD string compare', () => {
+    assert.equal(parseTellerDate('09/13/2026'), '2026-09-13');
+    assert.equal(parseTellerDate('20260913'), '2026-09-13');
+    assert.equal(parseTellerDate('2026-09-13T12:00:00Z'), '2026-09-13');
+  });
+
+  it('sampleRawShape is keys + types only', () => {
+    const shape = sampleRawShape({
+      id: 'txn_super_secret',
+      amount: '-999.00',
+      date: '2026-09-01',
+      description: 'HOME DEPOT CLANCY CARD',
+      details: { counterparty: { name: 'HOME DEPOT' } },
+      status: 'posted',
+      type: 'card_payment',
+    });
+    const blob = JSON.stringify(shape);
+    assert.equal(shape.has_id, true);
+    assert.equal(shape.id_field, 'id');
+    assert.equal(shape.id_prefix, 'txn_');
+    assert.equal(shape.amount_type, 'string');
+    assert.equal(shape.amount_parseable, true);
+    assert.equal(shape.date_shape, 'YYYY-MM-DD');
+    assert.equal(blob.includes('HOME DEPOT'), false);
+    assert.equal(blob.includes('CLANCY'), false);
+    assert.equal(blob.includes('-999'), false);
+    assert.equal(blob.includes('txn_super_secret'), false);
+  });
+});
+
+describe('Peak View account filter', () => {
+  it('keeps business checking 7120 and savings 7736', () => {
+    assert.equal(
+      classifyAccount({ name: 'BUS COMPLETE CHK', last_four: '7120', type: 'depository', subtype: 'checking' })
+        .peak_view,
+      true,
+    );
+    assert.equal(
+      classifyAccount({ name: 'CHASE BUS TOTAL SAV', last_four: '7736', type: 'depository', subtype: 'savings' })
+        .peak_view,
+      true,
+    );
+  });
+
+  it('excludes personal Freedom Unlimited, Clancy and Naomi, Maples Place', () => {
+    assert.equal(
+      classifyAccount({ name: 'Freedom Unlimited', last_four: '0185', type: 'credit', subtype: 'credit_card' })
+        .peak_view,
+      false,
+    );
+    assert.equal(
+      classifyAccount({ name: 'Clancy and Naomi', last_four: '3340', type: 'depository', subtype: 'checking' })
+        .peak_view,
+      false,
+    );
+    assert.equal(
+      classifyAccount({ name: 'Maples Place', last_four: '7915', type: 'depository', subtype: 'checking' }).peak_view,
+      false,
+    );
   });
 });
 

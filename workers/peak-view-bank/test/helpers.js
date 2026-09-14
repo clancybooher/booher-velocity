@@ -24,11 +24,11 @@ export function mockEnv(overrides = {}) {
   const accounts = overrides.accounts || [
     {
       id: 'acc_chase',
-      name: 'Checking',
+      name: 'BUS COMPLETE CHK',
       status: 'open',
       type: 'depository',
       subtype: 'checking',
-      last_four: '1234',
+      last_four: '7120',
       links: { transactions: 'https://api.teller.io/accounts/acc_chase/transactions' },
     },
   ];

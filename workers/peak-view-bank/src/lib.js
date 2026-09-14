@@ -19,6 +19,22 @@ export const MAX_SEEN_IDS = 2000;
 export const MAX_PENDING = 200;
 export const DEFAULT_LOOKBACK_DAYS = 14;
 
+/**
+ * Peak View ledger / cashflow / supplier pending use business
+ * checking + savings only. Last-four allowlist is the source of truth
+ * for the current Velocity Chase enrollment.
+ *
+ * Include: BUS COMPLETE CHK …7120, CHASE BUS TOTAL SAV …7736
+ * Exclude: Clancy and Naomi …3340, Maples Place …7915,
+ *          personal Freedom Unlimited …0185
+ */
+export const PEAK_VIEW_LAST_FOURS = Object.freeze(['7120', '7736']);
+export const PERSONAL_LAST_FOURS = Object.freeze(['3340', '7915', '0185']);
+export const PERSONAL_ACCOUNT_NAME_RE =
+  /freedom\s*unlimited|clancy\s+and\s+naomi|maples\s*place/i;
+export const BUSINESS_ACCOUNT_NAME_RE =
+  /\bbus(?:iness)?\b|complete\s*chk|total\s*sav/i;
+
 /** Keys this Worker is allowed to write on PEAK_VIEW_BANK_KV. */
 export const ALLOWED_PEAK_VIEW_KEYS = Object.freeze([
   PENDING_KEY,
@@ -88,6 +104,208 @@ export function assertNotHouseholdKey(key) {
   }
 }
 
+export function accountLastFour(account) {
+  return String(account?.last_four || '')
+    .replace(/\D/g, '')
+    .slice(-4);
+}
+
+/**
+ * Peak View default: business depository only.
+ * Allowlisted last fours always win. Personal names / last fours
+ * never enter ledger, pending, or cashflow.
+ */
+export function classifyAccount(account) {
+  const last4 = accountLastFour(account);
+  const name = String(account?.name || '');
+  const subtype = String(account?.subtype || '').toLowerCase();
+  const type = String(account?.type || '').toLowerCase();
+  const depository =
+    type === 'depository' || subtype === 'checking' || subtype === 'savings';
+
+  if (PERSONAL_LAST_FOURS.includes(last4) || PERSONAL_ACCOUNT_NAME_RE.test(name)) {
+    return { peak_view: false, reason: 'personal_excluded' };
+  }
+  if (PEAK_VIEW_LAST_FOURS.includes(last4)) {
+    return { peak_view: true, reason: 'allowlist_last_four' };
+  }
+  if (BUSINESS_ACCOUNT_NAME_RE.test(name) && depository) {
+    return { peak_view: true, reason: 'business_depository' };
+  }
+  return { peak_view: false, reason: 'not_business_depository' };
+}
+
+export function isPeakViewAccount(account) {
+  return classifyAccount(account).peak_view;
+}
+
+export function unwrapTellerTxn(row) {
+  if (row == null) return null;
+  if (typeof row === 'string') {
+    const trimmed = row.trim();
+    if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+      try {
+        return unwrapTellerTxn(JSON.parse(trimmed));
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }
+  if (typeof row !== 'object' || Array.isArray(row)) return null;
+  if (row.transaction && typeof row.transaction === 'object') return row.transaction;
+  if (
+    row.data &&
+    typeof row.data === 'object' &&
+    !Array.isArray(row.data) &&
+    (row.data.id || row.data.transaction_id || row.data.amount != null)
+  ) {
+    return row.data;
+  }
+  return row;
+}
+
+export function tellerTxnId(txn) {
+  const raw =
+    txn?.id ??
+    txn?.transaction_id ??
+    txn?.teller_transaction_id ??
+    txn?.txn_id ??
+    txn?.transactionId;
+  if (raw != null && String(raw).trim()) return String(raw).trim();
+  const self = txn?.links?.self;
+  if (typeof self === 'string') {
+    const m = self.match(/transactions\/([^/?#]+)/i);
+    if (m?.[1]) return m[1];
+  }
+  return '';
+}
+
+/**
+ * Teller docs: signed decimal string. Live Chase sometimes sends a
+ * number, "$1,234.56", unicode minus, or { amount | value }.
+ */
+export function parseTellerAmount(txn) {
+  const raw =
+    txn?.amount ??
+    txn?.details?.amount ??
+    txn?.value ??
+    txn?.amount_value;
+  if (raw == null || raw === '') return Number.NaN;
+  if (typeof raw === 'number') return Number.isFinite(raw) ? raw : Number.NaN;
+  if (typeof raw === 'object') {
+    return parseTellerAmount({
+      amount: raw.amount ?? raw.value ?? raw.amount_cents,
+    });
+  }
+  let s = String(raw).trim();
+  s = s.replace(/[\s$,]/g, '').replace(/\u2212/g, '-').replace(/^\((.+)\)$/, '-$1');
+  const n = Number.parseFloat(s);
+  return Number.isFinite(n) ? n : Number.NaN;
+}
+
+/**
+ * Local lookback compares YYYY-MM-DD. Teller docs use that; Chase
+ * payloads have also shown timestamps, MM/DD/YYYY, and YYYYMMDD.
+ * Unparseable dates stay empty so the lookback keeps the row.
+ */
+export function parseTellerDate(value) {
+  if (value == null || value === '') return '';
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    const ms = value > 1e12 ? value : value * 1000;
+    const d = new Date(ms);
+    return Number.isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
+  }
+  if (typeof value === 'object') {
+    const y = value.year ?? value.yyyy;
+    const m = value.month ?? value.mm;
+    const day = value.day ?? value.dd;
+    if (y && m && day) {
+      return `${String(y).padStart(4, '0')}-${String(m).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    }
+    return parseTellerDate(value.date ?? value.value ?? '');
+  }
+  const s = String(value).trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  if (/^\d{8}$/.test(s)) return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`;
+  const mdy = s.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{4})$/);
+  if (mdy) {
+    return `${mdy[3]}-${mdy[1].padStart(2, '0')}-${mdy[2].padStart(2, '0')}`;
+  }
+  if (/^\d{10,13}$/.test(s)) return parseTellerDate(Number(s));
+  const d = new Date(s);
+  if (!Number.isNaN(d.getTime()) && /^\d{4}/.test(s)) return d.toISOString().slice(0, 10);
+  return '';
+}
+
+function dateShape(value) {
+  if (value == null || value === '') return 'empty';
+  if (typeof value === 'number') return value > 1e12 ? 'unix_ms' : 'unix_s';
+  if (typeof value === 'object') return 'object';
+  const s = String(value);
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return 'YYYY-MM-DD';
+  if (/^\d{8}$/.test(s)) return 'YYYYMMDD';
+  if (/^\d{1,2}[/\-.]\d{1,2}[/\-.]\d{4}$/.test(s)) return 'MDY';
+  if (/^\d{10,13}$/.test(s)) return 'unix_string';
+  return 'other';
+}
+
+/**
+ * Field names + types only. No vendor, description, counterparty,
+ * amount value, or full transaction id.
+ */
+export function sampleRawShape(row) {
+  const rawType = row == null ? 'null' : Array.isArray(row) ? 'array' : typeof row;
+  if (rawType !== 'object') {
+    return { row_type: rawType, keys: [] };
+  }
+  const keys = Object.keys(row).slice(0, 24);
+  const nested = unwrapTellerTxn(row);
+  const amount = nested?.amount ?? row.amount;
+  const date = nested?.date ?? row.date;
+  const idVal =
+    nested?.id ??
+    nested?.transaction_id ??
+    nested?.teller_transaction_id ??
+    row.id ??
+    row.transaction_id;
+  const idField = nested?.id != null || row.id != null
+    ? 'id'
+    : nested?.transaction_id != null || row.transaction_id != null
+      ? 'transaction_id'
+      : nested?.teller_transaction_id != null || row.teller_transaction_id != null
+        ? 'teller_transaction_id'
+        : nested?.links?.self || row.links?.self
+          ? 'links.self'
+          : null;
+  return {
+    row_type: 'object',
+    keys,
+    nested_keys: nested && nested !== row ? Object.keys(nested).slice(0, 24) : [],
+    has_id: Boolean(tellerTxnId(nested || row)),
+    id_field: idField,
+    id_prefix: typeof idVal === 'string' ? idVal.slice(0, 4) : idVal == null ? null : typeof idVal,
+    amount_type: amount == null ? 'null' : Array.isArray(amount) ? 'array' : typeof amount,
+    amount_keys: amount && typeof amount === 'object' ? Object.keys(amount).slice(0, 8) : undefined,
+    amount_parseable: Number.isFinite(parseTellerAmount(nested || row)),
+    date_type: date == null ? 'null' : typeof date,
+    date_len: date == null ? 0 : String(date).length,
+    date_shape: dateShape(date),
+    status: typeof (nested?.status ?? row.status) === 'string' ? (nested?.status ?? row.status) : null,
+    type: typeof (nested?.type ?? row.type) === 'string' ? (nested?.type ?? row.type) : null,
+    has_details: Boolean(nested?.details || row.details),
+    has_description: typeof (nested?.description ?? row.description) === 'string',
+  };
+}
+
+export function normalizeFailReason(txn) {
+  const row = unwrapTellerTxn(txn);
+  if (!row) return 'not_object';
+  if (!tellerTxnId(row)) return 'missing_id';
+  if (!Number.isFinite(parseTellerAmount(row))) return 'bad_amount';
+  return null;
+}
+
 export function vendorText(txn) {
   const counter = txn.details?.counterparty?.name?.trim();
   const desc = txn.description?.trim();
@@ -121,20 +339,32 @@ export function classifyDirection(txn, amount) {
   return 'debit';
 }
 
-export function normalizeTxn(txn) {
-  if (!txn?.id) return null;
-  const amount = Number.parseFloat(String(txn.amount ?? ''));
+export function normalizeTxn(txn, account) {
+  const row = unwrapTellerTxn(txn);
+  if (!row) return null;
+  const id = tellerTxnId(row);
+  if (!id) return null;
+  const amount = parseTellerAmount(row);
   if (!Number.isFinite(amount)) return null;
-  const vendor = vendorText(txn);
-  const supplier = matchSupplier(`${vendor} ${txn.description || ''}`);
+  const date = parseTellerDate(
+    row.date ?? row.booked_on ?? row.transacted_at ?? row.timestamp,
+  );
+  const vendor = vendorText(row);
+  const supplier = matchSupplier(`${vendor} ${row.description || ''}`);
+  const classified = account ? classifyAccount(account) : null;
   return {
-    id: txn.id,
-    date: txn.date || '',
+    id,
+    date,
     vendor,
     amount,
     category: supplier ? 'supplier' : 'other',
-    type: classifyDirection(txn, amount),
+    type: classifyDirection(row, amount),
     supplier,
+    status: typeof row.status === 'string' ? row.status : null,
+    account_id: account?.id || row.account_id || null,
+    account_name: account?.name || null,
+    account_last_four: account ? accountLastFour(account) : accountLastFour({ last_four: row.account_last_four }),
+    peak_view: classified ? classified.peak_view : true,
   };
 }
 
@@ -146,6 +376,8 @@ export function toPublic(txn) {
     category: txn.category,
     type: txn.type,
     supplier: txn.supplier || null,
+    account_last_four: txn.account_last_four || null,
+    account_name: txn.account_name || null,
   };
 }
 

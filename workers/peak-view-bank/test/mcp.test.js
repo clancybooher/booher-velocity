@@ -43,6 +43,7 @@ describe('bridge + tools', () => {
     assert.equal(health.isolation.writes_household_ledger, false);
     assert.equal(health.ledger_count, 0);
     assert.equal(health.seen_ids_count, 0);
+    assert.deepEqual(health.account_filter.allowlist_last_fours, ['7120', '7736']);
   });
 
   it('bank_sync queues Home Depot ≥ $50 into Peak View pending only', async () => {
